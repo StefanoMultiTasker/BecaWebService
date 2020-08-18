@@ -22,6 +22,18 @@ namespace Entities.Contexts
         public virtual DbSet<VMenu> VMenu { get; set; }
         public virtual DbSet<VMenuLivello> VMenuLivello { get; set; }
 
+        public virtual DbSet<BecaView> BecaView { get; set; }
+        public virtual DbSet<BecaViewData> BecaViewData { get; set; }
+        public virtual DbSet<BecaViewFilterValues> BecaViewFilterValues { get; set; }
+        public virtual DbSet<BecaViewFilters> BecaViewFilters { get; set; }
+        public virtual DbSet<BecaViewPanels> BecaViewPanels { get; set; }
+        public virtual DbSet<BecaPanelFilters> BecaPanelFilters { get; set; }
+        public virtual DbSet<BecaFormula> BecaFormula { get; set; }
+        public virtual DbSet<BecaFormulaData> BecaFormulaData { get; set; }
+        public virtual DbSet<BecaFormulaDataFilters> BecaFormulaDataFilters { get; set; }
+        public virtual DbSet<BecaViewTypes> BecaViewTypes { get; set; }
+        public virtual DbSet<BecaAggregationTypes> BecaAggregationTypes { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<AnagLivelli>(entity =>
@@ -358,6 +370,124 @@ namespace Entities.Contexts
                     .IsRequired()
                     .HasMaxLength(50)
                     .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<BecaAggregationTypes>(entity =>
+            {
+                entity.HasKey(e => e.IdAggregationType);
+            });
+
+            modelBuilder.Entity<BecaFormula>(entity =>
+            {
+                entity.HasKey(e => e.IdFormula);
+            });
+
+            modelBuilder.Entity<BecaFormulaData>(entity =>
+            {
+                entity.HasKey(e => e.IdFormulaData);
+                
+                entity.HasOne(d => d.IdAggregationTypeNavigation)
+                    .WithMany(p => p.BecaFormulaData)
+                    .HasForeignKey(d => d.IdAggregationType)
+                    .HasConstraintName("FK_BecaFormulaData_BecaAggregationTypes");
+
+                entity.HasOne(d => d.IdFormulaNavigation)
+                    .WithMany(p => p.BecaFormulaData)
+                    .HasForeignKey(d => d.IdFormula)
+                    .HasConstraintName("FK_BecaFormulaData_BecaFormula");
+            });
+
+            modelBuilder.Entity<BecaFormulaDataFilters>(entity =>
+            {
+                entity.ToView("vBecaFormulaDataFilters");
+                entity.HasKey(e => new { e.IdFormulaData, e.idBecaFilter });
+
+                entity.HasOne(d => d.IdFormulaDataNavigation)
+                    .WithMany(p => p.BecaFormulaDataFilters)
+                    .HasForeignKey(d => d.IdFormulaData)
+                    .HasConstraintName("FK_BecaFormulaDataFilters_BecaFormulaData");
+            });
+
+            modelBuilder.Entity<BecaPanelFilters>(entity =>
+            {
+                entity.ToView("vBecaPanelFilters");
+                entity.HasKey(e => new { e.idBecaViewPanel, e.idBecaFilter });
+
+                entity.HasOne(d => d.idBecaViewPanelNavigation)
+                    .WithMany(p => p.BecaPanelFilters)
+                    .HasForeignKey(d => d.idBecaViewPanel)
+                    .HasConstraintName("FK_BecaPanelFilters_BecaViewPanels");
+            });
+
+            modelBuilder.Entity<BecaView>(entity =>
+            {
+                entity.HasKey(e => e.idBecaView);
+
+                entity.HasOne(d => d.idBecaViewTypeNavigation)
+                    .WithMany(p => p.BecaView)
+                    .HasForeignKey(d => d.idBecaViewType)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_BecaView_BecaViewTypes");
+            });
+
+            modelBuilder.Entity<BecaViewData>(entity =>
+            {
+                entity.ToView("vBecaViewData");
+                entity.HasKey(e => new { e.idBecaView, e.idDataDefinition });
+
+                entity.HasOne(d => d.idBecaViewNavigation)
+                    .WithMany(p => p.BecaViewData)
+                    .HasForeignKey(d => d.idBecaView)
+                    .HasConstraintName("FK_BecaViewData_BecaView");
+            });
+
+            modelBuilder.Entity<BecaViewFilterValues>(entity =>
+            {
+                entity.ToView("vBecaViewFilterValues");
+                entity.HasKey(e => new { e.idBecaView, e.idFilterValue })
+                    .HasName("PK_BecaViewFilterValue");
+
+                entity.HasOne(d => d.idBecaViewNavigation)
+                    .WithMany(p => p.BecaViewFilterValues)
+                    .HasForeignKey(d => d.idBecaView)
+                    .HasConstraintName("FK_BecaViewFilterValues_BecaView");
+            });
+
+            modelBuilder.Entity<BecaViewFilters>(entity =>
+            {
+                entity.ToView("vBecaViewFilters");
+                entity.HasKey(e => new { e.idBecaView, e.idBecaFilter });
+
+                entity.HasOne(d => d.idBecaViewNavigation)
+                    .WithMany(p => p.BecaViewFilters)
+                    .HasForeignKey(d => d.idBecaView)
+                    .HasConstraintName("FK_BecaViewFilters_BecaView");
+            });
+
+            modelBuilder.Entity<BecaViewPanels>(entity =>
+            {
+                entity.HasKey(e => e.idBecaViewPanel);
+
+                entity.HasOne(d => d.IdAggregationTypeNavigation)
+                    .WithMany(p => p.BecaViewPanels)
+                    .HasForeignKey(d => d.IdAggregationType)
+                    .HasConstraintName("FK_BecaViewPanels_BecaAggregationTypes");
+
+                entity.HasOne(d => d.idBecaViewNavigation)
+                    .WithMany(p => p.BecaViewPanels)
+                    .HasForeignKey(d => d.idBecaView)
+                    .HasConstraintName("FK_BecaViewPanels_BecaView");
+
+                entity.HasOne(d => d.IdFormulaNavigation)
+                    .WithMany(p => p.BecaViewPanels)
+                    .HasForeignKey(d => d.IdFormula)
+                    .HasConstraintName("FK_BecaViewPanels_BecaFormula");
+            });
+
+            modelBuilder.Entity<BecaViewTypes>(entity =>
+            {
+                entity.HasKey(e => e.idBecaViewType);
+
             });
 
             OnModelCreatingPartial(modelBuilder);

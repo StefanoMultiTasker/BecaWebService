@@ -14,7 +14,7 @@ namespace Entities.DataTransferObjects
         {
             MenuAreaDTO area;
             MenuGruppoDTO gruppo;
-            MenuSubGroup sub;
+            MenuSubGroupDTO sub;
 
             foreach (VMenuLivello menu in data)
             {
@@ -42,10 +42,10 @@ namespace Entities.DataTransferObjects
                 }
                 gruppo = area.Gruppi.Find(A => A.GruppoCod == menu.GruppoCod);
 
-                if (gruppo.SubGroup == null) gruppo.SubGroup = new List<MenuSubGroup>();
+                if (gruppo.SubGroup == null) gruppo.SubGroup = new List<MenuSubGroupDTO>();
                 if (!gruppo.SubGroup.Exists(A => A.SottoGruppo == menu.SottoGruppo))
                 {
-                    gruppo.SubGroup.Add(new MenuSubGroup
+                    gruppo.SubGroup.Add(new MenuSubGroupDTO
                     {
                         SottoGruppo = menu.SottoGruppo
                     });
@@ -88,10 +88,10 @@ namespace Entities.DataTransferObjects
         public string GruppoDesc { get; set; }
         public string GruppoIcona { get; set; }
         public short GruppoOrdine { get; set; }
-        public List<MenuSubGroup> SubGroup { get; set; }
+        public List<MenuSubGroupDTO> SubGroup { get; set; }
     }
 
-    public class MenuSubGroup
+    public class MenuSubGroupDTO
     {
         public int SottoGruppo { get; set; }
         public List<MenuVoceDTO> Voci { get; set; }

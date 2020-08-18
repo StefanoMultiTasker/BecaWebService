@@ -46,6 +46,9 @@ namespace BecaWebService
             services.ConfigureLoggerService();
             services.ConfigureRepositoryWrapper();
 
+            services.AddHttpContextAccessor();
+            services.ConfigureJSON();
+            services.ConfigureMyCache();
             services.AddControllers();
 
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

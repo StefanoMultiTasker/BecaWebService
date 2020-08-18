@@ -15,6 +15,7 @@ namespace Repository
         private IdbaFunzioniRepository _Voce;
         private IdbaFunzioniCfgRepository _VoceConfig;
         private IMenuLivelloRepository _MenuLivello;
+        private IBecaViewRepository _BecaView;
 
         public IdbaFunzioniAreeRepository Area
         {
@@ -73,6 +74,18 @@ namespace Repository
                     _MenuLivello = new MenuLivelloRepository(_repoContext);
                 }
                 return _MenuLivello;
+            }
+        }
+
+        public IBecaViewRepository BecaView
+        {
+            get
+            {
+                if (_BecaView == null)
+                {
+                    _BecaView = new BecaViewRepository(_repoContext);
+                }
+                return _BecaView;
             }
         }
 

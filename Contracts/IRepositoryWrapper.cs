@@ -12,6 +12,7 @@ namespace Contracts
         IdbaFunzioniRepository Voce { get; }
         IdbaFunzioniCfgRepository VoceConfig { get; }
         IMenuLivelloRepository MenuLivello { get; }
+        IBecaViewRepository BecaView { get;  }
         Task SaveAsync();
     }
 }

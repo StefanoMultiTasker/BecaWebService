@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BecaWebService.Tools;
 
 namespace BecaWebService.Extensions
 {
@@ -76,5 +77,18 @@ namespace BecaWebService.Extensions
         {
             services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
         }
+
+        public static void ConfigureMyCache(this IServiceCollection services)
+        {
+            services.AddSingleton<MyMemoryCache>();
+        }
+
+        public static void ConfigureJSON(this IServiceCollection services)
+        {
+            services.AddMvc().AddNewtonsoftJson(options =>
+                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+            );
+        }
+
     }
 }
