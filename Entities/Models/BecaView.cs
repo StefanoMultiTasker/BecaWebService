@@ -19,6 +19,7 @@ namespace Entities.Models
         public short idBecaViewType { get; set; }
         public string Caption { get; set; }
         public bool ChartHasDetail { get; set; }
+        public short viewAxisXformula { get; set; }
         public string HttpGetUrl { get; set; }
 
         public virtual BecaViewTypes idBecaViewTypeNavigation { get; set; }
@@ -49,9 +50,7 @@ namespace Entities.Models
         public int idFilterValue { get; set; }
         public string Name { get; set; }
         public bool Api { get; set; }
-        public string DefaultString { get; set; }
-        public DateTime? DefaultDate { get; set; }
-        public decimal? DefaultNumber { get; set; }
+        public string? DefaultValue { get; set; }
         public short DefaultUse { get; set; }
         public string FromFilterName { get; set; }
         public short? FromFilterIndex { get; set; }

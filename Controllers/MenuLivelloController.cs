@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BecaWebService.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     [ApiController]
     public class MenuLivelloController : ControllerBase
     {

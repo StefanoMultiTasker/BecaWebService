@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BecaWebService.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     [ApiController]
     public class BecaViewController : ControllerBase
     {
@@ -27,11 +27,12 @@ namespace BecaWebService.Controllers
         }
 
         [HttpGet("{idView}")]
-        public async Task<IActionResult> GetViewByID(int idView)
+        //public async Task<IActionResult> GetViewByID(int idView)
+        public IActionResult GetViewByID(int idView)
         {
             try
             {
-                BecaView dbView = await _repository.BecaView.GetViewByID(idView);
+                BecaView dbView = _repository.BecaView.GetViewByID(idView);
                 dtoBecaView oView = _mapper.Map<BecaView, dtoBecaView>(dbView);
                 _logger.LogInfo($"Returned View for id {idView}.");
 

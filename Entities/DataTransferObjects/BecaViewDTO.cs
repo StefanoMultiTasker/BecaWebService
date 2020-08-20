@@ -32,13 +32,14 @@ namespace Entities.DataTransferObjects
         public IList<dtoBecaData> viewFields { get; set; }
         public IList<dtoBecaPanel> viewPanels { get; set; }
         public bool ChartHasDetail { get; set; }
+        public short viewAxisXformula { get; set; }
         public string HttpGetUrl { get; set; }
     }
 
     public class dtoBecaData
     {
         public string Name { get; set; }
-        public short Type { get; set; }
+        public short DataType { get; set; }
         public string Title { get; set; }
         public string Format { get; set; }
         public bool isOptional { get; set; }

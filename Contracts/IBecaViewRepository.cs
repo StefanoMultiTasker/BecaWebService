@@ -8,6 +8,7 @@ namespace Contracts
 {
     public interface IBecaViewRepository
     {
-        Task<BecaView> GetViewByID(int idView);
+        //Task<BecaView> GetViewByID(int idView);
+        BecaView GetViewByID(int idView);
     }
 }

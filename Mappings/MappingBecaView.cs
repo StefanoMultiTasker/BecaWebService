@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
+using BecaWebService.Extensions;
 using Entities.DataTransferObjects;
 using Entities.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace BecaWebService.Mappings
@@ -18,6 +20,11 @@ namespace BecaWebService.Mappings
                                 src => src.idFieldsUse
                                 )
                             )
+                    .ForMember(dest => dest.FieldName,
+                            opts => opts.MapFrom(
+                                src => src.FieldName.ToLower()
+                                )
+                            )
                     .ForMember(dest => dest.Type,
                             opts => opts.MapFrom(
                                 src => src.idFilterType
@@ -29,6 +36,11 @@ namespace BecaWebService.Mappings
                             src => src.idFieldsUse
                             )
                         )
+                    .ForMember(dest => dest.FieldName,
+                            opts => opts.MapFrom(
+                                src => src.FieldName.ToLower()
+                                )
+                            )
                 .ForMember(dest => dest.Type,
                         opts => opts.MapFrom(
                             src => src.idFilterType
@@ -40,6 +52,11 @@ namespace BecaWebService.Mappings
                             src => src.idFieldsUse
                             )
                         )
+                    .ForMember(dest => dest.FieldName,
+                            opts => opts.MapFrom(
+                                src => src.FieldName.ToLower()
+                                )
+                            )
                 .ForMember(dest => dest.Type,
                         opts => opts.MapFrom(
                             src => src.idFilterType
@@ -50,6 +67,11 @@ namespace BecaWebService.Mappings
                 .ForMember(dest => dest.filterName,
                         opts => opts.MapFrom(
                             src => src.Name
+                            )
+                        )
+                .ForMember(dest => dest.Default,
+                        opts => opts.MapFrom(
+                            src => src.DefaultValue
                             )
                         );
 
@@ -94,7 +116,12 @@ namespace BecaWebService.Mappings
                         );
 
             CreateMap<BecaViewData, dtoBecaData>()
-                .ForMember(dest => dest.Type,
+                .ForMember(dest => dest.Name,
+                        opts => opts.MapFrom(
+                            src => src.Name.ToCamelCase()
+                            )
+                        )
+                .ForMember(dest => dest.DataType,
                         opts => opts.MapFrom(
                             src => src.idDataType
                             )
