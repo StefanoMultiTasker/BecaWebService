@@ -1,0 +1,19 @@
+2020-08-26 13:02:52.1587 ERROR Something went wrong inside GetViewByID action: Il nome di oggetto 'BecaViewFilterUI' non è valido.
+2020-08-26 13:02:52.1587 ERROR Something went wrong inside GetViewByID action: Il nome di oggetto 'BecaViewFilterUI' non è valido.
+2020-08-26 13:04:46.5036 ERROR Something went wrong inside GetViewByID action: Unable to cast object of type 'System.String' to type 'System.Int16'.
+2020-08-26 13:06:22.6885 INFO Returned View for id 1.
+2020-08-26 14:47:07.3482 INFO Returned View for id 1.
+2020-08-26 14:54:54.3339 INFO Returned View for id 1.
+2020-08-26 14:55:52.5225 INFO Returned View for id 1.
+2020-08-26 14:56:56.1433 INFO Returned View for id 1.
+2020-08-26 14:57:40.4589 INFO Returned View for id 1.
+2020-08-26 15:01:45.3623 INFO Returned View for id 1.
+2020-08-26 15:06:40.8130 INFO Returned View for id 1.
+2020-08-26 15:07:56.2667 INFO Returned View for id 1.
+2020-08-26 15:09:08.5509 INFO Returned View for id 1.
+2020-08-26 15:10:59.1778 INFO Returned View for id 1.
+2020-08-26 15:35:44.4162 INFO Returned View for id 1.
+2020-08-26 16:09:51.4398 ERROR Something went wrong inside GetViewByID action: Object reference not set to an instance of an object.
+2020-08-26 16:11:00.4914 INFO Returned View for id 1.
+2020-08-26 16:12:06.2189 INFO Returned View for id 1.
+2020-08-26 16:27:46.8896 INFO Returned View for id 1.

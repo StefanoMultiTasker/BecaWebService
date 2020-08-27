@@ -10,5 +10,6 @@ namespace Contracts
     {
         //Task<BecaView> GetViewByID(int idView);
         BecaView GetViewByID(int idView);
+        UIform GetViewFilterUI(int idView);
     }
 }

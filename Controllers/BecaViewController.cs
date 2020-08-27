@@ -34,6 +34,8 @@ namespace BecaWebService.Controllers
             {
                 BecaView dbView = _repository.BecaView.GetViewByID(idView);
                 dtoBecaView oView = _mapper.Map<BecaView, dtoBecaView>(dbView);
+                UIform viewFilterUI = _repository.BecaView.GetViewFilterUI(idView);
+                oView.FilterUI = viewFilterUI;
                 _logger.LogInfo($"Returned View for id {idView}.");
 
                 return Ok(oView);

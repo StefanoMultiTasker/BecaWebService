@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace BecaWebService.Extensions
+namespace BecaWebService.ExtensionsLib
 {
     public static class StringExtension
     {

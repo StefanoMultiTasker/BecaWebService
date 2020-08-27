@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Entities.Models;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -20,6 +21,7 @@ namespace Entities.DataTransferObjects
         public dtoBecaViewDefinition ViewDefinition { get; set; }
         public IList<dtoBecaFilter> Filters { get; set; }
         public IList<dtoBecaFilterValue> FilterValues { get; set; }
+        public UIform FilterUI { get; set; }
     }
 
     public class dtoBecaViewDefinition
@@ -28,11 +30,15 @@ namespace Entities.DataTransferObjects
         {
             viewFields = new List<dtoBecaData>();
             viewPanels = new List<dtoBecaPanel>();
+            viewAxisXData = new List<string>();
+            viewAxisXFilters = new List<string>();
         }
         public IList<dtoBecaData> viewFields { get; set; }
         public IList<dtoBecaPanel> viewPanels { get; set; }
         public bool ChartHasDetail { get; set; }
         public short viewAxisXformula { get; set; }
+        public IList<string> viewAxisXData { get; set; }
+        public IList<string> viewAxisXFilters { get; set; }
         public string HttpGetUrl { get; set; }
     }
 
@@ -42,11 +48,33 @@ namespace Entities.DataTransferObjects
         public short DataType { get; set; }
         public string Title { get; set; }
         public string Format { get; set; }
-        public bool isOptional { get; set; }
-        public bool isVisible { get; set; }
-        public short TableOrder { get; set; }
+        public bool isGridOptional { get; set; }
+        public bool isGridVisible { get; set; }
+        public short GridOrder { get; set; }
     }
 
+    public partial class BecaViewFilterUI
+    {
+        public string Name { get; set; }
+        public short DataType { get; set; }
+        public string? Title { get; set; }
+        public string? Format { get; set; }
+        public short Filter_Row { get; set; }
+        public short Filter_Col { get; set; }
+        public string Filter_Size { get; set; }
+        public string? Filter_options { get; set; }
+        public string? Filter_Title { get; set; }
+        public string Filter_Name { get; set; }
+        public string FieldType { get; set; }
+        public string? FieldInput { get; set; }
+        public string? DropDownList { get; set; }
+        public bool DropDownListAll { get; set; }
+        public bool DropDownListNull { get; set; }
+        public string? DropDownDisplayField { get; set; }
+        public string? DropDownKeyFields { get; set; }
+        public string? Parameters { get; set; }
+        public bool ParametersReq { get; set; }
+    }
     public class dtoBecaPanel
     {
         public dtoBecaPanel()
@@ -72,6 +100,8 @@ namespace Entities.DataTransferObjects
         public short? AggregationType { get; set; }
         public IList<dtoBecaFilter> Filters { get; set; }
         public dtoBecaFormula formula { get; set; }
+        public string? HelpTitle { get; set; }
+        public string? HelpText { get; set; }
     }
 
     public class dtoBecaFilter

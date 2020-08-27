@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using BecaWebService.Extensions;
+using BecaWebService.ExtensionsLib;
 using Entities.DataTransferObjects;
 using Entities.Models;
 using System;
@@ -143,9 +143,14 @@ namespace BecaWebService.Mappings
                     src => src.BecaViewFilterValues
                     )
                 )
-                .ForPath(dest => dest.ViewDefinition.ChartHasDetail,
+                .ForPath(dest => dest.ViewDefinition.viewAxisXData,
                         opts => opts.MapFrom(
-                            src => src.ChartHasDetail
+                            src => src.viewAxisXData.Split(",", StringSplitOptions.RemoveEmptyEntries).ToList<string>()
+                            )
+                        )
+                .ForPath(dest => dest.ViewDefinition.viewAxisXFilters,
+                        opts => opts.MapFrom(
+                            src => src.viewAxisXFilters.Split(",", StringSplitOptions.RemoveEmptyEntries).ToList<string>()
                             )
                         )
                 .ForPath(dest => dest.ViewDefinition.HttpGetUrl,

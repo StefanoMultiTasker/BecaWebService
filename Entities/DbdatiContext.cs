@@ -33,6 +33,7 @@ namespace Entities.Contexts
         public virtual DbSet<BecaFormulaDataFilters> BecaFormulaDataFilters { get; set; }
         public virtual DbSet<BecaViewTypes> BecaViewTypes { get; set; }
         public virtual DbSet<BecaAggregationTypes> BecaAggregationTypes { get; set; }
+        public virtual DbSet<BecaViewFilterUI> BecaViewFilterUI { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -487,6 +488,13 @@ namespace Entities.Contexts
             modelBuilder.Entity<BecaViewTypes>(entity =>
             {
                 entity.HasKey(e => e.idBecaViewType);
+
+            });
+
+            modelBuilder.Entity<BecaViewFilterUI>(entity =>
+            {
+                entity.ToView("vBecaViewFilterUI");
+                entity.HasKey(e => new { e.idBecaView, e.Name });
 
             });
 

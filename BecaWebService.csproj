@@ -7,18 +7,22 @@
   <ItemGroup>
     <Compile Remove="Contracts\**" />
     <Compile Remove="Entities\**" />
+    <Compile Remove="ExtensionsLib\**" />
     <Compile Remove="LoggerService\**" />
     <Compile Remove="Repository\**" />
     <Content Remove="Contracts\**" />
     <Content Remove="Entities\**" />
+    <Content Remove="ExtensionsLib\**" />
     <Content Remove="LoggerService\**" />
     <Content Remove="Repository\**" />
     <EmbeddedResource Remove="Contracts\**" />
     <EmbeddedResource Remove="Entities\**" />
+    <EmbeddedResource Remove="ExtensionsLib\**" />
     <EmbeddedResource Remove="LoggerService\**" />
     <EmbeddedResource Remove="Repository\**" />
     <None Remove="Contracts\**" />
     <None Remove="Entities\**" />
+    <None Remove="ExtensionsLib\**" />
     <None Remove="LoggerService\**" />
     <None Remove="Repository\**" />
   </ItemGroup>
@@ -43,7 +47,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="Contracts\Contracts.csproj" />
     <ProjectReference Include="Entities\Entities.csproj" />
+    <ProjectReference Include="ExtensionsLib\ExtensionsLib.csproj" />
     <ProjectReference Include="LoggerService\LoggerService.csproj" />
     <ProjectReference Include="Repository\Repository.csproj" />
   </ItemGroup>
