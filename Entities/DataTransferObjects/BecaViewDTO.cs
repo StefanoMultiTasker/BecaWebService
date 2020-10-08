@@ -35,7 +35,11 @@ namespace Entities.DataTransferObjects
         }
         public IList<dtoBecaData> viewFields { get; set; }
         public IList<dtoBecaPanel> viewPanels { get; set; }
+        public bool HasGrid { get; set; }
+        public bool HasChart { get; set; }
         public bool ChartHasDetail { get; set; }
+        public bool IsChartFromApi { get; set; }
+        public bool isPanelsFromApi { get; set; }
         public short viewAxisXformula { get; set; }
         public IList<string> viewAxisXData { get; set; }
         public IList<string> viewAxisXFilters { get; set; }
@@ -46,8 +50,9 @@ namespace Entities.DataTransferObjects
     {
         public string Name { get; set; }
         public short DataType { get; set; }
+        public short? FormulaFooter { get; set; }
         public string Title { get; set; }
-        public string Format { get; set; }
+        public string? Format { get; set; }
         public bool isGridOptional { get; set; }
         public bool isGridVisible { get; set; }
         public short GridOrder { get; set; }
@@ -106,6 +111,7 @@ namespace Entities.DataTransferObjects
 
     public class dtoBecaFilter
     {
+        public string FilterName { get; set; }
         public string FieldName { get; set; }
         public short? FieldsUse { get; set; }
         public short Type { get; set; }
@@ -124,6 +130,7 @@ namespace Entities.DataTransferObjects
         public bool Api { get; set; }
         public string? value { get; set; }
         public string Default { get; set; }
+        public string DefaultFunc { get; set; }
         public string FromFilterName { get; set; }
         public short? FromFilterIndex { get; set; }
         public bool FromFilterProp { get; set; }

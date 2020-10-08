@@ -115,7 +115,7 @@ namespace Repository
                     string opts = BecaCfgFormField.Filter_options ?? "";
                     if (opts.StartsWith("[") && opts.EndsWith("]"))
                     {
-                        field.options = opts.Replace("[", "").Replace("]", "").Split(",").ToArray();
+                        field.options = opts.Replace("[", "").Replace("]", "").Replace("'", "").Replace(" ", "").Split(",").ToArray();
                     }
                     field.optionDisplayed = BecaCfgFormField.DropDownDisplayField;
                     if(field.optionDisplayed != null) field.optionDisplayed = field.optionDisplayed.ToCamelCase();

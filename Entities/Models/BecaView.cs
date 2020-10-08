@@ -18,7 +18,11 @@ namespace Entities.Models
         public string Name { get; set; }
         public short idBecaViewType { get; set; }
         public string Caption { get; set; }
+        public bool HasGrid { get; set; }
+        public bool HasChart { get; set; }
         public bool ChartHasDetail { get; set; }
+        public bool IsChartFromApi { get; set; }
+        public bool isPanelsFromApi { get; set; }
         public short viewAxisXformula { get; set; }
         public string viewAxisXData { get; set; }
         public string viewAxisXFilters { get; set; }
@@ -37,6 +41,7 @@ namespace Entities.Models
         public int idDataDefinition { get; set; }
         public string Name { get; set; }
         public short idDataType { get; set; }
+        public short? FormulaFooter { get; set; }
         public string? Title { get; set; }
         public string? Format { get; set; }
         public bool isGridOptional { get; set; }
@@ -83,6 +88,7 @@ namespace Entities.Models
         public string Name { get; set; }
         public bool Api { get; set; }
         public string? DefaultValue { get; set; }
+        public string DefaultFunc { get; set; }
         public short DefaultUse { get; set; }
         public string FromFilterName { get; set; }
         public short? FromFilterIndex { get; set; }

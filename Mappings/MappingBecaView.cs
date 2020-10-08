@@ -143,6 +143,31 @@ namespace BecaWebService.Mappings
                     src => src.BecaViewFilterValues
                     )
                 )
+                .ForPath(dest => dest.ViewDefinition.HasGrid,
+                        opts => opts.MapFrom(
+                            src => src.HasGrid
+                            )
+                        )
+                .ForPath(dest => dest.ViewDefinition.HasChart,
+                        opts => opts.MapFrom(
+                            src => src.HasChart
+                            )
+                        )
+                .ForPath(dest => dest.ViewDefinition.ChartHasDetail,
+                        opts => opts.MapFrom(
+                            src => src.ChartHasDetail
+                            )
+                        )
+                .ForPath(dest => dest.ViewDefinition.IsChartFromApi,
+                        opts => opts.MapFrom(
+                            src => src.IsChartFromApi
+                            )
+                        )
+                .ForPath(dest => dest.ViewDefinition.isPanelsFromApi,
+                        opts => opts.MapFrom(
+                            src => src.isPanelsFromApi
+                            )
+                        )
                 .ForPath(dest => dest.ViewDefinition.viewAxisXData,
                         opts => opts.MapFrom(
                             src => src.viewAxisXData.Split(",", StringSplitOptions.RemoveEmptyEntries).ToList<string>()
