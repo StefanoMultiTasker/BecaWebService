@@ -128,6 +128,11 @@ namespace BecaWebService.Mappings
                         );
 
             CreateMap<BecaView, dtoBecaView>()
+                .ForMember(dest => dest.idView,
+                        opts => opts.MapFrom(
+                            src => src.idBecaView
+                            )
+                        )
                 .ForMember(dest => dest.Type,
                         opts => opts.MapFrom(
                             src => src.idBecaViewType
@@ -178,6 +183,21 @@ namespace BecaWebService.Mappings
                             src => src.viewAxisXFilters.Split(",", StringSplitOptions.RemoveEmptyEntries).ToList<string>()
                             )
                         )
+                .ForPath(dest => dest.ViewDefinition.viewAxisXActions,
+                        opts => opts.MapFrom(
+                            src => src.viewAxisXActions.Split(",", StringSplitOptions.RemoveEmptyEntries).ToList<string>()
+                            )
+                        )
+                .ForPath(dest => dest.ViewDefinition.viewAxisXZoomIf,
+                        opts => opts.MapFrom(
+                            src => src.viewAxisXZoomIf.Split(",", StringSplitOptions.RemoveEmptyEntries).ToList<string>()
+                            )
+                        )
+                .ForPath(dest => dest.ViewDefinition.viewAxisXZoomTo,
+                        opts => opts.MapFrom(
+                            src => src.viewAxisXZoomTo.Split(",", StringSplitOptions.RemoveEmptyEntries).ToList<string>()
+                            )
+                        )
                 .ForPath(dest => dest.ViewDefinition.HttpGetUrl,
                         opts => opts.MapFrom(
                             src => src.HttpGetUrl
@@ -193,6 +213,9 @@ namespace BecaWebService.Mappings
                     src => src.BecaViewPanels
                     )
                 );
+
+            CreateMap<BecaViewUI, BecaViewFilterUI>().ReverseMap();
+            CreateMap<BecaViewUI, BecaViewDetailUI>().ReverseMap();
         }
     }
 }

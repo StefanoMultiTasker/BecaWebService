@@ -13,6 +13,7 @@ namespace Entities.DataTransferObjects
             Filters = new List<dtoBecaFilter>();
             FilterValues = new List<dtoBecaFilterValue>();
         }
+        public int idView { get; set; }
         public string Name { get; set; }
         public short Type { get; set; }
         public string Caption { get; set; }
@@ -22,6 +23,7 @@ namespace Entities.DataTransferObjects
         public IList<dtoBecaFilter> Filters { get; set; }
         public IList<dtoBecaFilterValue> FilterValues { get; set; }
         public UIform FilterUI { get; set; }
+        public UIform DetailUI { get; set; }
     }
 
     public class dtoBecaViewDefinition
@@ -32,6 +34,9 @@ namespace Entities.DataTransferObjects
             viewPanels = new List<dtoBecaPanel>();
             viewAxisXData = new List<string>();
             viewAxisXFilters = new List<string>();
+            viewAxisXActions = new List<string>();
+            viewAxisXZoomIf = new List<string>();
+            viewAxisXZoomTo = new List<string>();
         }
         public IList<dtoBecaData> viewFields { get; set; }
         public IList<dtoBecaPanel> viewPanels { get; set; }
@@ -43,6 +48,10 @@ namespace Entities.DataTransferObjects
         public short viewAxisXformula { get; set; }
         public IList<string> viewAxisXData { get; set; }
         public IList<string> viewAxisXFilters { get; set; }
+        public IList<string> viewAxisXActions { get; set; }
+        public IList<string> viewAxisXZoomIf { get; set; }
+        public IList<string> viewAxisXZoomTo { get; set; }
+        public short? viewAxisXStep { get; set; }
         public string HttpGetUrl { get; set; }
     }
 
@@ -58,28 +67,40 @@ namespace Entities.DataTransferObjects
         public short GridOrder { get; set; }
     }
 
-    public partial class BecaViewFilterUI
+    public class dtoBecaDataUser
     {
         public string Name { get; set; }
         public short DataType { get; set; }
-        public string? Title { get; set; }
+        public short? FormulaFooter { get; set; }
+        public string Title { get; set; }
         public string? Format { get; set; }
-        public short Filter_Row { get; set; }
-        public short Filter_Col { get; set; }
-        public string Filter_Size { get; set; }
-        public string? Filter_options { get; set; }
-        public string? Filter_Title { get; set; }
-        public string Filter_Name { get; set; }
-        public string FieldType { get; set; }
-        public string? FieldInput { get; set; }
-        public string? DropDownList { get; set; }
-        public bool DropDownListAll { get; set; }
-        public bool DropDownListNull { get; set; }
-        public string? DropDownDisplayField { get; set; }
-        public string? DropDownKeyFields { get; set; }
-        public string? Parameters { get; set; }
-        public bool ParametersReq { get; set; }
+        public bool isGridOptional { get; set; }
+        public bool isGridVisible { get; set; }
+        public short GridOrder { get; set; }
     }
+    //public partial class dtoBecaViewUI
+    //{
+    //    public string Name { get; set; }
+    //    public short DataType { get; set; }
+    //    public string? Title { get; set; }
+    //    public string? Format { get; set; }
+    //    public short Filter_Row { get; set; }
+    //    public short Filter_Col { get; set; }
+    //    public string Filter_Size { get; set; }
+    //    public string? Filter_options { get; set; }
+    //    public string? Filter_Title { get; set; }
+    //    public string Filter_Name { get; set; }
+    //    public string FieldType { get; set; }
+    //    public string? FieldInput { get; set; }
+    //    public string? DropDownList { get; set; }
+    //    public bool DropDownListAll { get; set; }
+    //    public bool DropDownListNull { get; set; }
+    //    public string? DropDownDisplayField { get; set; }
+    //    public string? DropDownKeyFields { get; set; }
+    //    public string? Parameters { get; set; }
+    //    public bool ParametersReq { get; set; }
+    //}
+
     public class dtoBecaPanel
     {
         public dtoBecaPanel()
@@ -107,6 +128,7 @@ namespace Entities.DataTransferObjects
         public dtoBecaFormula formula { get; set; }
         public string? HelpTitle { get; set; }
         public string? HelpText { get; set; }
+        public string Color { get; set; }
     }
 
     public class dtoBecaFilter

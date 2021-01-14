@@ -1,0 +1,10 @@
+2020-11-06 12:44:32.2977 INFO Returned View for id 1.
+2020-11-06 12:45:47.3180 INFO Returned View for id 2.
+2020-11-06 12:51:24.0698 INFO Returned View for id 2.
+2020-11-06 12:52:06.0624 INFO Returned View for id 1.
+2020-11-06 13:01:13.1343 INFO Returned View for id 2.
+2020-11-06 13:03:10.4389 INFO Returned View for id 1.
+2020-11-06 13:07:07.2734 INFO Returned View for id 2.
+2020-11-06 13:08:24.5111 INFO Returned View for id 1.
+2020-11-06 14:22:28.6690 INFO Returned View for id 2.
+2020-11-06 14:23:59.5439 INFO Returned View for id 1.

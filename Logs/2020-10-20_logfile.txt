@@ -1,0 +1,36 @@
+2020-10-20 12:10:48.8662 ERROR Something went wrong inside GetViewByID action: Object reference not set to an instance of an object.
+2020-10-20 12:10:58.5215 ERROR Something went wrong inside GetViewByID action: Object reference not set to an instance of an object.
+2020-10-20 12:27:58.7358 INFO Returned View for id 3.
+2020-10-20 12:29:42.3028 INFO Returned View for id 2.
+2020-10-20 12:29:43.4265 INFO Returned View for id 3.
+2020-10-20 12:30:20.3701 INFO Returned View for id 2.
+2020-10-20 12:30:21.2941 INFO Returned View for id 3.
+2020-10-20 12:53:31.0784 INFO Returned View for id 3.
+2020-10-20 12:54:22.7405 INFO Returned View for id 2.
+2020-10-20 12:54:24.4128 INFO Returned View for id 3.
+2020-10-20 12:57:45.6071 INFO Returned View for id 2.
+2020-10-20 12:57:47.9617 INFO Returned View for id 3.
+2020-10-20 14:44:45.0442 INFO Returned View for id 3.
+2020-10-20 14:49:44.8758 INFO Returned View for id 3.
+2020-10-20 14:53:48.2173 INFO Returned View for id 2.
+2020-10-20 14:53:49.3000 INFO Returned View for id 3.
+2020-10-20 14:55:22.8824 INFO Returned View for id 2.
+2020-10-20 14:55:23.8274 INFO Returned View for id 3.
+2020-10-20 14:57:48.8089 INFO Returned View for id 3.
+2020-10-20 14:59:32.2334 INFO Returned View for id 2.
+2020-10-20 14:59:33.1259 INFO Returned View for id 3.
+2020-10-20 15:07:16.2746 INFO Returned View for id 2.
+2020-10-20 15:07:18.0331 INFO Returned View for id 3.
+2020-10-20 15:07:51.5142 INFO Returned View for id 2.
+2020-10-20 15:07:52.1767 INFO Returned View for id 3.
+2020-10-20 15:19:06.7861 INFO Returned View for id 3.
+2020-10-20 15:22:26.4553 INFO Returned View for id 3.
+2020-10-20 15:26:13.2483 INFO Returned View for id 2.
+2020-10-20 15:26:15.9807 INFO Returned View for id 3.
+2020-10-20 15:27:49.9289 INFO Returned View for id 3.
+2020-10-20 15:28:37.7186 INFO Returned View for id 3.
+2020-10-20 15:40:51.8571 INFO Returned View for id 3.
+2020-10-20 16:36:37.8945 INFO Returned View for id 3.
+2020-10-20 16:43:31.4274 INFO Returned View for id 3.
+2020-10-20 16:45:22.8755 INFO Returned View for id 3.
+2020-10-20 17:07:23.7833 INFO Returned View for id 3.

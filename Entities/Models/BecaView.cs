@@ -26,6 +26,10 @@ namespace Entities.Models
         public short viewAxisXformula { get; set; }
         public string viewAxisXData { get; set; }
         public string viewAxisXFilters { get; set; }
+        public string? viewAxisXActions { get; set; }
+        public string? viewAxisXZoomIf { get; set; }
+        public string? viewAxisXZoomTo { get; set; }
+        public short? viewAxisXStep { get; set; }
         public string HttpGetUrl { get; set; }
 
         public virtual BecaViewTypes idBecaViewTypeNavigation { get; set; }
@@ -51,7 +55,17 @@ namespace Entities.Models
         public virtual BecaView idBecaViewNavigation { get; set; }
     }
 
-    public partial class BecaViewFilterUI
+    public partial class BecaViewDataUser
+    {
+        public int idBecaView { get; set; }
+        public int idDataDefinition { get; set; }
+        public string Domain { get; set; }
+        public int idUtente { get; set; }
+        public bool isGridVisible { get; set; }
+        public short GridOrder { get; set; }
+    }
+
+    public partial class BecaViewUI
     {
         public int idBecaView { get; set; }
         public string ViewName { get; set; }
@@ -60,13 +74,14 @@ namespace Entities.Models
         public string DataType { get; set; }
         public string? Title { get; set; }
         public string? Format { get; set; }
-        public short Filter_Row { get; set; }
-        public short Filter_SubRow { get; set; }
-        public short Filter_Col { get; set; }
-        public short Filter_SubCol { get; set; }
-        public string Filter_Size { get; set; }
+        public short Row { get; set; }
+        public short SubRow { get; set; }
+        public short Col { get; set; }
+        public short SubCol { get; set; }
+        public string ColSize { get; set; }
+        public string SubColSize { get; set; }
         public string? Filter_options { get; set; }
-        public string? Filter_Title { get; set; }
+        //public string? Filter_Title { get; set; }
         public string Filter_Name { get; set; }
         public string FieldType { get; set; }
         public string? FieldInput { get; set; }
@@ -80,6 +95,40 @@ namespace Entities.Models
         public string? HelpShort { get; set; }
         public string? HelpFull { get; set; }
     }
+
+    public  class BecaViewFilterUI : BecaViewUI { }
+    public partial class BecaViewDetailUI : BecaViewUI { }
+
+
+    //public partial class BecaViewDetailUI
+    //{
+    //    public int idBecaView { get; set; }
+    //    public string ViewName { get; set; }
+    //    public string Name { get; set; }
+    //    public short idDataType { get; set; }
+    //    public string DataType { get; set; }
+    //    public string? Title { get; set; }
+    //    public string? Format { get; set; }
+    //    public short Detail_Row { get; set; }
+    //    public short Detail_SubRow { get; set; }
+    //    public short Detail_Col { get; set; }
+    //    public short Detail_SubCol { get; set; }
+    //    public string Detail_Size { get; set; }
+    //    public string? Detail_options { get; set; }
+    //    public string? Detail_Title { get; set; }
+    //    public string Detail_Name { get; set; }
+    //    public string FieldType { get; set; }
+    //    public string? FieldInput { get; set; }
+    //    public string? DropDownList { get; set; }
+    //    public bool DropDownListAll { get; set; }
+    //    public bool DropDownListNull { get; set; }
+    //    public string? DropDownDisplayField { get; set; }
+    //    public string? DropDownKeyFields { get; set; }
+    //    public string? Parameters { get; set; }
+    //    public bool ParametersReq { get; set; }
+    //    public string? HelpShort { get; set; }
+    //    public string? HelpFull { get; set; }
+    //}
 
     public partial class BecaViewFilterValues 
     {
@@ -146,6 +195,7 @@ namespace Entities.Models
         public int? IdFormula { get; set; }
         public string? HelpTitle { get; set; }
         public string? HelpText { get; set; }
+        public string Color { get; set; }
 
         public virtual BecaAggregationTypes IdAggregationTypeNavigation { get; set; }
         public virtual BecaView idBecaViewNavigation { get; set; }

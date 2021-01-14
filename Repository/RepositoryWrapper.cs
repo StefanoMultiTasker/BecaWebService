@@ -1,7 +1,11 @@
-﻿using Contracts;
+﻿using AutoMapper;
+using Contracts;
 using Entities.Contexts;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -16,6 +20,7 @@ namespace Repository
         private IdbaFunzioniCfgRepository _VoceConfig;
         private IMenuLivelloRepository _MenuLivello;
         private IBecaViewRepository _BecaView;
+        private readonly IMapper _mapper;
 
         public IdbaFunzioniAreeRepository Area
         {
@@ -83,20 +88,53 @@ namespace Repository
             {
                 if (_BecaView == null)
                 {
-                    _BecaView = new BecaViewRepository(_repoContext);
+                    _BecaView = new BecaViewRepository(_repoContext, _mapper);
                 }
                 return _BecaView;
             }
         }
 
-        public RepositoryWrapper(DbdatiContext repositoryContext)
+        public RepositoryWrapper(DbdatiContext repositoryContext, IMapper mapper)
         {
             _repoContext = repositoryContext;
+            _mapper = mapper;
         }
 
         public async Task SaveAsync()
         {
             await _repoContext.SaveChangesAsync();
+        }
+
+        public void ReadToken(string token)
+        {
+            token = token.Replace("Bearer ", "");
+            IEnumerable<System.Security.Claims.Claim> claims = GetClaimsFromToken(token.ToString());
+            //Utente loggedUser = new Utente();
+            if (Int32.TryParse(claims.SingleOrDefault(p => p.Type.Contains("NameIdentifier".ToLower()))?.Value, out int idUtente))
+            {
+                _repoContext.idUtente = idUtente;
+            } else
+            {
+                _repoContext.idUtente = -1;
+            }
+            _repoContext.domain = claims.SingleOrDefault(p => p.Type.Contains("PrimarySid".ToLower())).Value;
+        }
+
+        public IEnumerable<System.Security.Claims.Claim> GetClaimsFromToken(string token)
+        {
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("BecaWebForEncrypt")),
+                ValidateIssuer = false,
+                ValidateAudience = false, //you might want to validate the audience and issuer depending on your use case
+                ValidateLifetime = false //here we are saying that we don't care about the token's expiration date
+            };
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            SecurityToken securityToken;
+            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out securityToken);
+            return principal.Claims;
         }
     }
 }

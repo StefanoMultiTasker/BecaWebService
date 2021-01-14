@@ -1,0 +1,13 @@
+2020-10-23 10:10:07.2737 INFO Returned View for id 3.
+2020-10-23 10:15:19.6265 INFO Returned View for id 2.
+2020-10-23 10:15:21.1437 INFO Returned View for id 3.
+2020-10-23 10:15:50.8358 INFO Returned View for id 2.
+2020-10-23 11:11:56.6021 INFO Returned View for id 3.
+2020-10-23 11:17:00.6582 INFO Returned View for id 3.
+2020-10-23 11:19:00.8799 INFO Returned View for id 3.
+2020-10-23 11:19:28.4690 INFO Returned View for id 2.
+2020-10-23 11:55:02.4485 INFO Returned View for id 3.
+2020-10-23 11:55:04.4342 INFO Returned View for id 2.
+2020-10-23 11:55:51.8692 INFO Returned View for id 2.
+2020-10-23 11:56:28.4418 INFO Returned View for id 1.
+2020-10-23 12:32:09.5275 INFO Returned View for id 3.

@@ -5,6 +5,9 @@ namespace Entities.Contexts
 {
     public partial class DbdatiContext : DbContext
     {
+        public string domain;
+        public int idUtente;
+
         public DbdatiContext()
         {
         }
@@ -24,6 +27,7 @@ namespace Entities.Contexts
 
         public virtual DbSet<BecaView> BecaView { get; set; }
         public virtual DbSet<BecaViewData> BecaViewData { get; set; }
+        public virtual DbSet<BecaViewDataUser> BecaViewDataUser { get; set; }
         public virtual DbSet<BecaViewFilterValues> BecaViewFilterValues { get; set; }
         public virtual DbSet<BecaViewFilters> BecaViewFilters { get; set; }
         public virtual DbSet<BecaViewPanels> BecaViewPanels { get; set; }
@@ -34,6 +38,7 @@ namespace Entities.Contexts
         public virtual DbSet<BecaViewTypes> BecaViewTypes { get; set; }
         public virtual DbSet<BecaAggregationTypes> BecaAggregationTypes { get; set; }
         public virtual DbSet<BecaViewFilterUI> BecaViewFilterUI { get; set; }
+        public virtual DbSet<BecaViewDetailUI> BecaViewDetailUI { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -442,6 +447,12 @@ namespace Entities.Contexts
                     .HasConstraintName("FK_BecaViewData_BecaView");
             });
 
+            modelBuilder.Entity<BecaViewDataUser>(entity =>
+            {
+                entity.ToView("BecaViewDataUser");
+                entity.HasKey(e => new { e.idBecaView, e.idDataDefinition, e.Domain, e.idUtente });
+            });
+
             modelBuilder.Entity<BecaViewFilterValues>(entity =>
             {
                 entity.ToView("vBecaViewFilterValues");
@@ -494,6 +505,12 @@ namespace Entities.Contexts
             modelBuilder.Entity<BecaViewFilterUI>(entity =>
             {
                 entity.ToView("vBecaViewFilterUI");
+                entity.HasKey(e => new { e.idBecaView, e.Name });
+
+            });
+            modelBuilder.Entity<BecaViewDetailUI>(entity =>
+            {
+                entity.ToView("vBecaViewDetailUI");
                 entity.HasKey(e => new { e.idBecaView, e.Name });
 
             });

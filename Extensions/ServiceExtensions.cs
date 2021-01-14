@@ -42,7 +42,7 @@ namespace BecaWebService.Extensions
         public static void ConfigureDB(this IServiceCollection services, IConfiguration Configuration)
         {
 #if DEBUG
-            string cnn = "DbDatiConnL";
+            string cnn = "DbDatiConn";
 #else
             string cnn = "DbDatiConn";
 #endif
