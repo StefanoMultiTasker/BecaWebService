@@ -83,6 +83,9 @@ namespace Entities.Models
         public string? Filter_options { get; set; }
         //public string? Filter_Title { get; set; }
         public string Filter_Name { get; set; }
+        //public bool Filter_API { get; set; }
+        //public short Filter_ConcatSequence { get; set; }
+        //public string? Filter_Reference { get; set; }
         public string FieldType { get; set; }
         public string? FieldInput { get; set; }
         public string? DropDownList { get; set; }
@@ -149,8 +152,9 @@ namespace Entities.Models
     public partial class BecaViewFilters 
     {
         public int idBecaView { get; set; }
-        public string Field1 { get; set; }
-        public string Field2 { get; set; }
+        public string? FilterReference { get; set; }
+        //public string Field1 { get; set; }
+        //public string Field2 { get; set; }
         public string FieldName { get; set; }
         public string FilterName { get; set; }
         public string Format { get; set; }
@@ -214,8 +218,9 @@ namespace Entities.Models
         public short idFilterType { get; set; }
         public string FilterType { get; set; }
         public string Format { get; set; }
-        public string Field1 { get; set; }
-        public string Field2 { get; set; }
+        public string? FilterReference { get; set; }
+        //public string Field1 { get; set; }
+        //public string Field2 { get; set; }
         public string Parameter1 { get; set; }
         public string Parameter2 { get; set; }
         public string ValueModifier1 { get; set; }
@@ -270,8 +275,9 @@ namespace Entities.Models
         public short idFilterType { get; set; }
         public string FilterType { get; set; }
         public string Format { get; set; }
-        public string Field1 { get; set; }
-        public string Field2 { get; set; }
+        public string? FilterReference { get; set; }
+        //public string Field1 { get; set; }
+        //public string Field2 { get; set; }
         public string Parameter1 { get; set; }
         public string Parameter2 { get; set; }
         public string ValueModifier1 { get; set; }

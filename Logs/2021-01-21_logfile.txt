@@ -1,0 +1,7 @@
+2021-01-21 17:52:48.8709 INFO Returned View for id 2.
+2021-01-21 17:58:48.4598 INFO Returned View for id 1.
+2021-01-21 17:58:53.2763 INFO Returned View for id 2.
+2021-01-21 18:10:49.6659 ERROR Something went wrong inside GetViewByID action: Il nome di colonna 'FilterReference' non è valido.
+2021-01-21 18:13:22.6994 INFO Returned View for id 2.
+2021-01-21 18:20:51.3458 INFO Returned View for id 1.
+2021-01-21 18:20:56.5024 INFO Returned View for id 2.

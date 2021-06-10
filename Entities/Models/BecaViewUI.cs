@@ -68,6 +68,16 @@ namespace Entities.Models
             }
             return col;
         }
+        public void AddCol(UIcol col)
+        {
+            while (col.num > this.cols.Count + 1)
+            {
+                UIcol _col = new UIcol();
+                _col.num = this.cols.Count + 1;
+                this.cols.Add(_col);
+            }
+            this.cols.Add(col);
+        }
         public int num { get; set; }
         public List<UIcol> cols { get; set; }
     }
@@ -99,7 +109,7 @@ namespace Entities.Models
         public UIform(string name)
         {
             this.name = name;
-            this.rows = new UIrows(); 
+            this.rows = new UIrows();
         }
         public string name { get; set; }
         public UIrows rows { get; set; }

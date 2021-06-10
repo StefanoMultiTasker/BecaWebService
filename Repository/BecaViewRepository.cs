@@ -173,7 +173,7 @@ namespace Repository
                         col.size = BecaCfgFormField.ColSize;
                         col.content = field;
 
-                        row.cols.Add(col);
+                        row.AddCol(col);
                     }
                 }
             }
