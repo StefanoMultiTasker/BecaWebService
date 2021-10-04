@@ -20,6 +20,7 @@ namespace Entities.Models
         [Optional] public string[] options { get; set; }
         [Optional] public string optionDisplayed { get; set; }
         [Optional] public string DropDownList { get; set; }
+        [Optional] public string reference { get; set; }
         //public bool? disabled { get; set; }
         //public bool? Readonly { get; set; }
         //public bool? required { get; set; }

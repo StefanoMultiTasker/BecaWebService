@@ -143,6 +143,7 @@ namespace Repository
                     field.type = BecaCfgFormField.FieldType;
                     field.inputType = BecaCfgFormField.FieldInput;
                     field.format = BecaCfgFormField.Format;
+                    field.reference = BecaCfgFormField.Filter_Reference;
                     string opts = BecaCfgFormField.Filter_options ?? "";
                     if (opts.StartsWith("[") && opts.EndsWith("]"))
                     {

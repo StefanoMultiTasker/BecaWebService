@@ -3,6 +3,9 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UserSecretsId>0300bad6-b3ff-482e-99d7-aa81396c20cc</UserSecretsId>
+    <Authors>Stefano Bettica</Authors>
+    <Product>Beca WebService</Product>
+    <Company>Abea</Company>
   </PropertyGroup>
 
   <ItemGroup>

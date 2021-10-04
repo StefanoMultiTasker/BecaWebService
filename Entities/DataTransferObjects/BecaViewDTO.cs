@@ -156,6 +156,7 @@ namespace Entities.DataTransferObjects
         public string FromFilterName { get; set; }
         public short? FromFilterIndex { get; set; }
         public bool FromFilterProp { get; set; }
+        public bool subFilter { get; set; }
     }
 
     public class dtoBecaFormula

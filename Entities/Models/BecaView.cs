@@ -85,7 +85,7 @@ namespace Entities.Models
         public string Filter_Name { get; set; }
         //public bool Filter_API { get; set; }
         //public short Filter_ConcatSequence { get; set; }
-        //public string? Filter_Reference { get; set; }
+        public string? Filter_Reference { get; set; }
         public string FieldType { get; set; }
         public string? FieldInput { get; set; }
         public string? DropDownList { get; set; }
@@ -144,8 +144,9 @@ namespace Entities.Models
         public short DefaultUse { get; set; }
         public string FromFilterName { get; set; }
         public short? FromFilterIndex { get; set; }
-        public bool FromFilterProp { get; set; }   
-        
+        public bool FromFilterProp { get; set; }
+        public bool subFilter { get; set; }
+
         public virtual BecaView idBecaViewNavigation { get; set; }
     }
 
