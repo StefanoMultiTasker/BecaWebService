@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 
 namespace Entities.Models
@@ -51,6 +50,7 @@ namespace Entities.Models
         public bool isGridOptional { get; set; }
         public bool isGridVisible { get; set; }
         public short GridOrder { get; set; }
+        public string GridHeatColor { get; set; }
 
         public virtual BecaView idBecaViewNavigation { get; set; }
     }

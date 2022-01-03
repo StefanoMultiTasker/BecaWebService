@@ -1,5 +1,8 @@
 ﻿using Entities.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.Extensions.Configuration;
+using System;
 
 namespace Entities.Contexts
 {
@@ -8,22 +11,10 @@ namespace Entities.Contexts
         public string domain;
         public int idUtente;
 
-        public DbdatiContext()
-        {
-        }
+        private readonly IConfiguration Configuration;
 
-        public DbdatiContext(DbContextOptions<DbdatiContext> options)
-            : base(options)
-        {
-        }
-
-        public virtual DbSet<AnagLivelli> AnagLivelli { get; set; }
-        public virtual DbSet<DbaFunzioni> DbaFunzioni { get; set; }
-        public virtual DbSet<DbaFunzioniAree> DbaFunzioniAree { get; set; }
-        public virtual DbSet<DbaFunzioniCfg> DbaFunzioniCfg { get; set; }
-        public virtual DbSet<DbaFunzioniGruppi> DbaFunzioniGruppi { get; set; }
-        public virtual DbSet<VMenu> VMenu { get; set; }
-        public virtual DbSet<VMenuLivello> VMenuLivello { get; set; }
+        public virtual DbSet<BecaUser> BecaUsers { get; set; }
+        public virtual DbSet<UserMenu> RawUserMenu { get; set; }
 
         public virtual DbSet<BecaView> BecaView { get; set; }
         public virtual DbSet<BecaViewData> BecaViewData { get; set; }
@@ -40,348 +31,147 @@ namespace Entities.Contexts
         public virtual DbSet<BecaViewFilterUI> BecaViewFilterUI { get; set; }
         public virtual DbSet<BecaViewDetailUI> BecaViewDetailUI { get; set; }
 
+        //public DbdatiContext(IConfiguration configuration)
+        //{
+        //    Configuration = configuration;
+        //}
+
+        public DbdatiContext(DbContextOptions<DbdatiContext> options)
+            : base(options)
+        {
+        }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<AnagLivelli>(entity =>
+            #region "Authenticate"
+
+            modelBuilder.Entity<BecaUser>(entity =>
             {
-                entity.HasKey(e => e.IdLivello)
-                    .HasName("PK_Anag_Livelli_idLivello");
+                entity.ToTable("Users");
+                entity.HasKey(e => e.idUtente);
+                entity.OwnsMany(p => p.RefreshTokens, a =>
+                {
+                    a.Property<int>("idUtente")
+                        .HasColumnType("int");
 
-                entity.ToTable("Anag_Livelli");
+                    a.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                entity.Property(e => e.IdLivello)
-                    .HasColumnName("idLivello")
-                    .ValueGeneratedNever();
+                    a.Property<string>("Token")
+                        .HasColumnType("nvarchar(max)");
 
-                entity.Property(e => e.DescLivello)
-                    .HasMaxLength(500)
-                    .IsUnicode(false);
+                    a.Property<DateTime>("Expires")
+                        .HasColumnType("datetime2");
 
-                entity.Property(e => e.DtInsert)
-                    .HasColumnName("dtInsert")
-                    .HasColumnType("datetime")
-                    .HasDefaultValueSql("(getdate())");
+                    a.Property<DateTime>("Created")
+                        .HasColumnType("datetime2");
 
-                entity.Property(e => e.FlagsProfilo)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
+                    a.Property<string>("CreatedByIp")
+                        .HasColumnType("nvarchar(max)");
 
-                entity.Property(e => e.FlgCambioPwd).HasColumnName("flgCambioPwd");
+                    a.Property<DateTime?>("Revoked")
+                        .HasColumnType("datetime2");
 
-                entity.Property(e => e.FlgFiltroFiliale)
-                    .IsRequired()
-                    .HasColumnName("flgFiltroFiliale")
-                    .HasDefaultValueSql("((1))");
+                    a.Property<string>("RevokedByIp")
+                        .HasColumnType("nvarchar(max)");
 
-                entity.Property(e => e.FlgProtected)
-                    .HasColumnName("flgProtected")
-                    .HasDefaultValueSql("((0))");
+                    a.Property<string>("ReplacedByToken")
+                        .HasColumnType("nvarchar(max)");
 
-                entity.Property(e => e.HomePage)
-                    .IsRequired()
-                    .HasMaxLength(50)
-                    .IsUnicode(false)
-                    .HasDefaultValueSql("('Home.htm')");
+                    a.Property<string>("ReasonRevoked")
+                        .HasColumnType("nvarchar(max)");
 
-                entity.Property(e => e.LoginPage)
-                    .IsRequired()
-                    .HasMaxLength(50)
-                    .IsUnicode(false)
-                    .HasDefaultValueSql("('frmLogin.aspx')");
+                    a.HasKey("idUtente", "Id");
+
+                    a.ToTable("RefreshToken");
+
+                    a.WithOwner()
+                        .HasForeignKey("idUtente");
+
+                    a.ToTable("RefreshTokens");
+                });
+                entity.OwnsMany(c => c.Companies, a =>
+                {
+                    //a.Property<int>("idUtente")
+                    //    .HasColumnType("int");
+
+                    a.Property<int>("idCompany")
+                        .HasColumnType("int");
+
+                    a.Property<string>("CompanyName")
+                        .HasColumnType("nvarchar(max)");
+
+                    a.Property<int>("isDefault")
+                        .HasColumnType("int");
+
+                    a.Property<string>("Logo1url")
+                        .HasColumnType("nvarchar(max)");
+                    a.Property<string>("Logo2url")
+                        .HasColumnType("nvarchar(max)");
+                    a.Property<string>("Logo3url")
+                        .HasColumnType("nvarchar(max)");
+                    a.Property<string>("Logo4url")
+                        .HasColumnType("nvarchar(max)");
+                    a.Property<string>("Logo5url")
+                        .HasColumnType("nvarchar(max)");
+
+                    a.Property<string>("Color1")
+                        .HasColumnType("nvarchar(50)");
+                    a.Property<string>("Color2")
+                        .HasColumnType("nvarchar(50)");
+                    a.Property<string>("Color3")
+                        .HasColumnType("nvarchar(50)");
+                    a.Property<string>("Color4")
+                        .HasColumnType("nvarchar(50)");
+                    a.Property<string>("Color5")
+                        .HasColumnType("nvarchar(50)");
+
+                    a.HasKey("idUtente", "idCompany");
+                    a.WithOwner()
+                        .HasForeignKey("idUtente");
+                    a.ToTable("vUsersCompanies");
+
+                    a.OwnsMany(p => p.Profiles, a =>
+                    {
+                        a.Property<int>("idUtente")
+                            .HasColumnType("int");
+
+                        a.Property<int>("idCompany")
+                            .HasColumnType("int");
+
+                        a.Property<int>("idProfile")
+                            .HasColumnType("int");
+
+                        a.Property<string>("Profile")
+                            .HasColumnType("nvarchar(max)");
+
+                        a.Property<bool>("PasswordChange")
+                            .HasColumnType("bit");
+
+                        a.HasKey("idUtente", "idProfile", "idCompany");
+                        a.WithOwner()
+                            .HasForeignKey("idUtente", "idCompany");
+                        a.ToTable("vUsers");
+                    });
+                });
             });
 
-            modelBuilder.Entity<DbaFunzioni>(entity =>
+            modelBuilder.Entity<UserMenu>(entity =>
             {
-                entity.HasKey(e => e.CodMenuItem)
-                    .HasName("PK_dbaFunzioni_CoddbaFunzioni");
-
-                entity.ToTable("_dbaFunzioni");
-
-                entity.Property(e => e.CodMenuItem)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.Caption)
-                    .IsRequired()
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.CodMenuMain)
-                    .IsRequired()
-                    .HasMaxLength(10)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.CustomForm)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.DescMenuItem)
-                    .HasMaxLength(500)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.DetailsForm)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.DtInsert)
-                    .HasColumnName("dtInsert")
-                    .HasColumnType("datetime")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Form)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.Parameters)
-                    .HasMaxLength(100)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.TableName)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.ViewName)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-
-                entity.HasOne(d => d.CodMenuMainNavigation)
-                    .WithMany(p => p.DbaFunzioni)
-                    .HasForeignKey(d => d.CodMenuMain)
-                    .HasConstraintName("FK__dbaFunzioni__dbaFunzioniGruppi");
+                entity.ToView("vMenuUser");
+                entity.HasKey(e => new { e.idUtente, e.idCompany, e.idItem });
             });
 
-            modelBuilder.Entity<DbaFunzioniAree>(entity =>
-            {
-                entity.HasKey(e => e.CodMenuArea)
-                    .HasName("PK_dbaFunzioniAree");
+            #endregion
 
-                entity.ToTable("_dbaFunzioniAree");
-
-                entity.Property(e => e.CodMenuArea)
-                    .HasMaxLength(10)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.DescMenuArea)
-                    .IsRequired()
-                    .HasMaxLength(500)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.DtInsert)
-                    .HasColumnName("dtInsert")
-                    .HasColumnType("datetime")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Icona)
-                    .HasColumnName("icona")
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-            });
-
-            modelBuilder.Entity<DbaFunzioniCfg>(entity =>
-            {
-                entity.ToTable("_dbaFunzioniCfg");
-
-                entity.HasIndex(e => new { e.CodMenuMain, e.CodMenuItem, e.SottoGruppo, e.Posizione, e.IdLivello })
-                    .HasName("IX__dbaFunzioniCfg");
-
-                entity.Property(e => e.Id).HasColumnName("id");
-
-                entity.Property(e => e.Caption)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.CodMenuItem)
-                    .IsRequired()
-                    .HasMaxLength(10)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.CodMenuMain)
-                    .HasMaxLength(10)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.CodModulo)
-                    .HasMaxLength(10)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.CustomForm)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.DetailsForm)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.DtInsert)
-                    .HasColumnName("dtInsert")
-                    .HasColumnType("datetime")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.FlAdd).HasColumnName("flAdd");
-
-                entity.Property(e => e.FlDel).HasColumnName("flDel");
-
-                entity.Property(e => e.FlDetail).HasColumnName("flDetail");
-
-                entity.Property(e => e.FlEdit).HasColumnName("flEdit");
-
-                entity.Property(e => e.FlExcel).HasColumnName("flExcel");
-
-                entity.Property(e => e.FlList).HasColumnName("flList");
-
-                entity.Property(e => e.IdLivello).HasColumnName("idLivello");
-            });
-
-            modelBuilder.Entity<DbaFunzioniGruppi>(entity =>
-            {
-                entity.HasKey(e => e.CodMenuMain)
-                    .HasName("PK__dbaFunzioniGruppi_Cod_dbaFunzioniGruppi");
-
-                entity.ToTable("_dbaFunzioniGruppi");
-
-                entity.Property(e => e.CodMenuMain)
-                    .HasMaxLength(10)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.CodMenuArea)
-                    .IsRequired()
-                    .HasMaxLength(10)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.DescMenuMain)
-                    .IsRequired()
-                    .HasMaxLength(500)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.DtInsert)
-                    .HasColumnName("dtInsert")
-                    .HasColumnType("datetime")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Icona)
-                    .HasColumnName("icona")
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-
-                entity.HasOne(d => d.CodMenuAreaNavigation)
-                    .WithMany(p => p.DbaFunzioniGruppi)
-                    .HasForeignKey(d => d.CodMenuArea)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__dbaFunzioniGruppi__dbaFunzioniAree");
-            });
-
-            modelBuilder.Entity<VMenu>(entity =>
-            {
-                entity.HasNoKey();
-
-                entity.ToTable("__vMenu");
-
-                entity.Property(e => e.Caption)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.CodMenuItem)
-                    .IsRequired()
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.CodMenuMain)
-                    .HasMaxLength(10)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.DescLivello)
-                    .HasMaxLength(500)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.DetailsForm)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.FlAdd).HasColumnName("flAdd");
-
-                entity.Property(e => e.FlDel).HasColumnName("flDel");
-
-                entity.Property(e => e.FlDetail).HasColumnName("flDetail");
-
-                entity.Property(e => e.FlEdit).HasColumnName("flEdit");
-
-                entity.Property(e => e.FlExcel).HasColumnName("flExcel");
-
-                entity.Property(e => e.FlList).HasColumnName("flList");
-
-                entity.Property(e => e.Id).HasColumnName("id");
-
-                entity.Property(e => e.IdLivello).HasColumnName("idLivello");
-            });
-
-            modelBuilder.Entity<VMenuLivello>(entity =>
-            {
-                entity.HasNoKey();
-
-                entity.ToView("_vMenuLivello");
-
-                entity.Property(e => e.AreaCod)
-                    .IsRequired()
-                    .HasMaxLength(10)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.AreaDesc)
-                    .IsRequired()
-                    .HasMaxLength(500)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.AreaIcona)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.Caption)
-                    .IsRequired()
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.DetailsForm)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.FlAdd).HasColumnName("flAdd");
-
-                entity.Property(e => e.FlDel).HasColumnName("flDel");
-
-                entity.Property(e => e.FlDetail).HasColumnName("flDetail");
-
-                entity.Property(e => e.FlEdit).HasColumnName("flEdit");
-
-                entity.Property(e => e.FlExcel).HasColumnName("flExcel");
-
-                entity.Property(e => e.FlList).HasColumnName("flList");
-
-                entity.Property(e => e.GruppoCod)
-                    .IsRequired()
-                    .HasMaxLength(10)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.GruppoDesc)
-                    .IsRequired()
-                    .HasMaxLength(500)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.GruppoIcona)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.Id).HasColumnName("id");
-
-                entity.Property(e => e.IdLivello).HasColumnName("idLivello");
-
-                entity.Property(e => e.MenuCod)
-                    .IsRequired()
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-            });
+            #region "Views"
 
             modelBuilder.Entity<BecaAggregationTypes>(entity =>
-            {
-                entity.HasKey(e => e.IdAggregationType);
-            });
+                {
+                    entity.HasKey(e => e.IdAggregationType);
+                });
 
             modelBuilder.Entity<BecaFormula>(entity =>
             {
@@ -391,7 +181,7 @@ namespace Entities.Contexts
             modelBuilder.Entity<BecaFormulaData>(entity =>
             {
                 entity.HasKey(e => e.IdFormulaData);
-                
+
                 entity.HasOne(d => d.IdAggregationTypeNavigation)
                     .WithMany(p => p.BecaFormulaData)
                     .HasForeignKey(d => d.IdAggregationType)
@@ -514,6 +304,8 @@ namespace Entities.Contexts
                 entity.HasKey(e => new { e.idBecaView, e.Name });
 
             });
+
+            #endregion
 
             OnModelCreatingPartial(modelBuilder);
         }

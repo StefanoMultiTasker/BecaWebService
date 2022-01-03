@@ -20,6 +20,8 @@ using BecaWebService.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
 using NLog;
 using System.IO;
+using BecaWebService.Helpers;
+using BecaWebService.Authorization;
 
 namespace BecaWebService
 {
@@ -37,19 +39,21 @@ namespace BecaWebService
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc().AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<Startup>());
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
+            //services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
 
             services.ConfigureCors();
             services.ConfigureIISIntegration();
             services.ConfigureDB(Configuration);
-            services.ConfigureAuth(Configuration);
+            //services.ConfigureAuth(Configuration);
             services.ConfigureLoggerService();
             services.ConfigureRepositoryWrapper();
 
             services.AddHttpContextAccessor();
             services.ConfigureJSON();
             services.ConfigureMyCache();
+            services.ConfigureDI();
             services.AddControllers();
+            services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
 
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
         }
@@ -65,12 +69,22 @@ namespace BecaWebService
             app.UseHttpsRedirection();
             app.UseStaticFiles();
 
-            app.UseCors("CorsPolicy");
+            app.UseCors(x => x
+                .SetIsOriginAllowed(origin => true)
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials());
 
             app.UseForwardedHeaders(new ForwardedHeadersOptions
             {
                 ForwardedHeaders = ForwardedHeaders.All
             });
+
+            // global error handler
+            app.UseMiddleware<ErrorHandlerMiddleware>();
+
+            // custom jwt auth middleware
+            app.UseMiddleware<JwtMiddleware>();
 
             app.UseRouting();
 

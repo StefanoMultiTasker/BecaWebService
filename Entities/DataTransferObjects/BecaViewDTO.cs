@@ -65,6 +65,7 @@ namespace Entities.DataTransferObjects
         public bool isGridOptional { get; set; }
         public bool isGridVisible { get; set; }
         public short GridOrder { get; set; }
+        public string GridHeatColor { get; set; }
     }
 
     public class dtoBecaDataUser

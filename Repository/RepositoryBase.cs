@@ -27,7 +27,7 @@ namespace Repository
         {
             this.dbdatiContext = repositoryContext;
             _httpContextAccessor = httpContextAccessor;
-            this.Settings();
+            //this.Settings();
         }
 
         public IQueryable<T> GetAll()
