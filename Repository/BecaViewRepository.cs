@@ -140,7 +140,7 @@ namespace Repository
                     field.label = BecaCfgFormField.Title;
                     field.name = BecaCfgFormField.Name;
                     field.placeholder = BecaCfgFormField.HelpShort;
-                    field.type = BecaCfgFormField.FieldType;
+                    field.fieldType = BecaCfgFormField.FieldType;
                     field.inputType = BecaCfgFormField.FieldInput;
                     field.format = BecaCfgFormField.Format;
                     field.reference = BecaCfgFormField.Filter_Reference;

@@ -22,6 +22,7 @@ using NLog;
 using System.IO;
 using BecaWebService.Helpers;
 using BecaWebService.Authorization;
+using Entities;
 
 namespace BecaWebService
 {
@@ -56,6 +57,9 @@ namespace BecaWebService
             services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
 
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+            services.AddSingleton<IDependencies, Dependencies>();
+            services.AddSingleton<FormTool>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

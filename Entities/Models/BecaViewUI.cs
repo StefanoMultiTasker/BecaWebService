@@ -14,7 +14,7 @@ namespace Entities.Models
         public string name { get; set; }
         [Optional] public string label { get; set; }
         [Optional] public string placeholder { get; set; }
-        public string type { get; set; }
+        public string fieldType { get; set; }
         [Optional] public string inputType { get; set; }
         [Optional] public string format { get; set; }
         [Optional] public string[] options { get; set; }

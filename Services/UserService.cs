@@ -26,11 +26,13 @@ namespace BecaWebService.Services
     public class UserService : IUserService
     {
         private DbdatiContext _context;
+        private DbMemoryContext _memoryContext;
         private IJwtUtils _jwtUtils;
         private readonly AppSettings _appSettings;
 
         public UserService(
             DbdatiContext context,
+            DbMemoryContext memoryContext,
             IJwtUtils jwtUtils,
             IOptions<AppSettings> appSettings)
         {
@@ -58,6 +60,8 @@ namespace BecaWebService.Services
             // save changes to db
             _context.Update(user);
             _context.SaveChanges();
+            if (_memoryContext.Users.Find(user.idUtente) != null) _memoryContext.Users.Remove(user);
+            _memoryContext.Users.Add(user);
 
             return new AuthenticateResponse(user, jwtToken, refreshToken.Token);
         }
@@ -117,7 +121,8 @@ namespace BecaWebService.Services
 
         public BecaUser GetById(int id)
         {
-            var user = _context.BecaUsers.Find(id);
+            var user = _memoryContext.Users.Find(id);
+            if (user == null) user = _context.BecaUsers.Find(id);
             if (user == null) throw new KeyNotFoundException("User not found");
             return user;
         }
@@ -139,10 +144,10 @@ namespace BecaWebService.Services
                 c.idCompany = company.Key;
 
                 var areas = rawMenu.Where(m => m.idCompany == c.idCompany).GroupBy(
-                    c => new { c.idArea, c.Area},
+                    c => new { c.idArea, c.Area },
                     (key) => new { idArea = key.idArea, Area = key.Area }
                     );
-                foreach(var area in areas)
+                foreach (var area in areas)
                 {
                     UserMenuArea a = new UserMenuArea();
                     a.idArea = area.Key.idArea;

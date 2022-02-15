@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Entities.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -8,6 +9,7 @@ namespace Contracts
 {
     public interface IRepositoryBase<T>
     {
+        BecaUser CurrentUser();
         IQueryable<T> GetAll();
         IQueryable<T> GetByCondition(Expression<Func<T, bool>> expression);
         void Create(T entity);

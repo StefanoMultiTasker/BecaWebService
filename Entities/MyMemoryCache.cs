@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace BecaWebService.Tools
+namespace Entities
 {
     public interface IMyMemoryCache
     {

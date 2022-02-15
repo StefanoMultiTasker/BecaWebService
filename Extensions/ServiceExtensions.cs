@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using BecaWebService.Tools;
 using BecaWebService.Authorization;
 using BecaWebService.Services;
+using Entities;
 
 namespace BecaWebService.Extensions
 {
@@ -45,6 +46,7 @@ namespace BecaWebService.Extensions
         {
             services.AddDbContext<DbdatiContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("SQLBeca")));
+            services.AddDbContext<DbMemoryContext>();
         }
 
         public static void ConfigureAuth(this IServiceCollection services, IConfiguration Configuration)
@@ -87,9 +89,10 @@ namespace BecaWebService.Extensions
 
         public static void ConfigureJSON(this IServiceCollection services)
         {
-            services.AddControllers().AddNewtonsoftJson(options =>
-                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
-            );
+            services.AddControllers()
+                .AddNewtonsoftJson(options =>
+                    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore )
+                .AddJsonOptions(jsonOptions => jsonOptions.JsonSerializerOptions.PropertyNamingPolicy = null); 
         }
 
     }

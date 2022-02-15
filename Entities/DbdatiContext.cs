@@ -1,8 +1,17 @@
 ﻿using Entities.Models;
+using ExtensionsLib;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.Common;
+using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Entities.Contexts
 {
@@ -31,14 +40,22 @@ namespace Entities.Contexts
         public virtual DbSet<BecaViewFilterUI> BecaViewFilterUI { get; set; }
         public virtual DbSet<BecaViewDetailUI> BecaViewDetailUI { get; set; }
 
+        public DbSet<BecaForm> BecaForm { get; set; }
+        public DbSet<BecaFormLevels> BecaFormLevels { get; set; }
+        public DbSet<BecaFormField> BecaFormField { get; set; }
+        public DbSet<BecaFormFieldLevel> BecaFormFieldLevel { get; set; }
+
         //public DbdatiContext(IConfiguration configuration)
         //{
         //    Configuration = configuration;
         //}
 
-        public DbdatiContext(DbContextOptions<DbdatiContext> options)
+        public FormTool _formTool;
+
+        public DbdatiContext(DbContextOptions<DbdatiContext> options, FormTool formTool)
             : base(options)
         {
+            _formTool = formTool;
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -307,9 +324,204 @@ namespace Entities.Contexts
 
             #endregion
 
+            #region "Beca"
+
+            modelBuilder.Entity<BecaForm>().ToTable("_dbaForms");
+            modelBuilder.Entity<BecaForm>().HasKey(p => new { p.Form });
+
+            modelBuilder.Entity<BecaFormLevels>().ToTable("_dbaFormsLevels");
+            modelBuilder.Entity<BecaFormLevels>().HasKey(p => new { p.Form, p.SubLevel });
+
+            modelBuilder.Entity<BecaFormField>().ToTable("_dbaFormsFields");
+            modelBuilder.Entity<BecaFormField>().HasKey(p => new { p.Form, p.Campo });
+
+            modelBuilder.Entity<BecaFormFieldLevel>().ToTable("_dbaFormsObjAccess");
+            modelBuilder.Entity<BecaFormFieldLevel>().HasKey(p => new { p.Form, p.objName, p.idLivello });
+
+            #endregion
+
             OnModelCreatingPartial(modelBuilder);
         }
 
         partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
     }
+
+    public static class DbdatiContextExtension
+    {
+        public static List<T> ExecuteQuery<T>(this DbdatiContext db, string formName, string query, params object[] parameters) where T : class, new()
+        {
+            using (var command = db.Database.GetDbConnection().CreateCommand())
+            {
+                var rawSqlCommand = db.Database
+                     .GetService<IRawSqlCommandBuilder>()
+                     .Build(query, parameters);
+
+                command.CommandText = query;
+                command.CommandType = CommandType.Text;
+
+                db.Database.OpenConnection();
+                var paramObject = new RelationalCommandParameterObject(db.Database.GetService<IRelationalConnection>(), rawSqlCommand.ParameterValues, null, db, null);
+
+                //using (var reader = command.ExecuteReader())
+                using (var reader = rawSqlCommand
+                    .RelationalCommand
+                    .ExecuteReader(paramObject)
+                    .DbDataReader
+                    )
+                {
+                    var lst = new List<T>();
+                    var lstColumns = new T().GetType().GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).ToList();
+                    if (lstColumns.Count() == 0)
+                    {
+                        Type generatedType = db._formTool.GetFormCfg(formName, reader);
+                        PropertyInfo[] props = generatedType.GetProperties();
+                        while (reader.Read())
+                        {
+                            var generatedObject = Activator.CreateInstance(generatedType);
+                            int i = 0;
+                            foreach (PropertyInfo pi in props)
+                            {
+                                if (reader.GetValue(pi.Name) == DBNull.Value)
+                                {
+                                    pi.SetValue(generatedObject, null, new object[] { });
+                                }
+                                else
+                                {
+                                    pi.SetValue(generatedObject, reader.GetValue(pi.Name), new object[] { });
+                                }
+
+                                i += 1;
+                            }
+                            lst.Add((T)generatedObject);
+                        }
+                    }
+                    else
+                    {
+                        while (reader.Read())
+                        {
+                            var newObject = new T();
+                            for (var i = 0; i < reader.FieldCount; i++)
+                            {
+                                var name = reader.GetName(i);
+                                PropertyInfo prop = lstColumns.FirstOrDefault(a => a.Name.ToLower().Equals(name.ToLower()));
+                                if (prop == null)
+                                {
+                                    continue;
+                                }
+                                var val = reader.IsDBNull(i) ? null : reader[i];
+                                prop.SetValue(newObject, val, null);
+                            }
+                            lst.Add(newObject);
+                        }
+                    }
+                    return lst;
+                }
+            }
+        }
+
+        public static object GetQueryDef<T>(this DbdatiContext db, string formName, string query, params object[] parameters) where T : class, new()
+        {
+            using (var command = db.Database.GetDbConnection().CreateCommand())
+            {
+                var rawSqlCommand = db.Database
+                     .GetService<IRawSqlCommandBuilder>()
+                     .Build(query, parameters);
+
+                command.CommandText = query;
+                command.CommandType = CommandType.Text;
+
+                db.Database.OpenConnection();
+                var paramObject = new RelationalCommandParameterObject(db.Database.GetService<IRelationalConnection>(), rawSqlCommand.ParameterValues, null, db, null);
+
+                //using (var reader = command.ExecuteReader())
+                using (var reader = rawSqlCommand
+                    .RelationalCommand
+                    .ExecuteReader(paramObject)
+                    .DbDataReader
+                    )
+                {
+                    var lstColumns = new T().GetType().GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).ToList();
+                    if (lstColumns.Count() == 0)
+                    {
+                        Type generatedType = db._formTool.GetFormCfg(formName, reader);
+                        var generatedObject = Activator.CreateInstance(generatedType);
+                        string identityName = "";
+                        foreach (DbColumn col in reader.GetColumnSchema())
+                        {
+                            if ((bool)col.IsAutoIncrement)
+                            {
+                                identityName = col.ColumnName;
+                                break;
+                            }
+                        }
+                        MethodInfo method = generatedObject.GetType().GetMethod("set_identityName");
+                        method.Invoke(generatedObject, new object[] { identityName });
+                        return generatedObject;
+                    }
+                    else
+                    {
+                        return new T();
+                    }
+                }
+            }
+        }
+
+        public static async Task<int> ExecuteSqlCommandAsync(this DbdatiContext db, string commandText, params object[] parameters)
+        {
+            //using (var command = db.Database.GetDbConnection().CreateCommand())
+            //{
+            //    var rawSqlCommand = db.Database
+            //         .GetService<IRawSqlCommandBuilder>()
+            //         .Build(commandText, parameters);
+
+            //    command.CommandText = commandText;
+            //    command.CommandType = CommandType.Text;
+
+            //    db.Database.OpenConnection();
+            //    var paramObject = new RelationalCommandParameterObject(db.Database.GetService<IRelationalConnection>(), rawSqlCommand.ParameterValues, null, null);
+
+            //    return await rawSqlCommand
+            //        .RelationalCommand
+            //        .ExecuteNonQueryAsync(paramObject);
+            //}
+            return await db.Database.ExecuteSqlRawAsync(commandText, parameters);
+        }
+
+        public static int ExecuteSqlCommand(this DbdatiContext db, string commandText, params object[] parameters)
+        {
+            return db.Database.ExecuteSqlRaw(commandText, parameters);
+        }
+
+        public static async Task<int> InsertSqlCommandWithIdentity(this DbdatiContext db, string commandText, params object[] parameters)
+        {
+            commandText += "; SELECT CAST(scope_identity() AS int)";
+            using (var command = db.Database.GetDbConnection().CreateCommand())
+            {
+                var rawSqlCommand = db.Database
+                     .GetService<IRawSqlCommandBuilder>()
+                     .Build(commandText, parameters);
+
+                command.CommandText = commandText;
+                command.CommandType = CommandType.Text;
+
+                db.Database.OpenConnection();
+                var paramObject = new RelationalCommandParameterObject(db.Database.GetService<IRelationalConnection>(), rawSqlCommand.ParameterValues, null, db, null);
+
+                return (int)await rawSqlCommand
+                    .RelationalCommand
+                    .ExecuteScalarAsync(paramObject);
+            }
+        }
+
+        public static List<string> GetProcedureParams(this DbdatiContext db, string name)
+        {
+            List<object> pars = new List<object>();
+            pars.Add(name);
+            string commandText = $"SELECT PARAMETER_NAME, DATA_TYPE FROM information_schema.parameters WHERE specific_name = '{name}'";
+            List<object> names = ExecuteQuery<object>(db, "", commandText, pars.ToArray());
+            if (name == null || names.Count == 0) return new List<string>();
+            return names.Select(n => n.GetPropertyValue("PARAMETER_NAME").ToString()).ToList();
+        }
+    }
+
 }
