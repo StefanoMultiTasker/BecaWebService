@@ -13,7 +13,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using BecaWebService.Tools;
 using BecaWebService.Authorization;
 using BecaWebService.Services;
 using Entities;

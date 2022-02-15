@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using System.Linq;
 using Entities.DataTransferObjects;
+using Entities;
 
 namespace Repository
 {
@@ -17,10 +18,10 @@ namespace Repository
     {
         private readonly IMapper _mapper;
 
-        public BecaViewRepository(DbdatiContext dbdatiContext, IMapper mapper)
-               : base(dbdatiContext)
+        public BecaViewRepository(IDependencies deps)
+               : base(deps)
         {
-            _mapper = mapper;
+            _mapper = deps.mapper;
         }
 
         //public async Task<BecaView> GetViewByID(int idView)
