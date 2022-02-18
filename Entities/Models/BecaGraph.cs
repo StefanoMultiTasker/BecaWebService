@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Entities.DataTransferObjects;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -39,14 +40,6 @@ namespace Entities.Models
         public object value { get; set; }
         public IList<dtoBecaFilterValue> filterValues { get; set; }
         public IList<string> filerFormula { get; set; }
-    }
-
-    public class dtoBecaFilterValue
-    {
-        public string filterName { get; set; }
-        public bool Api { get; set; }
-        public string? value { get; set; }
-        public string Default { get; set; }
     }
 
     public class ViewChartValue

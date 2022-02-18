@@ -17,13 +17,13 @@ namespace Contracts
         Task<T> AddDataByForm<T>(string Form, object record) where T : class, new();
         Task<int> DeleteDataByForm<T>(string Form, object record) where T : class, new();
         List<object> GetDataByFormField(string Form, string field, List<BecaParameter> parameters);
-        List<object> GetDataBySQL(string sql, List<BecaParameter> parameters, bool useidUtente = true);
-        IDictionary<string, object> GetDataDictBySQL(string sql, List<BecaParameter> parameters);
+        List<object> GetDataBySQL(string dbName, string sql, List<BecaParameter> parameters, bool useidUtente = true);
+        IDictionary<string, object> GetDataDictBySQL(string dbName, string sql, List<BecaParameter> parameters);
         List<object> GetDataByFormLevel(string Form, int subLevel, List<BecaParameter> parameters);
         object GetPanelsByForm(string Form, List<BecaParameter> parameters);
         ViewChart GetGraphByFormField(string Form, string field, List<BecaParameter> parameters);
-        Task<int> ExecuteSqlCommandAsync(string commandText, params object[] parameters);
-        int ExecuteSqlCommand(string commandText, params object[] parameters);
+        Task<int> ExecuteSqlCommandAsync(string dbName, string commandText, params object[] parameters);
+        int ExecuteSqlCommand(string dbName, string commandText, params object[] parameters);
         BecaUser GetLoggedUser();
     }
 }

@@ -2,8 +2,10 @@
 using Contracts;
 using Entities;
 using Entities.Contexts;
+using Entities.DataTransferObjects;
 using Entities.Models;
 using ExtensionsLib;
+using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -14,15 +16,19 @@ using System.Threading.Tasks;
 
 namespace Repository
 {
-    class GenericRepository : IGenericRepository
+    public class GenericRepository : IGenericRepository
     {
-        private DbdatiContext _context;
+        private DbBecaContext _context;
         private BecaUser _currentUser;
+        private Company _activeCompany;
 
-        public GenericRepository( IDependencies deps)
+        private Dictionary<string, DbDatiContext> _databases = new Dictionary<string, DbDatiContext>();
+
+        public GenericRepository(IDependencies deps, IHttpContextAccessor httpContextAccessor)
         {
             _context = deps.context;
-            _currentUser = deps.memoryContext.Users.Find(deps.httpContext.Items["User"]);
+            _currentUser = (BecaUser)httpContextAccessor.HttpContext.Items["User"];
+            _activeCompany = (Company)httpContextAccessor.HttpContext.Items["Company"];
         }
 
         public BecaUser GetLoggedUser() => _currentUser;
@@ -38,14 +44,14 @@ namespace Repository
             {
                 if ((form.AddProcedureName ?? "") != "" && !form.AddProcedureName.Contains("#After"))
                 {
-                    int? resSPBefore = await UpdateDataByProcedure<T>(form.AddProcedureName, record);
+                    int? resSPBefore = await UpdateDataByProcedure<T>(form.TableNameDB,form.AddProcedureName, record);
                     if (!form.AddProcedureName.Contains("#Before"))
                     {
                         List<T> spRes = this.GetDataByForm<T>(Form, record);
                         return (spRes == null || spRes.Count == 0) ? null : spRes[0];
                     }
                 }
-                object def = _context.GetQueryDef<object>(Form, "Select * From " + form.TableName + " Where 0 = 1");
+                object def = getContext(form.TableNameDB).GetQueryDef<object>(Form, "Select * From " + form.TableName + " Where 0 = 1");
                 MethodInfo method = def.GetType().GetMethod("identityName");
                 string idName = method.Invoke(def, null).ToString();
 
@@ -76,7 +82,7 @@ namespace Repository
 
                 if (idName != "")
                 {
-                    int key = await _context.InsertSqlCommandWithIdentity(sql, pars.ToArray());
+                    int key = await getContext(form.TableNameDB).InsertSqlCommandWithIdentity(sql, pars.ToArray());
                     if (key <= 0)
                     {
                         return null;
@@ -85,7 +91,7 @@ namespace Repository
                 }
                 else
                 {
-                    int ires = await _context.ExecuteSqlCommandAsync(sql, pars.ToArray());
+                    int ires = await getContext(form.TableNameDB).ExecuteSqlCommandAsync(sql, pars.ToArray());
                 }
 
                 List<T> inserted = this.GetDataByForm<T>(Form, record);
@@ -94,7 +100,7 @@ namespace Repository
                 if ((form.AddProcedureName ?? "") != "" && form.AddProcedureName.Contains("#After"))
                 {
                     await _context.SaveChangesAsync();
-                    await UpdateDataByProcedure<T>(form.AddProcedureName, record);
+                    await UpdateDataByProcedure<T>(form.TableNameDB, form.AddProcedureName, record);
                 }
                 return inserted[0];
             }
@@ -111,7 +117,7 @@ namespace Repository
             List<object> pars = new List<object>();
             if (form != null)
             {
-                object def = _context.GetQueryDef<object>(Form, "Select * From " + form.TableName + " Where 0 = 1");
+                object def = getContext(form.TableNameDB).GetQueryDef<object>(Form, "Select * From " + form.TableName + " Where 0 = 1");
                 Type formType = def.GetType();
                 dynamic json = JsonConvert.DeserializeObject<dynamic>(jsonRecord);
 
@@ -153,7 +159,7 @@ namespace Repository
             {
                 if ((form.DeleteProcedureName ?? "") != "" && !form.DeleteProcedureName.Contains("#After"))
                 {
-                    int? resSPBefore = await UpdateDataByProcedure<T>(form.DeleteProcedureName, record);
+                    int? resSPBefore = await UpdateDataByProcedure<T>(form.TableNameDB, form.DeleteProcedureName, record);
                     if (!form.DeleteProcedureName.Contains("#Before")) return (int)resSPBefore;
                 }
                 int numP = 0;
@@ -165,11 +171,11 @@ namespace Repository
                     pars.Add(record.GetPropertyValue(orderField.Trim()));
                     numP++;
                 }
-                int? ires = await _context.ExecuteSqlCommandAsync(sql, pars.ToArray());
+                int? ires = await getContext(form.TableNameDB).ExecuteSqlCommandAsync(sql, pars.ToArray());
                 if ((form.DeleteProcedureName ?? "") != "" && form.UpdateProcedureName.Contains("#After"))
                 {
                     await _context.SaveChangesAsync();
-                    return (int)await UpdateDataByProcedure<T>(form.DeleteProcedureName, record);
+                    return (int)await UpdateDataByProcedure<T>(form.TableNameDB, form.DeleteProcedureName, record);
                 }
                 return (int)ires;
             }
@@ -188,7 +194,9 @@ namespace Repository
             {
                 string sql = "Select * From " +
                     (form.ViewName == null || form.ViewName.ToString() == "" ? form.TableName : form.ViewName);
-                object colCheck = _context.GetQueryDef<object>(Form, sql + " Where 0 = 1");
+                string db = form.ViewName == null || form.ViewName.ToString() == "" ? form.TableNameDB : form.ViewNameDB;
+
+                object colCheck = getContext(db).GetQueryDef<object>(Form, sql + " Where 0 = 1");
                 if (form.UseDefaultParam)
                 {
                     if (colCheck.GetType().GetProperty("idUtente") != null)
@@ -228,6 +236,15 @@ namespace Repository
                                 pars.Add(null);
                                 break;
 
+                            case "in":
+                                string[] vals = par.value1.ToString().Replace("(", "").Replace(")", "").Replace(" ", "").Split(",");
+                                foreach (string val in vals)
+                                {
+                                    pars.Add(val);
+                                    numP++;
+                                }
+                                break;
+
                             default:
                                 sql += " {" + numP + "}";
                                 pars.Add(par.value1);
@@ -249,7 +266,7 @@ namespace Repository
                         (field.SequenzaOrdinamento < 0 ? " DESC" : "");
                 }
                 sql += sqlOrd;
-                return _context.ExecuteQuery<T>(Form, sql, pars.ToArray());
+                return getContext(db).ExecuteQuery<T>(Form, sql, pars.ToArray());
             }
             else
             {
@@ -296,7 +313,7 @@ namespace Repository
             List<object> pars = new List<object>();
             if (form != null)
             {
-                object def = _context.GetQueryDef<object>(Form, "Select * From " + form.TableName + " Where 0 = 1");
+                object def = getContext(form.TableNameDB).GetQueryDef<object>(Form, "Select * From " + form.TableName + " Where 0 = 1");
                 return (T)def;
             }
             else
@@ -312,13 +329,13 @@ namespace Repository
             return data[0];
         }
 
-        public async Task<int?> UpdateDataByProcedure<T>(string spName, object record) where T : class, new()
+        public async Task<int?> UpdateDataByProcedure<T>(string dbName, string spName, object record) where T : class, new()
         {
             spName = spName.Replace("#Before", "").Replace("#After", "");
-            List<string> names = _context.GetProcedureParams(spName);
+            List<string> names = getContext(dbName).GetProcedureParams(spName);
             string sql = $"Exec {spName} " + string.Join(", ", names.Select((x, i) => $"{{{i}}}"));
             var pars = names.Select((x, i) => record.HasPropertyValue(x.Replace("@", "")) ? record.GetPropertyValue(x.Replace("@", "")) : null).ToArray();
-            return await _context.ExecuteSqlCommandAsync(sql, pars);
+            return await getContext(dbName).ExecuteSqlCommandAsync(sql, pars);
         }
 
         public async Task<int?> UpdateDataByForm<T>(string Form, object recordOld, object recordNew) where T : class, new()
@@ -330,7 +347,7 @@ namespace Repository
             {
                 if ((form.UpdateProcedureName ?? "") != "" && !form.UpdateProcedureName.Contains("#After"))
                 {
-                    int? resSPBefore = await UpdateDataByProcedure<T>(form.UpdateProcedureName, recordNew);
+                    int? resSPBefore = await UpdateDataByProcedure<T>(form.TableNameDB, form.UpdateProcedureName, recordNew);
                     if (!form.UpdateProcedureName.Contains("#Before")) return resSPBefore;
                 }
                 int numP = 0;
@@ -385,11 +402,11 @@ namespace Repository
                     numPW++;
                 }
                 sql += sqlW;
-                int? resSave = await _context.ExecuteSqlCommandAsync(sql, pars.ToArray());
+                int? resSave = await getContext(form.TableNameDB).ExecuteSqlCommandAsync(sql, pars.ToArray());
                 if ((form.UpdateProcedureName ?? "") != "" && form.UpdateProcedureName.Contains("#After"))
                 {
                     await _context.SaveChangesAsync();
-                    return await UpdateDataByProcedure<T>(form.UpdateProcedureName, recordNew);
+                    return await UpdateDataByProcedure<T>(form.TableNameDB, form.UpdateProcedureName, recordNew);
                 }
                 return resSave;
             }
@@ -420,7 +437,7 @@ namespace Repository
                 if (sqlChk.ToUpper().Contains("ORDER")) sqlChk = sqlChk.Substring(0, sqlChk.ToUpper().IndexOf("ORDER") - 1);
                 if (ddlPar != null && ddlPar.Contains("idUtente"))
                 {
-                    object colCheck = _context.GetQueryDef<object>(Form + '_' + field + "_chk", sqlChk + " Where 0 = 1");
+                    object colCheck = getContext(formField.DropDownListDB).GetQueryDef<object>(Form + '_' + field + "_chk", sqlChk + " Where 0 = 1");
                     if (colCheck.GetType().GetProperty("idUtente") != null)
                     {
                         parameters.Add(new BecaParameter()
@@ -483,7 +500,7 @@ namespace Repository
                     }
                 }
                 sql = sql + " " + sqlGroup + " " + sqlOrd;
-                return _context.ExecuteQuery<object>(Form + '_' + field, sql, pars.ToArray());
+                return getContext(formField.DropDownListDB).ExecuteQuery<object>(Form + '_' + field, sql, pars.ToArray());
             }
             else
             {
@@ -491,7 +508,7 @@ namespace Repository
             }
         }
 
-        public List<object> GetDataBySQL(string sql, List<BecaParameter> parameters, bool useidUtente = true)
+        public List<object> GetDataBySQL(string dbName, string sql, List<BecaParameter> parameters, bool useidUtente = true)
         {
             string sqlOrd = "";
             if (sql.ToUpper().Contains("ORDER"))
@@ -514,7 +531,7 @@ namespace Repository
             string sqlTable = sql.Substring(sql.ToUpper().IndexOf("FROM") + 5);
             string sqlChk = "Select * From " + sqlTable;
 
-            object colCheck = _context.GetQueryDef<object>("", sqlChk + " Where 0 = 1");
+            object colCheck = getContext(dbName).GetQueryDef<object>("", sqlChk + " Where 0 = 1");
             if (colCheck.GetType().GetProperty("idUtente") != null && useidUtente)
             {
                 if (parameters == null) parameters = new List<BecaParameter>();
@@ -562,12 +579,12 @@ namespace Repository
                 }
             }
             sql = sql + " " + sqlGroup + " " + sqlOrd;
-            return _context.ExecuteQuery<object>("", sql, pars.ToArray());
+            return getContext(dbName).ExecuteQuery<object>("", sql, pars.ToArray());
         }
 
-        public IDictionary<string, object> GetDataDictBySQL(string sql, List<BecaParameter> parameters)
+        public IDictionary<string, object> GetDataDictBySQL(string dbName, string sql, List<BecaParameter> parameters)
         {
-            List<object> data = this.GetDataBySQL(sql, parameters);
+            List<object> data = this.GetDataBySQL(dbName, sql, parameters);
 
             sql = sql.Substring(0, sql.ToUpper().IndexOf("FROM") - 1).TrimEnd().Substring(7);
             string[] fields = sql.Split(",");
@@ -641,16 +658,24 @@ namespace Repository
 
         #region "SQL"
 
-        public int ExecuteSqlCommand(string commandText, params object[] parameters)
+        public int ExecuteSqlCommand(string dbName, string commandText, params object[] parameters)
         {
-            return _context.ExecuteSqlCommand(commandText, parameters);
+            return getContext(dbName).ExecuteSqlCommand(commandText, parameters);
         }
 
-        public async Task<int> ExecuteSqlCommandAsync(string commandText, params object[] parameters)
+        public async Task<int> ExecuteSqlCommandAsync(string dbName, string commandText, params object[] parameters)
         {
-            return await _context.ExecuteSqlCommandAsync(commandText, parameters);
+            return await getContext(dbName).ExecuteSqlCommandAsync(commandText, parameters);
         }
         #endregion "SQL"
 
+        private DbDatiContext getContext(string dbName)
+        {
+            if (_databases.ContainsKey(dbName)) return _databases[dbName];
+
+            DbDatiContext db = new DbDatiContext(_activeCompany.Connections.FirstOrDefault(c => c.ConnectionName == dbName).ConnectionString);
+            _databases.Add(dbName, db);
+            return db;
+        }
     }
 }

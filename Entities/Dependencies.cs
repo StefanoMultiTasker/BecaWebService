@@ -16,9 +16,9 @@ namespace Entities
         IConfiguration configuration { get; }
         IMemoryCache memoryCache { get; }
         IMapper mapper { get; }
-        DbdatiContext context { get; }
+        DbBecaContext context { get; }
         DbMemoryContext memoryContext { get; }
-        HttpContext httpContext { get; }
+        //HttpContext httpContext { get; }
     }
 
     public class Dependencies : IDependencies
@@ -27,12 +27,12 @@ namespace Entities
         private readonly IConfiguration _config;
         private readonly IMemoryCache _cache;
         private readonly IMapper _mapper;
-        private readonly DbdatiContext _context;
+        private readonly DbBecaContext _context;
         private readonly DbMemoryContext _memoryContext;
-        private readonly HttpContext _httpContext;
+        //private readonly HttpContext _httpContext;
 
         public Dependencies(IConfiguration configuration, IMapper mapper, MyMemoryCache cache, 
-            DbdatiContext context, DbMemoryContext memoryContext, HttpContext httpContext)
+            DbBecaContext context, DbMemoryContext memoryContext)
         {
             _cache = cache.Cache;
             //_context = context;
@@ -40,7 +40,7 @@ namespace Entities
             _mapper = mapper;
             _context = context;
             _memoryContext = memoryContext;
-            _httpContext = httpContext;
+            //_httpContext = httpContext;
         }
 
         public IConfiguration configuration => _config;
@@ -49,11 +49,11 @@ namespace Entities
 
         public IMapper mapper => _mapper;
 
-        public DbdatiContext context=> _context;
+        public DbBecaContext context=> _context;
 
         public DbMemoryContext memoryContext => _memoryContext;
 
-        public HttpContext httpContext => _httpContext;
+        //public HttpContext httpContext => _httpContext;
 
     }
 }

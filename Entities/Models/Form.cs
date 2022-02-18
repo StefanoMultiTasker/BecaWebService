@@ -60,7 +60,9 @@ namespace Entities.Models
         public bool AddRecord { get; set; }
         public bool EditRecord { get; set; }
         public bool DeleteRecord { get; set; }
+        public string TableNameDB { get; set; }
         public string TableName { get; set; }
+        public string ViewNameDB { get; set; }
         public string ViewName { get; set; }
         public string PrimaryKey { get; set; }
         public string SelectProcedureName { get; set; }
@@ -111,6 +113,7 @@ namespace Entities.Models
         public string? Struttura { get; set; }
         public Int16 LunghezzaMin { get; set; }
         public int LunghezzaMax { get; set; }
+        public string? DropDownListDB { get; set; }
         public string? DropDownList { get; set; }
         public string? Parametri { get; set; }
         public bool ParametriObbl { get; set; }

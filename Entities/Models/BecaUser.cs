@@ -28,7 +28,7 @@ namespace Entities.Models
         public bool isConfirmed { get; set; }
         public bool isPrivacyRead { get; set; }
         public bool isPwdChanged { get; set; }
-        public List<Company> Companies { get; set; }
+        public List<UserCompany> Companies { get; set; }
         //public string isDefault { get; set; }
         //public int idProfile { get; set; }
         //public string Profile { get; set; }
@@ -62,7 +62,7 @@ namespace Entities.Models
     }
 
     [Owned]
-    public partial class Company
+    public partial class UserCompany
     {
         [JsonIgnore]
         public int idUtente { get; set; }

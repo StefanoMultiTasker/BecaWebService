@@ -50,16 +50,12 @@ namespace BecaWebService
             services.ConfigureRepositoryWrapper();
 
             services.AddHttpContextAccessor();
+            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             services.ConfigureJSON();
             services.ConfigureMyCache();
             services.ConfigureDI();
             services.AddControllers();
             services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
-
-            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-
-            services.AddSingleton<IDependencies, Dependencies>();
-            services.AddSingleton<FormTool>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -89,6 +85,7 @@ namespace BecaWebService
 
             // custom jwt auth middleware
             app.UseMiddleware<JwtMiddleware>();
+            app.UseMiddleware<OptionsMiddleware>();
 
             app.UseRouting();
 

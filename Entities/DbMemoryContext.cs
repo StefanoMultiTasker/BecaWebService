@@ -7,6 +7,7 @@ namespace Entities.Contexts
     public class DbMemoryContext : DbContext
     {
         public DbSet<BecaUser> Users { get; set; }
+        public DbSet<Company> Companies { get; set; }
 
         private readonly IConfiguration Configuration;
 

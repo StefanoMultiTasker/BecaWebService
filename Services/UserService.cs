@@ -25,18 +25,19 @@ namespace BecaWebService.Services
 
     public class UserService : IUserService
     {
-        private DbdatiContext _context;
+        private DbBecaContext _context;
         private DbMemoryContext _memoryContext;
         private IJwtUtils _jwtUtils;
         private readonly AppSettings _appSettings;
 
         public UserService(
-            DbdatiContext context,
+            DbBecaContext context,
             DbMemoryContext memoryContext,
             IJwtUtils jwtUtils,
             IOptions<AppSettings> appSettings)
         {
             _context = context;
+            _memoryContext = memoryContext;
             _jwtUtils = jwtUtils;
             _appSettings = appSettings.Value;
         }
@@ -62,6 +63,7 @@ namespace BecaWebService.Services
             _context.SaveChanges();
             if (_memoryContext.Users.Find(user.idUtente) != null) _memoryContext.Users.Remove(user);
             _memoryContext.Users.Add(user);
+            _memoryContext.SaveChanges();
 
             return new AuthenticateResponse(user, jwtToken, refreshToken.Token);
         }
@@ -122,7 +124,12 @@ namespace BecaWebService.Services
         public BecaUser GetById(int id)
         {
             var user = _memoryContext.Users.Find(id);
-            if (user == null) user = _context.BecaUsers.Find(id);
+            if (user == null)
+            {
+                user = _context.BecaUsers.Find(id);
+                _memoryContext.Users.Add(user);
+                _memoryContext.SaveChanges();
+            }
             if (user == null) throw new KeyNotFoundException("User not found");
             return user;
         }

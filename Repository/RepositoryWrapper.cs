@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Contracts;
+using Entities;
 using Entities.Contexts;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -13,7 +14,8 @@ namespace Repository
 {
     public class RepositoryWrapper : IRepositoryWrapper
     {
-        private DbdatiContext _repoContext;
+        private IDependencies _deps;
+        private DbBecaContext _repoContext;
         private IBecaViewRepository _BecaView;
         private readonly IMapper _mapper;
 
@@ -23,16 +25,16 @@ namespace Repository
             {
                 if (_BecaView == null)
                 {
-                    _BecaView = new BecaViewRepository(_repoContext, _mapper);
+                    _BecaView = new BecaViewRepository(_deps);
                 }
                 return _BecaView;
             }
         }
 
-        public RepositoryWrapper(DbdatiContext repositoryContext, IMapper mapper)
+        public RepositoryWrapper(IDependencies deps)
         {
-            _repoContext = repositoryContext;
-            _mapper = mapper;
+            _deps = deps;
+            _repoContext = _deps.context;
         }
 
         public async Task SaveAsync()

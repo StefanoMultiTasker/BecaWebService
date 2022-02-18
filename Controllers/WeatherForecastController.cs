@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Contracts;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -17,10 +18,12 @@ namespace BecaWebService.Controllers
         };
 
         private readonly ILogger<WeatherForecastController> _logger;
+        private readonly IGenericRepository _repo;
 
-        public WeatherForecastController(ILogger<WeatherForecastController> logger)
+        public WeatherForecastController(ILogger<WeatherForecastController> logger, IGenericRepository repo)
         {
             _logger = logger;
+            _repo = repo;
         }
 
         [HttpGet]
@@ -35,6 +38,15 @@ namespace BecaWebService.Controllers
                 Summary = Summaries[rng.Next(Summaries.Length)]
             })
             .ToArray();
+        }
+
+        [HttpGet("{sp}")]
+        public IActionResult Getsp(int sp)
+        {
+            List<object> parameters = new List<object>();
+            parameters.Add(9);
+            _repo.ExecuteSqlCommand("DbDati", "Select * From Mesi Where Mese={0}", parameters.ToArray());
+            return Ok();
         }
     }
 }

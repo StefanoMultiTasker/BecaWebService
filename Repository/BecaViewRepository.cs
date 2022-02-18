@@ -11,6 +11,7 @@ using AutoMapper;
 using System.Linq;
 using Entities.DataTransferObjects;
 using Entities;
+using Microsoft.AspNetCore.Http;
 
 namespace Repository
 {
@@ -20,6 +21,12 @@ namespace Repository
 
         public BecaViewRepository(IDependencies deps)
                : base(deps)
+        {
+            _mapper = deps.mapper;
+        }
+
+        public BecaViewRepository(IDependencies deps, HttpContext httpContext)
+               : base(deps, httpContext)
         {
             _mapper = deps.mapper;
         }

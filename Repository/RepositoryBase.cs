@@ -17,16 +17,21 @@ namespace Repository
 {
     public abstract class RepositoryBase<T> : IRepositoryBase<T> where T : class
     {
-        protected DbdatiContext dbdatiContext { get; set; }
+        protected DbBecaContext dbdatiContext { get; set; }
         private BecaUser _currentUser;
 
         public RepositoryBase(IDependencies deps)
         {
             this.dbdatiContext = deps.context;
-            _currentUser = deps.memoryContext.Users.Find(deps.httpContext.Items["User"]);
         }
 
-        public RepositoryBase(DbdatiContext repositoryContext, IHttpContextAccessor httpContextAccessor)
+        public RepositoryBase(IDependencies deps, HttpContext httpContext)
+        {
+            this.dbdatiContext = deps.context;
+            _currentUser = deps.memoryContext.Users.Find(httpContext.Items["User"]);
+        }
+
+        public RepositoryBase(DbBecaContext repositoryContext, IHttpContextAccessor httpContextAccessor)
         {
             this.dbdatiContext = repositoryContext;
             //this.Settings();

@@ -17,7 +17,7 @@ namespace BecaWebService.Models.Users
         public bool isPrivacyRead { get; set; }
         public bool isPwdChanged { get; set; }
         public string Token { get; set; }
-        public List<Company> Companies { get; set; }
+        public List<UserCompany> Companies { get; set; }
 
         [JsonIgnore] // refresh token is returned in http only cookie
         public string RefreshToken { get; set; }
