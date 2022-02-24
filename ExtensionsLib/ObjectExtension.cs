@@ -3,6 +3,8 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
+using System.Xml.Serialization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,6 +18,18 @@ namespace BecaWebService.ExtensionsLib
             T result = Activator.CreateInstance<T>();
             //// **** made things  
             return result;
+        }
+
+        public static T deepCopy<T>(this T object2Copy)
+        {
+            using (var stream = new MemoryStream())
+            {
+                var serializer = new XmlSerializer(typeof(T));
+
+                serializer.Serialize(stream, object2Copy);
+                stream.Position = 0;
+                return (T)serializer.Deserialize(stream);
+            }
         }
 
         public static T getObjectFromJSON<T>(this object source, string jsonRecord)

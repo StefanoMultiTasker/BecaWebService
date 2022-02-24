@@ -16,6 +16,8 @@ using System.Threading.Tasks;
 using BecaWebService.Authorization;
 using BecaWebService.Services;
 using Entities;
+using Newtonsoft.Json.Serialization;
+using BecaWebService.ExtensionsLib;
 
 namespace BecaWebService.Extensions
 {
@@ -96,8 +98,19 @@ namespace BecaWebService.Extensions
         {
             services.AddControllers()
                 .AddNewtonsoftJson(options =>
-                    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore )
+                {
+                    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+                    options.SerializerSettings.ContractResolver = new DefaultContractResolver { NamingStrategy = new LowerCamelCaseNamingStrategy() };
+                })
                 .AddJsonOptions(jsonOptions => jsonOptions.JsonSerializerOptions.PropertyNamingPolicy = null); 
+        }
+
+        public class LowerCamelCaseNamingStrategy : NamingStrategy
+        {
+            protected override string ResolvePropertyName(string name)
+            {
+                return name.ToLowerToCamelCase();
+            }
         }
 
     }

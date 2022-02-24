@@ -24,6 +24,7 @@ namespace Contracts
         ViewChart GetGraphByFormField(string Form, string field, List<BecaParameter> parameters);
         Task<int> ExecuteSqlCommandAsync(string dbName, string commandText, params object[] parameters);
         int ExecuteSqlCommand(string dbName, string commandText, params object[] parameters);
+        Task<int> ExecuteProcedure(string dbName, string spName, List<BecaParameter> parameters);
         BecaUser GetLoggedUser();
     }
 }

@@ -127,13 +127,13 @@ namespace Repository
                     bool isFieldPresent = false;
                     try
                     {
-                        object v = (object)json[pi.Name.ToCamelCase()].Value;
+                        object v = (object)json[pi.Name.ToLowerToCamelCase()].Value;
                         isFieldPresent = true;
                     }
                     catch (Exception ex) { isFieldPresent = false; }
                     if (isFieldPresent)
                     {
-                        def.SetPropertyValue(pi.Name, (object)json[pi.Name.ToCamelCase()].Value);
+                        def.SetPropertyValue(pi.Name, (object)json[pi.Name.ToLowerToCamelCase()].Value);
                     }
                     //pi.SetValue(def, json[pi.Name].Value, new object[] { });
                     //if (json[pi.Name].Value == DBNull.Value)
@@ -666,6 +666,19 @@ namespace Repository
         public async Task<int> ExecuteSqlCommandAsync(string dbName, string commandText, params object[] parameters)
         {
             return await getContext(dbName).ExecuteSqlCommandAsync(commandText, parameters);
+        }
+
+        public async Task<int> ExecuteProcedure(string dbName, string spName, List<BecaParameter> parameters)
+        {
+            List<string> names = getContext(dbName).GetProcedureParams(spName);
+            string sql = $"Exec {spName} " + string.Join(", ", names.Select((x, i) => $"{{{i}}}"));
+            var pars = names.Select((x, i) =>
+                parameters.Find(p => p.name == x.Replace("@", "")) == null ?
+                null
+                :
+                parameters.Find(p => p.name == x.Replace("@", "")).value1
+                ).ToArray();
+            return await getContext(dbName).ExecuteSqlCommandAsync(sql, pars);
         }
         #endregion "SQL"
 

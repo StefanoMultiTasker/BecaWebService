@@ -10,6 +10,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using BecaWebService.Authorization;
+using BecaWebService.ExtensionsLib;
 
 namespace BecaWebService.Services
 {
@@ -61,8 +62,12 @@ namespace BecaWebService.Services
             // save changes to db
             _context.Update(user);
             _context.SaveChanges();
-            if (_memoryContext.Users.Find(user.idUtente) != null) _memoryContext.Users.Remove(user);
-            _memoryContext.Users.Add(user);
+            if (_memoryContext.Users.SingleOrDefault(u => u.idUtente == user.idUtente) != null)
+            {
+                _memoryContext.Users.Remove(_memoryContext.Users.Find(user.idUtente));
+                _memoryContext.SaveChanges();
+            }
+            _memoryContext.Users.Add(user.deepCopy());
             _memoryContext.SaveChanges();
 
             return new AuthenticateResponse(user, jwtToken, refreshToken.Token);

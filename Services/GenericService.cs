@@ -138,5 +138,18 @@ namespace BecaWebService.Services
         {
             return _genericRepository.GetPanelsByForm(Form, parameters);
         }
+
+        public async Task<GenericResponse> ExecCommand(string dbName, string procName, List<BecaParameter> parameters)
+        {
+            try
+            {
+                int res = await _genericRepository.ExecuteProcedure(dbName, procName, parameters);
+                return new GenericResponse(true);
+            }
+            catch (Exception ex)
+            {
+                return new GenericResponse(ex.Message);
+            }
+        }
     }
 }

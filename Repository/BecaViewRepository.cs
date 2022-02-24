@@ -146,44 +146,53 @@ namespace Repository
                 {
                     FieldConfig field = new FieldConfig();
                     field.label = BecaCfgFormField.Title;
-                    field.name = BecaCfgFormField.Name;
+                    field.name = BecaCfgFormField.Name.ToCamelCase();
                     field.placeholder = BecaCfgFormField.HelpShort;
                     field.fieldType = BecaCfgFormField.FieldType;
                     field.inputType = BecaCfgFormField.FieldInput;
                     field.format = BecaCfgFormField.Format;
                     field.reference = BecaCfgFormField.Filter_Reference;
+                    field.filter_API = BecaCfgFormField.Filter_API;
                     string opts = BecaCfgFormField.Filter_options ?? "";
                     if (opts.StartsWith("[") && opts.EndsWith("]"))
                     {
                         field.options = opts.Replace("[", "").Replace("]", "").Replace("'", "").Replace(" ", "").Split(",").ToArray();
                     }
-                    field.optionDisplayed = BecaCfgFormField.DropDownDisplayField;
-                    if (field.optionDisplayed != null) field.optionDisplayed = field.optionDisplayed.ToCamelCase();
+                    field.optionDisplayed = BecaCfgFormField.DropDownDisplayField.ToCamelCase();
+                    if (field.optionDisplayed != null) field.optionDisplayed = field.optionDisplayed.ToLowerToCamelCase();
                     field.DropDownList = BecaCfgFormField.DropDownList;
+                    field.DropDownKeyFields = BecaCfgFormField.DropDownKeyFields.ToCamelCase();
+                    field.row = BecaCfgFormField.Row;
+                    field.col = BecaCfgFormField.Col;
+                    field.subRow = BecaCfgFormField.SubRow;
+                    field.subCol = BecaCfgFormField.SubCol;
+                    field.ColSize = BecaCfgFormField.ColSize;
+                    field.SubColSize = BecaCfgFormField.SubColSize;
 
-                    UIrow row = filter.rows.GetRow(BecaCfgFormField.Row, true);
-                    if (BecaCfgFormField.SubRow > 0 && BecaCfgFormField.SubCol > 0)
-                    {
-                        UIcol col = row.GetCol(BecaCfgFormField.Col, true);
-                        col.size = BecaCfgFormField.ColSize;
+                    filter.fields.Add(field);
+                    //UIrow row = filter.rows.GetRow(BecaCfgFormField.Row, true);
+                    //if (BecaCfgFormField.SubRow > 0 && BecaCfgFormField.SubCol > 0)
+                    //{
+                    //    UIcol col = row.GetCol(BecaCfgFormField.Col, true);
+                    //    col.size = BecaCfgFormField.ColSize;
 
-                        if (col.rows == null) col.rows = new UIrows();
-                        UIrow subRow = col.rows.GetRow(BecaCfgFormField.SubRow, true);
-                        UIcol subCol = new UIcol();
-                        subCol.num = BecaCfgFormField.Col;
-                        subCol.size = BecaCfgFormField.SubColSize;
-                        subCol.content = field;
-                        subRow.cols.Add(subCol);
-                    }
-                    else
-                    {
-                        UIcol col = new UIcol();
-                        col.num = BecaCfgFormField.Col;
-                        col.size = BecaCfgFormField.ColSize;
-                        col.content = field;
+                    //    if (col.rows == null) col.rows = new UIrows();
+                    //    UIrow subRow = col.rows.GetRow(BecaCfgFormField.SubRow, true);
+                    //    UIcol subCol = new UIcol();
+                    //    subCol.num = BecaCfgFormField.Col;
+                    //    subCol.size = BecaCfgFormField.SubColSize;
+                    //    subCol.content = field;
+                    //    subRow.cols.Add(subCol);
+                    //}
+                    //else
+                    //{
+                    //    UIcol col = new UIcol();
+                    //    col.num = BecaCfgFormField.Col;
+                    //    col.size = BecaCfgFormField.ColSize;
+                    //    col.content = field;
 
-                        row.AddCol(col);
-                    }
+                    //    row.AddCol(col);
+                    //}
                 }
             }
             return filter;

@@ -22,7 +22,7 @@ namespace BecaWebService.Mappings
                         )
                 .ForMember(dest => dest.FieldName,
                         opts => opts.MapFrom(
-                            src => src.FieldName.ToLower()
+                            src => src.FieldName.ToLowerToCamelCase()
                             )
                         )
                 .ForMember(dest => dest.Type,
@@ -33,13 +33,13 @@ namespace BecaWebService.Mappings
                 .ForMember(dest => dest.Field1,
                         opts => opts.MapFrom((src, dest) => {
                             string[] f = (src.FilterReference ?? "").Split(",");
-                            return f.Length > 0 ? f[0] : null;
+                            return f.Length > 0 ? f[0].ToLowerToCamelCase() : null;
                         })
                         )
                 .ForMember(dest => dest.Field2,
                         opts => opts.MapFrom((src, dest) => {
                             string[] f = (src.FilterReference ?? "").Split(",");
-                            return f.Length > 1 ? f[1] : null;
+                            return f.Length > 1 ? f[1].ToLowerToCamelCase() : null;
                         })
                         );
             CreateMap<BecaPanelFilters, dtoBecaFilter>()
@@ -50,7 +50,7 @@ namespace BecaWebService.Mappings
                         )
                 .ForMember(dest => dest.FieldName,
                         opts => opts.MapFrom(
-                            src => src.FieldName.ToLower()
+                            src => src.FieldName.ToLowerToCamelCase()
                             )
                         )
                 .ForMember(dest => dest.Type,
@@ -78,7 +78,7 @@ namespace BecaWebService.Mappings
                         )
                     .ForMember(dest => dest.FieldName,
                             opts => opts.MapFrom(
-                                src => src.FieldName.ToLower()
+                                src => src.FieldName.ToLowerToCamelCase()
                                 )
                             )
                 .ForMember(dest => dest.Type,
@@ -154,7 +154,7 @@ namespace BecaWebService.Mappings
             CreateMap<BecaViewData, dtoBecaData>()
                 .ForMember(dest => dest.Name,
                         opts => opts.MapFrom(
-                            src => src.Name.ToCamelCase()
+                            src => src.Name.ToLowerToCamelCase()//.ToCamelCase()
                             )
                         )
                 .ForMember(dest => dest.DataType,

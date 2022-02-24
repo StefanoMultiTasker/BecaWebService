@@ -8,7 +8,6 @@ namespace Contracts
     public interface IRepositoryWrapper
     {
         IBecaViewRepository BecaView { get;  }
-        void ReadToken(string token);
         Task SaveAsync();
     }
 }

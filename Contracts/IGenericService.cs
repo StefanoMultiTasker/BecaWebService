@@ -22,6 +22,6 @@ namespace Contracts
         List<object> GetDataByFormLevel(string Form, int subLevel, List<BecaParameter> parameters);
         object GetPanelsByForm(string Form, List<BecaParameter> parameters);
         ViewChart GetGraphByFormField(string Form, string field, List<BecaParameter> parameters);
-
+        Task<GenericResponse> ExecCommand(string dbName, string procName, List<BecaParameter> parameters);
     }
 }

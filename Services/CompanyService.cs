@@ -1,4 +1,5 @@
-﻿using Entities.Contexts;
+﻿using BecaWebService.ExtensionsLib;
+using Entities.Contexts;
 using Entities.Models;
 using System;
 using System.Collections.Generic;
@@ -29,7 +30,7 @@ namespace BecaWebService.Services
             if (company == null)
             {
                 company = _context.Companies.Find(id);
-                _memoryContext.Companies.Add(company);
+                _memoryContext.Companies.Add(company.deepCopy());
                 _memoryContext.SaveChanges();
             }
             if (company == null) throw new KeyNotFoundException("Company not found");

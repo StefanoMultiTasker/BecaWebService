@@ -20,7 +20,15 @@ namespace Entities.Models
         [Optional] public string[] options { get; set; }
         [Optional] public string optionDisplayed { get; set; }
         [Optional] public string DropDownList { get; set; }
+        [Optional] public string DropDownKeyFields { get; set; }
         [Optional] public string reference { get; set; }
+        public bool filter_API { get; set; }
+        public int row { get; set; }
+        public int col { get; set; }
+        public int subRow { get; set; }
+        public int subCol { get; set; }
+        public string ColSize { get; set; }
+        public string SubColSize { get; set; }
         //public bool? disabled { get; set; }
         //public bool? Readonly { get; set; }
         //public bool? required { get; set; }
@@ -111,7 +119,9 @@ namespace Entities.Models
         {
             this.name = name;
             this.rows = new UIrows();
+            this.fields = new List<FieldConfig>();
         }
+        [Optional] public List<FieldConfig> fields { get; set; }
         public string name { get; set; }
         public UIrows rows { get; set; }
     }

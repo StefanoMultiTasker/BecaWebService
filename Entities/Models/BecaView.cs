@@ -83,7 +83,7 @@ namespace Entities.Models
         public string? Filter_options { get; set; }
         //public string? Filter_Title { get; set; }
         public string Filter_Name { get; set; }
-        //public bool Filter_API { get; set; }
+        public bool Filter_API { get; set; }
         //public short Filter_ConcatSequence { get; set; }
         public string? Filter_Reference { get; set; }
         public string FieldType { get; set; }

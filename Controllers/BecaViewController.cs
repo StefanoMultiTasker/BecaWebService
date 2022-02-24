@@ -33,7 +33,6 @@ namespace BecaWebService.Controllers
         {
             try
             {
-                if (Authorization != null) _repository.ReadToken(Authorization);
                 BecaView dbView = _repository.BecaView.GetViewByID(idView);
                 dtoBecaView oView = _mapper.Map<BecaView, dtoBecaView>(dbView);
                 UIform viewFilterUI = _repository.BecaView.GetViewUI(idView, "F");
@@ -56,7 +55,6 @@ namespace BecaWebService.Controllers
         {
             try
             {
-                _repository.ReadToken(Authorization);
                 _repository.BecaView.CustomizeColumnsByUser(idView, cols);
                 _logger.LogInfo($"Saved Cusom cols for view {idView.ToString()}: " + cols.ToArray().ToString());
                 return Ok(true);
