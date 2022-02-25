@@ -13,19 +13,31 @@ using System.Threading.Tasks;
 
 namespace Entities.Contexts
 {
+    public interface IDbDatiContextFactory
+    {
+        DbDatiContext Create(string connectionString);
+    }
+    public class DbDatiContextFactory : IDbDatiContextFactory
+    {
+        private FormTool _formTool;
+        public DbDatiContextFactory(FormTool formTool) => this._formTool = formTool;
+        public DbDatiContext Create(string connectionString) => new DbDatiContext(_formTool, connectionString);
+    }
+
     public partial class DbDatiContext : DbContext
     {
         private string _connection;
         public FormTool _formTool;
 
-        public DbDatiContext(string connectionString)
-        {
-            _connection = connectionString;
-        }
+        //public DbDatiContext(string connectionString)
+        //{
+        //    _connection = connectionString;
+        //}
 
-        public DbDatiContext(FormTool formTool)
+        public DbDatiContext(FormTool formTool, string connectionString)
         {
             _formTool = formTool;
+            _connection = connectionString;
         }
         //public DbDatiContext(DbContextOptions<DbDatiContext> options,string connection, FormTool formTool)
         //    : base(options)

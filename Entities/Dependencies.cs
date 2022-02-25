@@ -18,6 +18,7 @@ namespace Entities
         IMapper mapper { get; }
         DbBecaContext context { get; }
         DbMemoryContext memoryContext { get; }
+        FormTool formTool { get; }
         //HttpContext httpContext { get; }
     }
 
@@ -29,10 +30,11 @@ namespace Entities
         private readonly IMapper _mapper;
         private readonly DbBecaContext _context;
         private readonly DbMemoryContext _memoryContext;
+        private readonly FormTool _formTool;
         //private readonly HttpContext _httpContext;
 
         public Dependencies(IConfiguration configuration, IMapper mapper, MyMemoryCache cache, 
-            DbBecaContext context, DbMemoryContext memoryContext)
+            DbBecaContext context, DbMemoryContext memoryContext, FormTool formTool)
         {
             _cache = cache.Cache;
             //_context = context;
@@ -40,7 +42,7 @@ namespace Entities
             _mapper = mapper;
             _context = context;
             _memoryContext = memoryContext;
-            //_httpContext = httpContext;
+            _formTool = formTool;
         }
 
         public IConfiguration configuration => _config;
@@ -53,7 +55,7 @@ namespace Entities
 
         public DbMemoryContext memoryContext => _memoryContext;
 
-        //public HttpContext httpContext => _httpContext;
+        public FormTool formTool => _formTool;
 
     }
 }

@@ -17,8 +17,8 @@ namespace Entities.Contexts
 {
     public partial class DbBecaContext : DbContext
     {
-        public string domain;
-        public int idUtente;
+        //public string domain;
+        //public int idUtente;
 
         private readonly IConfiguration Configuration;
 
@@ -287,7 +287,7 @@ namespace Entities.Contexts
             modelBuilder.Entity<BecaViewDataUser>(entity =>
             {
                 entity.ToView("BecaViewDataUser");
-                entity.HasKey(e => new { e.idBecaView, e.idDataDefinition, e.Domain, e.idUtente });
+                entity.HasKey(e => new { e.idBecaView, e.idDataDefinition, e.idCompany, e.idUtente });
             });
 
             modelBuilder.Entity<BecaViewFilterValues>(entity =>

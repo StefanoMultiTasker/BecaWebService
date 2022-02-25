@@ -34,20 +34,20 @@ namespace Repository
         //public async Task<BecaView> GetViewByID(int idView)
         public BecaView GetViewByID(int idView)
         {
-            BecaView view = dbdatiContext.BecaView
+            BecaView view = dbBecaContext.BecaView
                         .SingleOrDefault(view => view.idBecaView == idView);
             //.Include(data => data.BecaViewData)
             //.Include(filters => filters.BecaViewFilters)
             //.Include(filterValues => filterValues.BecaViewFilterValues)
 
-            List<BecaViewData> cols = dbdatiContext.BecaViewData
+            List<BecaViewData> cols = dbBecaContext.BecaViewData
                         .Where(view => view.idBecaView == idView)
                         .ToList();
             this.SetCustomizedCols(idView, ref cols);
-            List<BecaViewFilters> vFilters = dbdatiContext.BecaViewFilters
+            List<BecaViewFilters> vFilters = dbBecaContext.BecaViewFilters
                         .Where(view => view.idBecaView == idView)
                         .ToList();
-            List<BecaViewFilterValues> vFilterVals = dbdatiContext.BecaViewFilterValues
+            List<BecaViewFilterValues> vFilterVals = dbBecaContext.BecaViewFilterValues
                         .Where(view => view.idBecaView == idView)
                         .ToList();
 
@@ -55,7 +55,7 @@ namespace Repository
             view.BecaViewFilters = vFilters;
             view.BecaViewFilterValues = vFilterVals;
 
-            List<BecaViewPanels> panels = dbdatiContext.BecaViewPanels
+            List<BecaViewPanels> panels = dbBecaContext.BecaViewPanels
                     .Where(panel => panel.idBecaView == idView)
                     .Include(filters => filters.BecaPanelFilters)
                     .Include(formula => formula.IdFormulaNavigation)
@@ -86,13 +86,12 @@ namespace Repository
 
         private void SetCustomizedCols(int idView, ref List<BecaViewData> cols)
         {
-            if (dbdatiContext.domain == null) return;
-            int idUtente = dbdatiContext.idUtente;
-            string domain = dbdatiContext.domain.ToLower();
-            List<BecaViewDataUser> customCols = dbdatiContext.BecaViewDataUser
+            int idUtente = CurrentUser().idUtente;
+            int idCompany = CurrentCompany().idCompany;
+            List<BecaViewDataUser> customCols = dbBecaContext.BecaViewDataUser
                         .Where(view => view.idBecaView == idView &&
                             view.idUtente == idUtente &&
-                            view.Domain == domain)
+                            view.idCompany == idCompany)
                         .ToList();
             foreach (BecaViewDataUser customCol in customCols)
             {
@@ -112,7 +111,7 @@ namespace Repository
             switch (tipoUI)
             {
                 case "F":
-                    List<BecaViewFilterUI> filterUI = dbdatiContext.BecaViewFilterUI
+                    List<BecaViewFilterUI> filterUI = dbBecaContext.BecaViewFilterUI
                             .Where(obj => obj.idBecaView == idView)
                             .OrderBy(obj => obj.Row)
                             .ThenBy(obj => obj.Col)
@@ -122,7 +121,7 @@ namespace Repository
                     UIform viewFilterUI = this.CreateFilterUI(this._mapper.Map<List<BecaViewFilterUI>, List<BecaViewUI>>(filterUI));
                     return viewFilterUI;
                 case "D":
-                    List<BecaViewDetailUI> detailUI = dbdatiContext.BecaViewDetailUI
+                    List<BecaViewDetailUI> detailUI = dbBecaContext.BecaViewDetailUI
                             .Where(obj => obj.idBecaView == idView)
                             .OrderBy(obj => obj.Row)
                             .ThenBy(obj => obj.Col)
@@ -201,7 +200,7 @@ namespace Repository
         public bool CustomizeColumnsByUser(int idView, List<dtoBecaData> cols)
         {
             List<BecaViewDataUser> customCols = new List<BecaViewDataUser>();
-            List<BecaViewData> viewCols = dbdatiContext.BecaViewData
+            List<BecaViewData> viewCols = dbBecaContext.BecaViewData
                         .Where(view => view.idBecaView == idView)
                         .ToList();
             foreach (dtoBecaData col in cols)
@@ -218,31 +217,29 @@ namespace Repository
                             break;
                         }
                     }
-                    customCol.Domain = dbdatiContext.domain;
-                    customCol.idUtente = dbdatiContext.idUtente;
+                    customCol.idCompany = CurrentCompany().idCompany;
+                    customCol.idUtente = CurrentUser().idUtente;
                     customCol.isGridVisible = col.isGridVisible;
                     customCols.Add(customCol);
                 }
             }
             try
             {
-                int idUtente = dbdatiContext.idUtente;
-                string domain = dbdatiContext.domain.ToLower();
-                List<BecaViewDataUser> userData = dbdatiContext.BecaViewDataUser
+                List<BecaViewDataUser> userData = dbBecaContext.BecaViewDataUser
                             .Where(view => view.idBecaView == idView &&
-                                view.idUtente == idUtente &&
-                                view.Domain == domain)
+                                view.idUtente == CurrentUser().idUtente &&
+                                view.idCompany == CurrentCompany().idCompany)
                             .ToList();
-                dbdatiContext.RemoveRange(userData);
-                dbdatiContext.SaveChanges();
+                dbBecaContext.RemoveRange(userData);
+                dbBecaContext.SaveChanges();
             }
             catch (Exception ex)
             {
             }
             try
             {
-                dbdatiContext.AddRange(customCols.FindAll(col => col.isGridVisible == true));
-                dbdatiContext.SaveChanges();
+                dbBecaContext.AddRange(customCols.FindAll(col => col.isGridVisible == true));
+                dbBecaContext.SaveChanges();
             }
             catch (Exception ex)
             {

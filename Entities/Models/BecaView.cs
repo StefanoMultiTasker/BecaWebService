@@ -59,7 +59,7 @@ namespace Entities.Models
     {
         public int idBecaView { get; set; }
         public int idDataDefinition { get; set; }
-        public string Domain { get; set; }
+        public int idCompany { get; set; }
         public int idUtente { get; set; }
         public bool isGridVisible { get; set; }
         public short GridOrder { get; set; }

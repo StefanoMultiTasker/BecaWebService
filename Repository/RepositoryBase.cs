@@ -17,51 +17,53 @@ namespace Repository
 {
     public abstract class RepositoryBase<T> : IRepositoryBase<T> where T : class
     {
-        protected DbBecaContext dbdatiContext { get; set; }
+        protected DbBecaContext dbBecaContext { get; set; }
         private BecaUser _currentUser;
+        private Company _currentCompany;
 
         public RepositoryBase(IDependencies deps)
         {
-            this.dbdatiContext = deps.context;
+            this.dbBecaContext = deps.context;
         }
 
         public RepositoryBase(IDependencies deps, HttpContext httpContext)
         {
-            this.dbdatiContext = deps.context;
+            this.dbBecaContext = deps.context;
             _currentUser = deps.memoryContext.Users.Find(httpContext.Items["User"]);
         }
 
         public RepositoryBase(DbBecaContext repositoryContext, IHttpContextAccessor httpContextAccessor)
         {
-            this.dbdatiContext = repositoryContext;
+            this.dbBecaContext = repositoryContext;
             //this.Settings();
         }
 
         public BecaUser CurrentUser() => _currentUser;
+        public Company CurrentCompany() => _currentCompany;
 
         public IQueryable<T> GetAll()
         {
-            return this.dbdatiContext.Set<T>().AsNoTracking();
+            return this.dbBecaContext.Set<T>().AsNoTracking();
         }
 
         public IQueryable<T> GetByCondition(Expression<Func<T, bool>> expression)
         {
-            return this.dbdatiContext.Set<T>().Where(expression).AsNoTracking();
+            return this.dbBecaContext.Set<T>().Where(expression).AsNoTracking();
         }
 
         public void Create(T entity)
         {
-            this.dbdatiContext.Set<T>().Add(entity);
+            this.dbBecaContext.Set<T>().Add(entity);
         }
 
         public void Update(T entity)
         {
-            this.dbdatiContext.Set<T>().Update(entity);
+            this.dbBecaContext.Set<T>().Update(entity);
         }
 
         public void Delete(T entity)
         {
-            this.dbdatiContext.Set<T>().Remove(entity);
+            this.dbBecaContext.Set<T>().Remove(entity);
         }
 
     }

@@ -21,6 +21,7 @@ namespace Repository
         private DbBecaContext _context;
         private BecaUser _currentUser;
         private Company _activeCompany;
+        private readonly FormTool _formTool;
 
         private Dictionary<string, DbDatiContext> _databases = new Dictionary<string, DbDatiContext>();
 
@@ -29,6 +30,7 @@ namespace Repository
             _context = deps.context;
             _currentUser = (BecaUser)httpContextAccessor.HttpContext.Items["User"];
             _activeCompany = (Company)httpContextAccessor.HttpContext.Items["Company"];
+            _formTool = deps.formTool;
         }
 
         public BecaUser GetLoggedUser() => _currentUser;
@@ -686,7 +688,7 @@ namespace Repository
         {
             if (_databases.ContainsKey(dbName)) return _databases[dbName];
 
-            DbDatiContext db = new DbDatiContext(_activeCompany.Connections.FirstOrDefault(c => c.ConnectionName == dbName).ConnectionString);
+            DbDatiContext db =  new DbDatiContext(_formTool, _activeCompany.Connections.FirstOrDefault(c => c.ConnectionName == dbName).ConnectionString);
             _databases.Add(dbName, db);
             return db;
         }

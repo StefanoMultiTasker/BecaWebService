@@ -92,6 +92,7 @@ namespace BecaWebService.Extensions
             services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
             services.AddSingleton<FormTool>();
             services.AddScoped<IGenericRepository, GenericRepository>();
+            services.AddScoped<IGenericService, GenericService>();
         }
 
         public static void ConfigureJSON(this IServiceCollection services)
