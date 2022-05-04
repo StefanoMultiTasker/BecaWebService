@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
@@ -7,6 +7,10 @@
     <Product>BecaWeb REST API</Product>
     <Company>Abea</Company>
     <PackageId>BecaWebREST_API</PackageId>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,6 +34,10 @@
     <None Remove="ExtensionsLib\**" />
     <None Remove="LoggerService\**" />
     <None Remove="Repository\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="BecaCFG.mdb" />
   </ItemGroup>
 
   <ItemGroup>

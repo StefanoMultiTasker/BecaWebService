@@ -21,15 +21,17 @@ namespace Repository
         private BecaUser _currentUser;
         private Company _currentCompany;
 
-        public RepositoryBase(IDependencies deps)
-        {
-            this.dbBecaContext = deps.context;
-        }
+        //public RepositoryBase(IDependencies deps)
+        //{
+        //    this.dbBecaContext = deps.context;
+        //}
 
-        public RepositoryBase(IDependencies deps, HttpContext httpContext)
+        public RepositoryBase(IDependencies deps, IHttpContextAccessor httpContextAccessor)
         {
             this.dbBecaContext = deps.context;
-            _currentUser = deps.memoryContext.Users.Find(httpContext.Items["User"]);
+            //urrentUser = deps.memoryContext.Users.Find(httpContextAccessor.HttpContext.Items["User"]);
+            _currentUser = (BecaUser)httpContextAccessor.HttpContext.Items["User"] ;
+            _currentCompany = (Company)httpContextAccessor.HttpContext.Items["Company"];
         }
 
         public RepositoryBase(DbBecaContext repositoryContext, IHttpContextAccessor httpContextAccessor)

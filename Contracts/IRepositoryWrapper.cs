@@ -7,7 +7,7 @@ namespace Contracts
 {
     public interface IRepositoryWrapper
     {
-        IBecaViewRepository BecaView { get;  }
+        //IBecaViewRepository BecaView { get;  }
         Task SaveAsync();
     }
 }

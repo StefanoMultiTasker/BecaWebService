@@ -52,12 +52,12 @@ namespace Entities.Contexts
         //    Configuration = configuration;
         //}
 
-        public FormTool _formTool;
+        //public FormTool _formTool;
 
-        public DbBecaContext(DbContextOptions<DbBecaContext> options, FormTool formTool)
+        public DbBecaContext(DbContextOptions<DbBecaContext> options) //, FormTool formTool)
             : base(options)
         {
-            _formTool = formTool;
+            //_formTool = formTool;
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -132,7 +132,7 @@ namespace Entities.Contexts
 
                     a.HasKey("idUtente", "Id");
 
-                    a.ToTable("RefreshToken");
+                    //a.ToTable("RefreshToken");
 
                     a.WithOwner()
                         .HasForeignKey("idUtente");
@@ -195,6 +195,9 @@ namespace Entities.Contexts
                             .HasColumnType("nvarchar(max)");
 
                         a.Property<bool>("PasswordChange")
+                            .HasColumnType("bit");
+
+                        a.Property<bool>("isDefault")
                             .HasColumnType("bit");
 
                         a.HasKey("idUtente", "idProfile", "idCompany");

@@ -50,7 +50,7 @@ namespace Entities.Models
         public bool isGridOptional { get; set; }
         public bool isGridVisible { get; set; }
         public short GridOrder { get; set; }
-        public string GridHeatColor { get; set; }
+        public string? GridHeatColor { get; set; }
 
         public virtual BecaView idBecaViewNavigation { get; set; }
     }
@@ -79,10 +79,10 @@ namespace Entities.Models
         public short Col { get; set; }
         public short SubCol { get; set; }
         public string ColSize { get; set; }
-        public string SubColSize { get; set; }
+        public string? SubColSize { get; set; }
         public string? Filter_options { get; set; }
         //public string? Filter_Title { get; set; }
-        public string Filter_Name { get; set; }
+        public string? Filter_Name { get; set; }
         public bool Filter_API { get; set; }
         //public short Filter_ConcatSequence { get; set; }
         public string? Filter_Reference { get; set; }
@@ -140,7 +140,7 @@ namespace Entities.Models
         public string Name { get; set; }
         public bool Api { get; set; }
         public string? DefaultValue { get; set; }
-        public string DefaultFunc { get; set; }
+        public string? DefaultFunc { get; set; }
         public short DefaultUse { get; set; }
         public string FromFilterName { get; set; }
         public short? FromFilterIndex { get; set; }
@@ -158,16 +158,16 @@ namespace Entities.Models
         //public string Field2 { get; set; }
         public string FieldName { get; set; }
         public string FilterName { get; set; }
-        public string Format { get; set; }
+        public string? Format { get; set; }
         public int idBecaFilter { get; set; }
         public short? idFieldsUse { get; set; }
-        public string FieldsUse { get; set; }
+        public string? FieldsUse { get; set; }
         public short idFilterType { get; set; }
         public string FilterType { get; set; }
-        public string Parameter1 { get; set; }
-        public string Parameter2 { get; set; }
-        public string ValueModifier1 { get; set; }
-        public string ValueModifier2 { get; set; }
+        public string? Parameter1 { get; set; }
+        public string? Parameter2 { get; set; }
+        public string? ValueModifier1 { get; set; }
+        public string? ValueModifier2 { get; set; }
   
         public virtual BecaView idBecaViewNavigation { get; set; }
     }
@@ -187,20 +187,20 @@ namespace Entities.Models
         public string Size { get; set; }
         public bool IsFilterRequired { get; set; }
         public string Caption { get; set; }
-        public string Prefix { get; set; }
-        public string Postfix { get; set; }
-        public string Format { get; set; }
-        public string Icon { get; set; }
-        public string Class { get; set; }
+        public string? Prefix { get; set; }
+        public string? Postfix { get; set; }
+        public string? Format { get; set; }
+        public string? Icon { get; set; }
+        public string? Class { get; set; }
         public bool HasDetail { get; set; }
         public bool? IsChart { get; set; }
-        public string ChartColor { get; set; }
-        public string MainField { get; set; }
+        public string? ChartColor { get; set; }
+        public string? MainField { get; set; }
         public short? IdAggregationType { get; set; }
         public int? IdFormula { get; set; }
         public string? HelpTitle { get; set; }
         public string? HelpText { get; set; }
-        public string Color { get; set; }
+        public string? Color { get; set; }
 
         public virtual BecaAggregationTypes IdAggregationTypeNavigation { get; set; }
         public virtual BecaView idBecaViewNavigation { get; set; }

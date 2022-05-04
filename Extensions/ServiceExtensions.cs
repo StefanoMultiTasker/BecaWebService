@@ -45,9 +45,9 @@ namespace BecaWebService.Extensions
 
         public static void ConfigureDB(this IServiceCollection services, IConfiguration Configuration)
         {
+            services.AddDbContext<DbMemoryContext>();
             services.AddDbContext<DbBecaContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("SQLBeca")));
-            services.AddDbContext<DbMemoryContext>();
         }
 
         public static void ConfigureAuth(this IServiceCollection services, IConfiguration Configuration)
@@ -89,10 +89,11 @@ namespace BecaWebService.Extensions
             services.AddScoped<ICompanyService, CompanyService>();
     
             services.AddScoped<IDependencies, Dependencies>();
-            services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
+            //services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
             services.AddSingleton<FormTool>();
             services.AddScoped<IGenericRepository, GenericRepository>();
             services.AddScoped<IGenericService, GenericService>();
+            services.AddScoped<IBecaViewRepository, BecaViewRepository>();
         }
 
         public static void ConfigureJSON(this IServiceCollection services)

@@ -22,7 +22,7 @@ namespace BecaWebService.Mappings
                         )
                 .ForMember(dest => dest.FieldName,
                         opts => opts.MapFrom(
-                            src => src.FieldName.ToLowerToCamelCase()
+                            src => src.FieldName//.ToLowerToCamelCase()
                             )
                         )
                 .ForMember(dest => dest.Type,
@@ -50,7 +50,7 @@ namespace BecaWebService.Mappings
                         )
                 .ForMember(dest => dest.FieldName,
                         opts => opts.MapFrom(
-                            src => src.FieldName.ToLowerToCamelCase()
+                            src => src.FieldName//.ToLowerToCamelCase()
                             )
                         )
                 .ForMember(dest => dest.Type,

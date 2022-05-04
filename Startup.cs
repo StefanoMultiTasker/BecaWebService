@@ -23,6 +23,7 @@ using System.IO;
 using BecaWebService.Helpers;
 using BecaWebService.Authorization;
 using Entities;
+using Microsoft.AspNetCore.Http;
 
 namespace BecaWebService
 {
@@ -47,12 +48,13 @@ namespace BecaWebService
             services.ConfigureDB(Configuration);
             //services.ConfigureAuth(Configuration);
             services.ConfigureLoggerService();
-            services.ConfigureRepositoryWrapper();
 
             services.AddHttpContextAccessor();
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             services.ConfigureJSON();
             services.ConfigureMyCache();
+            //services.ConfigureRepositoryWrapper();
             services.ConfigureDI();
             services.AddControllers();
             services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));

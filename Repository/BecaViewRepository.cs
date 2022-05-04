@@ -19,14 +19,8 @@ namespace Repository
     {
         private readonly IMapper _mapper;
 
-        public BecaViewRepository(IDependencies deps)
-               : base(deps)
-        {
-            _mapper = deps.mapper;
-        }
-
-        public BecaViewRepository(IDependencies deps, HttpContext httpContext)
-               : base(deps, httpContext)
+        public BecaViewRepository(IDependencies deps, IHttpContextAccessor httpContextAccessor)
+               : base(deps, httpContextAccessor)
         {
             _mapper = deps.mapper;
         }

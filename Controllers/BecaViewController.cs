@@ -17,10 +17,10 @@ namespace BecaWebService.Controllers
     public class BecaViewController : ControllerBase
     {
         private ILoggerManager _logger;
-        private IRepositoryWrapper _repository;
+        private IBecaViewRepository _repository;
         private readonly IMapper _mapper;
 
-        public BecaViewController(ILoggerManager logger, IRepositoryWrapper repository, IMapper mapper)
+        public BecaViewController(ILoggerManager logger, IBecaViewRepository repository, IMapper mapper)
         {
             _logger = logger;
             _repository = repository;
@@ -33,10 +33,10 @@ namespace BecaWebService.Controllers
         {
             try
             {
-                BecaView dbView = _repository.BecaView.GetViewByID(idView);
+                BecaView dbView = _repository.GetViewByID(idView);
                 dtoBecaView oView = _mapper.Map<BecaView, dtoBecaView>(dbView);
-                UIform viewFilterUI = _repository.BecaView.GetViewUI(idView, "F");
-                UIform viewDetailUI = _repository.BecaView.GetViewUI(idView, "D");
+                UIform viewFilterUI = _repository.GetViewUI(idView, "F");
+                UIform viewDetailUI = _repository.GetViewUI(idView, "D");
                 oView.FilterUI = viewFilterUI;
                 oView.DetailUI = viewDetailUI;
                 _logger.LogInfo($"Returned View for id {idView}.");
@@ -55,7 +55,7 @@ namespace BecaWebService.Controllers
         {
             try
             {
-                _repository.BecaView.CustomizeColumnsByUser(idView, cols);
+                _repository.CustomizeColumnsByUser(idView, cols);
                 _logger.LogInfo($"Saved Cusom cols for view {idView.ToString()}: " + cols.ToArray().ToString());
                 return Ok(true);
             }

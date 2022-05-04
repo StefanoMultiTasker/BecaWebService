@@ -13,18 +13,18 @@ namespace Entities.Models
         public BecaUser()
         {
             //Profiles = new List<UserProfile>();
-            RefreshTokens = new List<RefreshToken>();
+            //RefreshTokens = new List<RefreshToken>();
         }
 
         [Key]
         public int idUtente { get; set; }
         public string UserName { get; set; }
         //public string Pwd { get; set; }
-        public string LastName { get; set; }
-        public string FirstName { get; set; }
-        public string Title { get; set; }
-        public string EMail { get; set; }
-        public string Phone { get; set; }
+        public string? LastName { get; set; }
+        public string? FirstName { get; set; }
+        public string? Title { get; set; }
+        public string? EMail { get; set; }
+        public string? Phone { get; set; }
         public bool isConfirmed { get; set; }
         public bool isPrivacyRead { get; set; }
         public bool isPwdChanged { get; set; }
@@ -59,6 +59,7 @@ namespace Entities.Models
         public bool PasswordChange { get; set; }
         [JsonIgnore]
         public string Flags { get; set; }
+        public bool isDefault { get; set; }
     }
 
     [Owned]

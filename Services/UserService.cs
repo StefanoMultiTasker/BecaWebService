@@ -65,7 +65,7 @@ namespace BecaWebService.Services
             if (_memoryContext.Users.SingleOrDefault(u => u.idUtente == user.idUtente) != null)
             {
                 _memoryContext.Users.Remove(_memoryContext.Users.Find(user.idUtente));
-                _memoryContext.SaveChanges();
+                //_memoryContext.SaveChanges();
             }
             _memoryContext.Users.Add(user.deepCopy());
             _memoryContext.SaveChanges();
@@ -157,23 +157,27 @@ namespace BecaWebService.Services
 
                 var areas = rawMenu.Where(m => m.idCompany == c.idCompany).GroupBy(
                     c => new { c.idArea, c.Area },
-                    (key) => new { idArea = key.idArea, Area = key.Area }
+                    (key) => new { idArea = key.idArea, Area = key.Area, IconType=key.AreaIconType, Icon=key.AreaIcon }
                     );
                 foreach (var area in areas)
                 {
                     UserMenuArea a = new UserMenuArea();
                     a.idArea = area.Key.idArea;
                     a.Area = area.Key.Area;
+                    a.IconType = area.ElementAt(0).IconType;
+                    a.Icon = area.ElementAt(0).Icon;
 
                     var panels = rawMenu.Where(m => m.idCompany == c.idCompany && m.idArea == a.idArea).GroupBy(
                         c => new { c.idPanel, c.Panel },
-                        (key) => new { idPanel = key.idPanel, Panel = key.Panel }
+                        (key) => new { idPanel = key.idPanel, Panel = key.Panel, IconType = key.PanelIconType, Icon = key.PanelIcon }
                         );
                     foreach (var panel in panels)
                     {
                         UserMenuPanel p = new UserMenuPanel();
                         p.idPanel = panel.Key.idPanel;
                         p.Panel = panel.Key.Panel;
+                        p.IconType = panel.ElementAt(0).IconType;
+                        p.Icon = panel.ElementAt(0).Icon;
 
                         var items = rawMenu
                             .Where(m => m.idCompany == c.idCompany && m.idArea == a.idArea && m.idPanel == p.idPanel);
