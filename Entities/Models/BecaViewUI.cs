@@ -16,7 +16,7 @@ namespace Entities.Models
         [Optional] public string placeholder { get; set; }
         public string fieldType { get; set; }
         [Optional] public string inputType { get; set; }
-        [Optional] public string format { get; set; }
+        [Optional] public string? format { get; set; }
         [Optional] public string[] options { get; set; }
         [Optional] public string optionDisplayed { get; set; }
         [Optional] public string DropDownList { get; set; }

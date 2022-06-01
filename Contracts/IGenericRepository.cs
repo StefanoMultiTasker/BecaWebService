@@ -10,6 +10,7 @@ namespace Contracts
     public interface IGenericRepository
     {
         T getFormObject<T>(string Form);
+        string GetFormByView(int idView);
         List<T> GetDataByForm<T>(string Form, List<BecaParameter> parameters) where T : class, new();
         List<T> GetDataByForm<T>(string Form, object record) where T : class, new();
         T CreateObjectFromJSON<T>(string Form, string jsonRecord) where T : class, new();

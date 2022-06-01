@@ -24,23 +24,56 @@ namespace BecaWebService.Controllers
             _genericService = service;
         }
 
-        [HttpPost()]
-        public IActionResult Post([FromBody] JObject data)
+        private string getFormByView(int idView)
         {
-            string Form = data["Form"].ToString();
-            List<BecaParameter> parameters = data["Parameters"].ToObject<BecaParameters>().parameters.ToList<BecaParameter>();
-            IEnumerable<object> res = _genericService.GetDataByForm(Form, parameters);
-            return Ok(res);
+            return _genericService.GetFormByView(idView);
+        }
+
+        [HttpPost()]
+        public IActionResult Post([FromBody] dataFormPostParameter data)
+        {
+            try
+            {
+                string form = data.idView == null ? data.Form : getFormByView(data.idView.Value);
+                if ((form ?? "") == "")
+                    return BadRequest("La View non ha form associate");
+
+                List<BecaParameter> parameters = data.Parameters.parameters;
+                IEnumerable<object> res = _genericService.GetDataByForm(form, parameters);
+
+                return Ok(res);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            //string Form = data["Form"].ToString();
+            //List<BecaParameter> parameters = data["Parameters"].ToObject<BecaParameters>().parameters.ToList<BecaParameter>();
+            //IEnumerable<object> res = _genericService.GetDataByView(Form, parameters);
         }
 
         [HttpPost("DataField")]
-        public IActionResult DataField([FromBody] JObject data)
+        public IActionResult DataField([FromBody] dataFormPostParameter data)
         {
-            string Form = data["Form"].ToString();
-            string FormField = data["FormField"].ToString();
-            List<BecaParameter> parameters = data["Parameters"].ToObject<BecaParameters>().parameters.ToList<BecaParameter>();
-            IEnumerable<object> res = _genericService.GetDataByFormField(Form, FormField, parameters);
-            return Ok(res);
+            try
+            {
+                string form = data.idView == null ? data.Form : getFormByView(data.idView.Value);
+                if ((form ?? "") == "")
+                    return BadRequest("La View non ha form associate");
+                string FormField = data.FormField;
+
+                List<BecaParameter> parameters = data.Parameters.parameters;
+                IEnumerable<object> res = _genericService.GetDataByFormField(form, FormField, parameters);
+                //string Form = data["Form"].ToString();
+                //string FormField = data["FormField"].ToString();
+                //List<BecaParameter> parameters = data["Parameters"].ToObject<BecaParameters>().parameters.ToList<BecaParameter>();
+                //IEnumerable<object> res = _genericService.GetDataByFormField(Form, FormField, parameters);
+                return Ok(res);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPost("DataGraph")]
@@ -63,49 +96,106 @@ namespace BecaWebService.Controllers
         }
 
         [HttpPost("DataFormUpdate")]
-        public async Task<IActionResult> DataFormUpdate([FromBody] JObject data)
+        public async Task<IActionResult> DataFormUpdate([FromBody] dataFormPostParameter data)
         //[FromForm] string form, [FromForm] string Record, [FromForm] string oldRecord)
         {
-            string form = data["form"].ToString();  //data.form; // data["form"].ToString();
-            object recordNew = _genericService.CreateObjectFromJObject<object>(form, data["newData"].ToObject<JObject>());  //data.newData; //data["newData"].FromObject<object>();
-            object recordOld = _genericService.CreateObjectFromJObject<object>(form, data["originalData"].ToObject<JObject>());  //data.newData; //data["newData"].FromObject<object>();
+            try
+            {
+                string form = data.idView == null ? data.Form : getFormByView(data.idView.Value);
+                if ((form ?? "") == "")
+                    return BadRequest("La View non ha form associate");
 
-            //var recordNew = _genericService.CreateObjectFromJSON<object>(form, Record);
-            //var recordOld = _genericService.CreateObjectFromJSON<object>(form, oldRecord);
-            GenericResponse result = await _genericService.UpdateDataByForm(form, recordOld, recordNew);
-            if (!result.Success)
-                return BadRequest(result.Message);
+                object recordNew = _genericService.CreateObjectFromJObject<object>(form, data.newData);
+                object recordOld = _genericService.CreateObjectFromJObject<object>(form, data.originalData);
 
-            return Ok(result);
+                GenericResponse result = await _genericService.UpdateDataByForm(form, recordOld, recordNew);
+                if (!result.Success)
+                    return BadRequest(result.Message);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
+            //string form = data["form"].ToString();  //data.form; // data["form"].ToString();
+            //object recordNew = _genericService.CreateObjectFromJObject<object>(form, data["newData"].ToObject<JObject>());  //data.newData; //data["newData"].FromObject<object>();
+            //object recordOld = _genericService.CreateObjectFromJObject<object>(form, data["originalData"].ToObject<JObject>());  //data.newData; //data["newData"].FromObject<object>();
+
+            ////var recordNew = _genericService.CreateObjectFromJSON<object>(form, Record);
+            ////var recordOld = _genericService.CreateObjectFromJSON<object>(form, oldRecord);
+            //GenericResponse result = await _genericService.UpdateDataByForm(form, recordOld, recordNew);
+            //if (!result.Success)
+            //    return BadRequest(result.Message);
+
+            //return Ok(result);
         }
 
         [HttpPost("DataFormAdd")]
-        public async Task<IActionResult> DataFormAdd([FromBody] JObject data)
-        //[FromForm] string form, [FromForm] string Record, [FromForm] string force = "0")
+        public async Task<IActionResult> DataFormAdd([FromBody] dataFormPostParameter data)
         {
-            string form = data["form"].ToString();  //data.form; // data["form"].ToString();
-            string force = data["force"].ToString();  //data.form; // data["form"].ToString();
-            object recordNew = _genericService.CreateObjectFromJObject<object>(form, data["newData"].ToObject<JObject>());  //data.newData; //data["newData"].FromObject<object>();
-            //var recordNew = _genericService.CreateObjectFromJSON<object>(form, Record);
-            GenericResponse result = await _genericService.AddDataByForm(form, recordNew, (force == "0" ? false : true));
-            if (!result.Success)
-                return BadRequest(result.Message);
+            try
+            {
+                string form = data.idView == null ? data.Form : getFormByView(data.idView.Value);
+                if ((form ?? "") == "")
+                    return BadRequest("La View non ha form associate");
 
-            return Ok(result);
+                object recordNew = _genericService.CreateObjectFromJObject<object>(form, data.newData);
+
+                GenericResponse result = await _genericService.AddDataByForm(form, recordNew, data.force.Value);
+                if (!result.Success)
+                    return BadRequest(result.Message);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
+            //string form = data["form"].ToString();  //data.form; // data["form"].ToString();
+            //string force = data["force"].ToString();  //data.form; // data["form"].ToString();
+            //object recordNew = _genericService.CreateObjectFromJObject<object>(form, data["newData"].ToObject<JObject>());  //data.newData; //data["newData"].FromObject<object>();
+            ////var recordNew = _genericService.CreateObjectFromJSON<object>(form, Record);
+            //GenericResponse result = await _genericService.AddDataByForm(form, recordNew, (force == "0" ? false : true));
+            //if (!result.Success)
+            //    return BadRequest(result.Message);
+
+            //return Ok(result);
         }
 
         [HttpPost("DataFormDelete")]
-        public async Task<IActionResult> DataFormDelete([FromBody] JObject data)
+        public async Task<IActionResult> DataFormDelete([FromBody] dataFormPostParameter data)
         //[FromForm] string form, [FromForm] string Record)
         {
-            string form = data["form"].ToString();  //data.form; // data["form"].ToString();
-            object recordNew = _genericService.CreateObjectFromJObject<object>(form, data["newData"].ToObject<JObject>());  //data.newData; //data["newData"].FromObject<object>();
-                                                                                                                            //var recordNew = _genericService.CreateObjectFromJSON<object>(form, Record);
-            GenericResponse result = await _genericService.DeleteDataByForm(form, recordNew);
-            if (!result.Success)
-                return BadRequest(result.Message);
+            try
+            {
+                string form = data.idView == null ? data.Form : getFormByView(data.idView.Value);
+                if ((form ?? "") == "")
+                    return BadRequest("La View non ha form associate");
 
-            return Ok(result);
+                object recordNew = _genericService.CreateObjectFromJObject<object>(form, data.newData);
+
+                GenericResponse result = await _genericService.DeleteDataByForm(form, recordNew );
+                if (!result.Success)
+                    return BadRequest(result.Message);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
+            //string form = data["form"].ToString();  //data.form; // data["form"].ToString();
+            //object recordNew = _genericService.CreateObjectFromJObject<object>(form, data["newData"].ToObject<JObject>());  //data.newData; //data["newData"].FromObject<object>();
+            //                                                                                                                //var recordNew = _genericService.CreateObjectFromJSON<object>(form, Record);
+            //GenericResponse result = await _genericService.DeleteDataByForm(form, recordNew);
+            //if (!result.Success)
+            //    return BadRequest(result.Message);
+
+            //return Ok(result);
         }
 
         [HttpPost("ExecProcedure")]
@@ -120,11 +210,14 @@ namespace BecaWebService.Controllers
         }
     }
 
-    public class dfobj
+    public class dataFormPostParameter
     {
-        public string form { get; set; }
-        public Boolean force { get; set; }
-        public object newData { get; set; }
-        public object originalData { get; set; }
+        public string? Form { get; set; }
+        public int? idView { get; set; }
+        public string? FormField { get; set; }
+        public BecaParameters Parameters { get; set; }
+        public Boolean? force { get; set; }
+        public JObject? newData { get; set; }
+        public JObject? originalData { get; set; }
     }
 }

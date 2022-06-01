@@ -20,6 +20,18 @@ namespace BecaWebService.Services
             this._genericRepository = genericRepository;
         }
 
+        public string GetFormByView(int idView)
+        {
+            return _genericRepository.GetFormByView(idView);
+            //if (form == null) throw new ArgumentException("La View non ha form associate");
+           // return form;
+        }
+
+        public List<object> GetDataByView(int idView, List<BecaParameter> parameters)
+        {
+            return GetDataByForm(GetFormByView(idView), parameters);
+        }
+
         public List<object> GetDataByForm(string Form, List<BecaParameter> parameters)
         {
             return _genericRepository.GetDataByForm<object>(Form, parameters);
@@ -65,6 +77,11 @@ namespace BecaWebService.Services
             return _genericRepository.CreateObjectFromJSON<T>(Form, jsonRecord);
         }
 
+        public async Task<GenericResponse> UpdateDataByView(int idView, object recordOld, object recordNew)
+        {
+            return await UpdateDataByForm(GetFormByView(idView), recordOld, recordNew);
+        }
+
         public async Task<GenericResponse> UpdateDataByForm(string Form, object recordOld, object recordNew)
         {
             List<object> data = _genericRepository.GetDataByForm<object>(Form, recordOld);
@@ -75,6 +92,11 @@ namespace BecaWebService.Services
 
             List<object> dataNew = _genericRepository.GetDataByForm<object>(Form, recordNew);
             return new GenericResponse(dataNew);
+        }
+
+        public async Task<GenericResponse> AddDataByView(int idView, object record, bool forceInsert)
+        {
+            return await UpdateDataByForm(GetFormByView(idView), record, forceInsert);
         }
 
         public async Task<GenericResponse> AddDataByForm(string Form, object record, bool forceInsert)
@@ -97,6 +119,11 @@ namespace BecaWebService.Services
             }
         }
 
+        public async Task<GenericResponse> DeleteDataByView(int idView, object record)
+        {
+            return await DeleteDataByForm(GetFormByView(idView), record);
+        }
+
         public async Task<GenericResponse> DeleteDataByForm(string Form, object record)
         {
             //List<object> data = _genericRepository.GetDataByForm<object>(Form, record);
@@ -112,6 +139,11 @@ namespace BecaWebService.Services
             {
                 return new GenericResponse(ex.Message);
             }
+        }
+
+        public List<object> GetDataByViewField(int idView, string field, List<BecaParameter> parameters)
+        {
+            return GetDataByFormField(GetFormByView(idView), field, parameters);
         }
 
         public List<object> GetDataByFormField(string Form, string field, List<BecaParameter> parameters)

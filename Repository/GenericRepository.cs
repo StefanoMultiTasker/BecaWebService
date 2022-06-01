@@ -37,6 +37,14 @@ namespace Repository
 
         #region "Form"
 
+        public string GetFormByView(int idView)
+        {
+            BecaViewForm form = _context.BecaViewForms
+                .FirstOrDefault(f => f.idBecaView == idView && f.isMain == true);
+            if (form != null) return form.Form;
+            else return null;
+        }
+
         public async Task<T> AddDataByForm<T>(string Form, object record) where T : class, new()
         {
             BecaForm form = _context.BecaForm
@@ -257,15 +265,15 @@ namespace Repository
                 }
 
                 List<BecaFormField> fields = _context.BecaFormField
-                    .Where(f => f.Form == Form && f.SequenzaOrdinamento != 0)
-                    .OrderBy(f => Math.Abs(f.SequenzaOrdinamento))
+                    .Where(f => f.Form == Form && f.OrderSequence != 0)
+                    .OrderBy(f => Math.Abs(f.OrderSequence))
                     .ToList();
                 string sqlOrd = "";
                 foreach (BecaFormField field in fields)
                 {
                     sqlOrd += (sqlOrd.Length == 0 ? " Order By " : ", ") +
-                        (field.Ordinamento == null ? field.Campo : (field.Ordinamento.Contains("Ord") ? (field.Campo.EndsWith("Desc") ? field.Campo.Substring(0, field.Campo.Length - 5) : field.Campo) : field.Ordinamento)) +
-                        (field.SequenzaOrdinamento < 0 ? " DESC" : "");
+                        (field.OrderOnField == null ? field.Name :  field.OrderOnField) +
+                        (field.OrderSequence < 0 ? " DESC" : "");
                 }
                 sql += sqlOrd;
                 return getContext(db).ExecuteQuery<T>(Form, sql, pars.ToArray());
@@ -425,10 +433,12 @@ namespace Repository
         {
             BecaFormField formField = _context.BecaFormField
                 .Find(Form, field);
-            BecaFormFieldLevel formFieldCust = _context.BecaFormFieldLevel
-                .Find(Form, field, null);
-            string ddl = formFieldCust == null ? formField.DropDownList : formFieldCust.DropDownList;
-            string ddlPar = formFieldCust == null ? formField.Parametri : formFieldCust.Parametri;
+            //BecaFormFieldLevel formFieldCust = _context.BecaFormFieldLevel
+            //    .Find(Form, field, null);
+            string ddl =   formField.DropDownList ;
+            string ddlPar = formField.Parameters;
+            //string ddl = formFieldCust == null ? formField.DropDownList : formFieldCust.DropDownList;
+            //string ddlPar = formFieldCust == null ? formField.Parametri : formFieldCust.Parametri;
 
             if (formField != null)
             {
@@ -636,7 +646,7 @@ namespace Repository
 
             BecaFormField formField = _context.BecaFormField
                 .Find(Form, field + "Dati");
-            List<string> lines = formField.Parametri.Replace(" ", "").Split(",").ToList();
+            List<string> lines = formField.Parameters.Replace(" ", "").Split(",").ToList();
             foreach (string line in lines)
             {
                 ViewChartValue val = new ViewChartValue();
@@ -683,6 +693,11 @@ namespace Repository
             return await getContext(dbName).ExecuteSqlCommandAsync(sql, pars);
         }
         #endregion "SQL"
+
+        private DbDatiContext getContext(int id)
+        {
+            return this.getContext(_activeCompany.Connections.FirstOrDefault(c => c.idConnection == id).ConnectionName);
+        }
 
         private DbDatiContext getContext(string dbName)
         {

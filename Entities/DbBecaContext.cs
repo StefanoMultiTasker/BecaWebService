@@ -42,6 +42,7 @@ namespace Entities.Contexts
         public virtual DbSet<BecaViewFilterUI> BecaViewFilterUI { get; set; }
         public virtual DbSet<BecaViewDetailUI> BecaViewDetailUI { get; set; }
 
+        public DbSet<BecaViewForm> BecaViewForms { get; set; }
         public DbSet<BecaForm> BecaForm { get; set; }
         public DbSet<BecaFormLevels> BecaFormLevels { get; set; }
         public DbSet<BecaFormField> BecaFormField { get; set; }
@@ -359,14 +360,17 @@ namespace Entities.Contexts
 
             #region "Beca"
 
-            modelBuilder.Entity<BecaForm>().ToTable("_dbaForms");
+            modelBuilder.Entity<BecaViewForm>().ToTable("BecaViewForms");
+            modelBuilder.Entity<BecaViewForm>().HasKey(p => new { p.idBecaView, p.Form });
+
+            modelBuilder.Entity<BecaForm>().ToTable("vBecaForm");
             modelBuilder.Entity<BecaForm>().HasKey(p => new { p.Form });
 
             modelBuilder.Entity<BecaFormLevels>().ToTable("_dbaFormsLevels");
             modelBuilder.Entity<BecaFormLevels>().HasKey(p => new { p.Form, p.SubLevel });
 
-            modelBuilder.Entity<BecaFormField>().ToTable("_dbaFormsFields");
-            modelBuilder.Entity<BecaFormField>().HasKey(p => new { p.Form, p.Campo });
+            modelBuilder.Entity<BecaFormField>().ToTable("vBecaFormFields");
+            modelBuilder.Entity<BecaFormField>().HasKey(p => new { p.Form, p.Name });
 
             modelBuilder.Entity<BecaFormFieldLevel>().ToTable("_dbaFormsObjAccess");
             modelBuilder.Entity<BecaFormFieldLevel>().HasKey(p => new { p.Form, p.objName, p.idLivello });
