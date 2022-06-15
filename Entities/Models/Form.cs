@@ -115,7 +115,7 @@ namespace Entities.Models
         public string Form { get; set; }
         //public int PosizioneTabella { get; set; }
         //public string Campo { get; set; }
-        public int idDataDefinition { get; set; }
+        //public int idDataDefinition { get; set; }
         public string Name { get; set; }
         //public string DescCampo { get; set; }
         //public string Titolo { get; set; }

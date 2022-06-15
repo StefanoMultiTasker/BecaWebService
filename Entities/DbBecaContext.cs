@@ -280,7 +280,7 @@ namespace Entities.Contexts
             modelBuilder.Entity<BecaViewData>(entity =>
             {
                 entity.ToView("vBecaViewData");
-                entity.HasKey(e => new { e.idBecaView, e.idDataDefinition });
+                entity.HasKey(e => new { e.idBecaView, e.Field });
 
                 entity.HasOne(d => d.idBecaViewNavigation)
                     .WithMany(p => p.BecaViewData)
@@ -291,7 +291,7 @@ namespace Entities.Contexts
             modelBuilder.Entity<BecaViewDataUser>(entity =>
             {
                 entity.ToView("BecaViewDataUser");
-                entity.HasKey(e => new { e.idBecaView, e.idDataDefinition, e.idCompany, e.idUtente });
+                entity.HasKey(e => new { e.idBecaView, e.field, e.idCompany, e.idUtente });
             });
 
             modelBuilder.Entity<BecaViewFilterValues>(entity =>

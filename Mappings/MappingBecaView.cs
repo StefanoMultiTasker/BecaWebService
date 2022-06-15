@@ -154,7 +154,7 @@ namespace BecaWebService.Mappings
             CreateMap<BecaViewData, dtoBecaData>()
                 .ForMember(dest => dest.Name,
                         opts => opts.MapFrom(
-                            src => src.Name.ToLowerToCamelCase()//.ToCamelCase()
+                            src => src.Field.ToLowerToCamelCase()//.ToCamelCase()
                             )
                         )
                 .ForMember(dest => dest.DataType,

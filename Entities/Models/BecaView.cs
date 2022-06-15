@@ -41,8 +41,8 @@ namespace Entities.Models
     public partial class BecaViewData 
     {
         public int idBecaView { get; set; }
-        public int idDataDefinition { get; set; }
-        public string Name { get; set; }
+        //public int idDataDefinition { get; set; }
+        public string Field { get; set; }
         public short idDataType { get; set; }
         public short? FormulaFooter { get; set; }
         public string? Title { get; set; }
@@ -58,7 +58,7 @@ namespace Entities.Models
     public partial class BecaViewDataUser
     {
         public int idBecaView { get; set; }
-        public int idDataDefinition { get; set; }
+        public string field { get; set; }
         public int idCompany { get; set; }
         public int idUtente { get; set; }
         public bool isGridVisible { get; set; }
@@ -88,7 +88,7 @@ namespace Entities.Models
         public string? Filter_Reference { get; set; }
         public string FieldType { get; set; }
         public string? FieldInput { get; set; }
-        public string? DropDownList { get; set; }
+        //public string? DropDownList { get; set; }
         public bool DropDownListAll { get; set; }
         public bool DropDownListNull { get; set; }
         public string? DropDownDisplayField { get; set; }

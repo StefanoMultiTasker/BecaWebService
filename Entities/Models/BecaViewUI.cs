@@ -19,7 +19,7 @@ namespace Entities.Models
         [Optional] public string? format { get; set; }
         [Optional] public string[] options { get; set; }
         [Optional] public string optionDisplayed { get; set; }
-        [Optional] public string DropDownList { get; set; }
+        //|[Optional] public string DropDownList { get; set; }
         [Optional] public string DropDownKeyFields { get; set; }
         [Optional] public string reference { get; set; }
         public bool filter_API { get; set; }

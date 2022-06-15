@@ -89,14 +89,8 @@ namespace Repository
                         .ToList();
             foreach (BecaViewDataUser customCol in customCols)
             {
-                foreach (BecaViewData col in cols)
-                {
-                    if (col.idDataDefinition == customCol.idDataDefinition)
-                    {
-                        col.isGridVisible = customCol.isGridVisible;
-                        break;
-                    }
-                }
+                BecaViewData col = cols.FirstOrDefault(c => c.Field == customCol.field);
+                if (col != null) col.isGridVisible = customCol.isGridVisible;
             }
         }
 
@@ -153,7 +147,7 @@ namespace Repository
                     }
                     field.optionDisplayed = BecaCfgFormField.DropDownDisplayField.ToCamelCase();
                     if (field.optionDisplayed != null) field.optionDisplayed = field.optionDisplayed.ToLowerToCamelCase();
-                    field.DropDownList = BecaCfgFormField.DropDownList;
+                    //field.DropDownList = BecaCfgFormField.DropDownList;
                     field.DropDownKeyFields = BecaCfgFormField.DropDownKeyFields.ToCamelCase();
                     field.row = BecaCfgFormField.Row;
                     field.col = BecaCfgFormField.Col;
@@ -205,9 +199,9 @@ namespace Repository
                     customCol.idBecaView = idView;
                     foreach (BecaViewData viewCol in viewCols)
                     {
-                        if (viewCol.Name.ToLower() == col.Name.ToLower())
+                        if (viewCol.Field.ToLower() == col.Name.ToLower())
                         {
-                            customCol.idDataDefinition = viewCol.idDataDefinition;
+                            customCol.field = viewCol.Field;
                             break;
                         }
                     }
