@@ -141,78 +141,172 @@ namespace BecaWebService.Services
 
         public UserMenuResponse GetMenuByUser(int idUtente)
         {
-            var rawMenu = _context.RawUserMenu.Where(m => m.idUtente == idUtente).ToList();
-            if (rawMenu == null) throw new KeyNotFoundException("Menu non configurato");
+            IList<UserMenu> rawUserMenu = _context.RawUserMenu.Where(m => m.idUtente == idUtente).ToList();
+            if (rawUserMenu == null) throw new KeyNotFoundException("Menu non configurato");
+
+            var parents = rawUserMenu
+                .Where(m => m.ParentItem != null)
+                .GroupBy(m => new { m.idCompany,  m.CompanyName,  m.ParentItem },
+                    (key) => new { idCompany = key.idCompany, CompanyName = key.CompanyName, ParentItem = key.ParentItem })
+                .ToList();
+
+            foreach (var parent in parents)
+            {
+                addParentMenu(ref rawUserMenu, parent.Key.ParentItem, parent.Key.idCompany, parent.Key.CompanyName);
+            }
 
             UserMenuResponse menu = new UserMenuResponse();
-            //List<UserMenuCompany>
-            var companies = rawMenu.GroupBy(
+            var companies = rawUserMenu.GroupBy(
                 c => c.idCompany,
                 (key) => new { idCompany = key }
-                );
+            );
             foreach (var company in companies)
             {
                 UserMenuCompany c = new UserMenuCompany();
                 c.idCompany = company.Key;
-
-                var areas = rawMenu.Where(m => m.idCompany == c.idCompany).GroupBy(
-                    c => new { c.idArea, c.Area },
-                    (key) => new { idArea = key.idArea, Area = key.Area, IconType=key.AreaIconType, Icon=key.AreaIcon }
-                    );
-                foreach (var area in areas)
+                foreach (UserMenu item in rawUserMenu
+                    .Where(m => m.ParentItem == null && m.idCompany == c.idCompany)
+                    .OrderBy(m => m.Position).ToList())
                 {
-                    UserMenuArea a = new UserMenuArea();
-                    a.idArea = area.Key.idArea;
-                    a.Area = area.Key.Area;
-                    a.IconType = area.ElementAt(0).IconType;
-                    a.Icon = area.ElementAt(0).Icon;
-
-                    var panels = rawMenu.Where(m => m.idCompany == c.idCompany && m.idArea == a.idArea).GroupBy(
-                        c => new { c.idPanel, c.Panel },
-                        (key) => new { idPanel = key.idPanel, Panel = key.Panel, IconType = key.PanelIconType, Icon = key.PanelIcon }
-                        );
-                    foreach (var panel in panels)
-                    {
-                        UserMenuPanel p = new UserMenuPanel();
-                        p.idPanel = panel.Key.idPanel;
-                        p.Panel = panel.Key.Panel;
-                        p.IconType = panel.ElementAt(0).IconType;
-                        p.Icon = panel.ElementAt(0).Icon;
-
-                        var items = rawMenu
-                            .Where(m => m.idCompany == c.idCompany && m.idArea == a.idArea && m.idPanel == p.idPanel);
-                        foreach (UserMenu item in items)
-                        {
-                            UserMenuItem i = new UserMenuItem();
-                            i.idItem = item.idItem;
-                            i.Caption = item.Caption;
-                            i.DescMenuItem = item.DescMenuItem;
-                            i.IconType = item.IconType;
-                            i.Icon = item.Icon;
-                            i.idGroup = item.idGroup;
-                            i.Position = item.Position;
-                            i.Form = item.Form;
-                            i.DetailsForm = item.DetailsForm;
-                            i.CustomForm = item.CustomForm;
-                            i.GridWait4Param = item.GridWait4Param;
-                            i.Parameters = item.Parameters;
-                            i.flAdd = item.flAdd;
-                            i.flEdit = item.flEdit;
-                            i.flDel = item.flDel;
-                            i.flDetail = item.flDetail;
-                            i.flList = item.flList;
-                            i.flExcel = item.flExcel;
-
-                            p.Menu.Add(i);
-                        }
-
-                        a.Panels.Add(p);
-                    }
-                    c.Areas.Add(a);
+                    UserMenuItem i = createMenuItem(item);
+                    c.Menu.Add(i);
+                    AddMenuItems(ref i, rawUserMenu, c.idCompany);
+                }
+                if (c.Menu.Count == 1)
+                {
+                    List<UserMenuItem> level2 = c.Menu[0].Items;
+                    c.Menu.RemoveAt(0);
+                    c.Menu.AddRange(level2);
                 }
                 menu.Companies.Add(c);
             }
+
+            ////List<UserMenuCompany>
+            //var companies = rawMenu.GroupBy(
+            //c => c.idCompany,
+            //(key) => new { idCompany = key }
+            //);
+            //foreach (var company in companies)
+            //{
+            //    UserMenuCompany c = new UserMenuCompany();
+            //    c.idCompany = company.Key;
+
+            //    var areas = rawMenu.Where(m => m.idCompany == c.idCompany).GroupBy(
+            //        c => new { c.idArea, c.Area },
+            //        (key) => new { idArea = key.idArea, Area = key.Area, IconType = key.AreaIconType, Icon = key.AreaIcon }
+            //        );
+            //    foreach (var area in areas)
+            //    {
+            //        UserMenuArea a = new UserMenuArea();
+            //        a.idArea = area.Key.idArea;
+            //        a.Area = area.Key.Area;
+            //        a.IconType = area.ElementAt(0).IconType;
+            //        a.Icon = area.ElementAt(0).Icon;
+
+            //        var panels = rawMenu.Where(m => m.idCompany == c.idCompany && m.idArea == a.idArea).GroupBy(
+            //            c => new { c.idPanel, c.Panel },
+            //            (key) => new { idPanel = key.idPanel, Panel = key.Panel, IconType = key.PanelIconType, Icon = key.PanelIcon }
+            //            );
+            //        foreach (var panel in panels)
+            //        {
+            //            UserMenuPanel p = new UserMenuPanel();
+            //            p.idPanel = panel.Key.idPanel;
+            //            p.Panel = panel.Key.Panel;
+            //            p.IconType = panel.ElementAt(0).IconType;
+            //            p.Icon = panel.ElementAt(0).Icon;
+
+            //            var items = rawMenu
+            //                .Where(m => m.idCompany == c.idCompany && m.idArea == a.idArea && m.idPanel == p.idPanel);
+            //            foreach (UserMenu item in items)
+            //            {
+            //                UserMenuItem i = new UserMenuItem();
+            //                i.idItem = item.idItem;
+            //                i.Caption = item.Caption;
+            //                i.DescMenuItem = item.DescMenuItem;
+            //                i.IconType = item.IconType;
+            //                i.Icon = item.Icon;
+            //                i.idGroup = item.idGroup;
+            //                i.Position = item.Position;
+            //                i.Form = item.Form;
+            //                i.DetailsForm = item.DetailsForm;
+            //                i.CustomForm = item.CustomForm;
+            //                i.GridWait4Param = item.GridWait4Param;
+            //                i.Parameters = item.Parameters;
+            //                i.flAdd = item.flAdd;
+            //                i.flEdit = item.flEdit;
+            //                i.flDel = item.flDel;
+            //                i.flDetail = item.flDetail;
+            //                i.flList = item.flList;
+            //                i.flExcel = item.flExcel;
+
+            //                p.Menu.Add(i);
+            //            }
+
+            //            a.Panels.Add(p);
+            //        }
+            //        c.Areas.Add(a);
+            //    }
+            //    menu.Companies.Add(c);
+            //}
             return menu;
+        }
+
+        private void addParentMenu(ref IList<UserMenu> rawUserMenu, int? parentItem, int idCompany, string CompanyName)
+        {
+            if (!rawUserMenu.Any(m => m.idItem == parentItem))
+            {
+                BasicMenu rawMenu = _context.RawMenu.FirstOrDefault(m => m.idItem == parentItem);
+                UserMenu newMenu = new UserMenu(rawMenu);
+                newMenu.idUtente = rawUserMenu[0].idUtente;
+                newMenu.UserName = rawUserMenu[0].UserName;
+                newMenu.idCompany = idCompany;
+                newMenu.CompanyName = CompanyName;
+                rawUserMenu.Add(newMenu);
+                if (rawMenu.ParentItem != null)
+                    addParentMenu(ref rawUserMenu, rawMenu.ParentItem, idCompany, CompanyName);
+            }
+        }
+
+        private void AddMenuItems(ref UserMenuItem menu, IList<UserMenu> allItems, int idCompany)
+        {
+            int itemId = menu.idItem;
+            IList<UserMenu> subItems = allItems
+                .Where(m => m.ParentItem == itemId && m.idCompany == idCompany)
+                .OrderBy(m => m.Position).ToList()
+                .ToList();
+            foreach (UserMenu item in subItems)
+            {
+                UserMenuItem i = createMenuItem(item);
+                menu.Items.Add(i);
+                if (item.isContainer)
+                    AddMenuItems(ref i, allItems, idCompany);
+            }
+        }
+
+        private UserMenuItem createMenuItem(UserMenu item)
+        {
+            UserMenuItem i = new UserMenuItem();
+            i.idItem = item.idItem;
+            i.Caption = item.Caption;
+            i.DescMenuItem = item.DescMenuItem;
+            i.IconType = item.IconType;
+            i.Icon = item.Icon;
+            i.idGroup = item.idGroup;
+            i.Position = item.Position;
+            i.isContainer = item.isContainer;
+            i.Form = item.Form;
+            i.DetailsForm = item.DetailsForm;
+            i.CustomForm = item.CustomForm;
+            i.GridWait4Param = item.GridWait4Param;
+            i.Parameters = item.Parameters;
+            i.flAdd = item.flAdd;
+            i.flEdit = item.flEdit;
+            i.flDel = item.flDel;
+            i.flDetail = item.flDetail;
+            i.flList = item.flList;
+            i.flExcel = item.flExcel;
+
+            return i;
         }
 
         // helper methods

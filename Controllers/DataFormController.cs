@@ -1,11 +1,16 @@
-﻿using BecaWebService.Models.Communications;
+﻿using BecaWebService.Helpers;
+using BecaWebService.Models.Communications;
 using Contracts;
 using Entities.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -30,7 +35,32 @@ namespace BecaWebService.Controllers
         }
 
         [HttpPost()]
-        public IActionResult Post([FromBody] dataFormPostParameter data)
+        //[DeflateCompression]
+        public async Task<IActionResult> Post([FromBody] dataFormPostParameter data, System.Threading.CancellationToken cancel)
+        {
+            try
+            {
+                string form = data.idView == null ? data.Form : getFormByView(data.idView.Value);
+                if ((form ?? "") == "")
+                    return BadRequest("La View non ha form associate");
+
+                List<BecaParameter> parameters = data.Parameters.parameters;
+                IEnumerable<object> res = _genericService.GetDataByForm(form, parameters);
+
+                //return Ok(res);
+                return await getContent(res, cancel);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            //string Form = data["Form"].ToString();
+            //List<BecaParameter> parameters = data["Parameters"].ToObject<BecaParameters>().parameters.ToList<BecaParameter>();
+            //IEnumerable<object> res = _genericService.GetDataByView(Form, parameters);
+        }
+
+        [HttpPost("DataFormNoZip")]
+        public IActionResult DataFormNoZip([FromBody] dataFormPostParameter data, System.Threading.CancellationToken cancel)
         {
             try
             {
@@ -53,7 +83,7 @@ namespace BecaWebService.Controllers
         }
 
         [HttpPost("DataField")]
-        public IActionResult DataField([FromBody] dataFormPostParameter data)
+        public async Task<IActionResult> DataField([FromBody] dataFormPostParameter data, System.Threading.CancellationToken cancel)
         {
             try
             {
@@ -68,7 +98,8 @@ namespace BecaWebService.Controllers
                 //string FormField = data["FormField"].ToString();
                 //List<BecaParameter> parameters = data["Parameters"].ToObject<BecaParameters>().parameters.ToList<BecaParameter>();
                 //IEnumerable<object> res = _genericService.GetDataByFormField(Form, FormField, parameters);
-                return Ok(res);
+                //return Ok(res);
+                return await getContent(res, cancel);
             }
             catch (Exception ex)
             {
@@ -177,7 +208,7 @@ namespace BecaWebService.Controllers
 
                 object recordNew = _genericService.CreateObjectFromJObject<object>(form, data.newData);
 
-                GenericResponse result = await _genericService.DeleteDataByForm(form, recordNew );
+                GenericResponse result = await _genericService.DeleteDataByForm(form, recordNew);
                 if (!result.Success)
                     return BadRequest(result.Message);
 
@@ -208,6 +239,43 @@ namespace BecaWebService.Controllers
             object res = await _genericService.ExecCommand(dbName, procName, parameters);
             return Ok(res);
         }
+
+        private async Task<IActionResult> getContent(IEnumerable<object> res, System.Threading.CancellationToken cancel)
+        {
+            DefaultContractResolver contractResolver = new DefaultContractResolver
+            {
+                NamingStrategy = new Extensions.ServiceExtensions.LowerCamelCaseNamingStrategy()
+                {
+                    OverrideSpecifiedNames = false
+                }
+            };
+
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(res, new Newtonsoft.Json.JsonSerializerSettings
+            {
+                ContractResolver = contractResolver,
+                Formatting = Newtonsoft.Json.Formatting.Indented
+            });
+            //var json = System.Text.Json.JsonSerializer.Serialize(res);
+            if (!string.IsNullOrEmpty(Request.Headers["Accept-Encoding"]))
+            {
+                var encodings = Request.Headers["Accept-Encoding"].ToString().Split(',', StringSplitOptions.TrimEntries);
+                if (Array.IndexOf(encodings, "gzip") > -1)
+                {
+                    Response.Headers.Append("Content-Encoding", "gzip");
+                    var compressedBytes = await Compressor.GZipCompressBytesAsync(System.Text.Encoding.UTF8.GetBytes(json), cancel);
+                    return File(compressedBytes, "application/json");
+                }
+                if (Array.IndexOf(encodings, "br") > -1)
+                {
+                    Response.Headers.Append("Content-Encoding", "br");
+                    var compressedBytes = await Compressor.BrotliCompressBytesAsync(System.Text.Encoding.UTF8.GetBytes(json), cancel);
+                    return File(compressedBytes, "application/json");
+                }
+            }
+            Response.ContentType = "application/json"; // ADD THE CONTENT TYPE
+            return Content(json); // return non-compressed data
+
+        }
     }
 
     public class dataFormPostParameter
@@ -219,5 +287,31 @@ namespace BecaWebService.Controllers
         public Boolean? force { get; set; }
         public JObject? newData { get; set; }
         public JObject? originalData { get; set; }
+    }
+
+    internal class Compressor
+    {
+        public static async Task<byte[]> BrotliCompressBytesAsync(byte[] bytes, System.Threading.CancellationToken cancel)
+        {
+            using (var outputStream = new MemoryStream())
+            {
+                using (var compressionStream = new BrotliStream(outputStream, CompressionLevel.Optimal))
+                {
+                    await compressionStream.WriteAsync(bytes, 0, bytes.Length, cancel);
+                }
+                return outputStream.ToArray();
+            }
+        }
+        public static async Task<byte[]> GZipCompressBytesAsync(byte[] bytes, System.Threading.CancellationToken cancel)
+        {
+            using (var outputStream = new MemoryStream())
+            {
+                using (var compressionStream = new GZipStream(outputStream, CompressionLevel.Optimal))
+                {
+                    await compressionStream.WriteAsync(bytes, 0, bytes.Length, cancel);
+                }
+                return outputStream.ToArray();
+            }
+        }
     }
 }

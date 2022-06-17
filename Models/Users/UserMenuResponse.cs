@@ -13,9 +13,11 @@ namespace BecaWebService.Models.Users
 
     public class UserMenuCompany
     {
-        public UserMenuCompany() =>  Areas = new List<UserMenuArea>();
+        public UserMenuCompany() => Menu = new List<UserMenuItem>();
+        //public UserMenuCompany() =>  Areas = new List<UserMenuArea>();
         public int idCompany { get; set; }
-        public List<UserMenuArea> Areas { get; set; }
+        public List<UserMenuItem> Menu { get; set; }
+        //public List<UserMenuArea> Areas { get; set; }
 
     }
 
@@ -41,13 +43,17 @@ namespace BecaWebService.Models.Users
 
     public class UserMenuItem
     {
+        public UserMenuItem() => Items = new List<UserMenuItem>();
+
         public int idItem { get; set; }
+        public bool isContainer { get; set; }
         public string Caption { get; set; }
         public string DescMenuItem { get; set; }
         public string? IconType { get; set; }
         public string? Icon { get; set; }
         public int idGroup { get; set; }
         public int Position { get; set; }
+        public List<UserMenuItem> Items { get; set; }
         public string? Form { get; set; }
         public string? DetailsForm { get; set; }
         public string? CustomForm { get; set; }
