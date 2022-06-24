@@ -22,14 +22,14 @@ namespace Entities.Models
         public bool ChartHasDetail { get; set; }
         public bool IsChartFromApi { get; set; }
         public bool isPanelsFromApi { get; set; }
-        public short viewAxisXformula { get; set; }
-        public string viewAxisXData { get; set; }
-        public string viewAxisXFilters { get; set; }
+        public short? viewAxisXformula { get; set; }
+        public string? viewAxisXData { get; set; }
+        public string? viewAxisXFilters { get; set; }
         public string? viewAxisXActions { get; set; }
         public string? viewAxisXZoomIf { get; set; }
         public string? viewAxisXZoomTo { get; set; }
         public short? viewAxisXStep { get; set; }
-        public string HttpGetUrl { get; set; }
+        public string? HttpGetUrl { get; set; }
 
         public virtual BecaViewTypes idBecaViewTypeNavigation { get; set; }
         public virtual ICollection<BecaViewData> BecaViewData { get; set; }
