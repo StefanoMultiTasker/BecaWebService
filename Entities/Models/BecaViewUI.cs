@@ -27,8 +27,8 @@ namespace Entities.Models
         public int col { get; set; }
         public int subRow { get; set; }
         public int subCol { get; set; }
-        public string ColSize { get; set; }
-        public string SubColSize { get; set; }
+        public string? ColSize { get; set; }
+        public string? SubColSize { get; set; }
         //public bool? disabled { get; set; }
         //public bool? Readonly { get; set; }
         //public bool? required { get; set; }

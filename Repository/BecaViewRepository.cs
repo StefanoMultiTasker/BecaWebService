@@ -103,8 +103,10 @@ namespace Repository
                             .Where(obj => obj.idBecaView == idView)
                             .OrderBy(obj => obj.Row)
                             .ThenBy(obj => obj.Col)
+                            .ThenBy(obj => obj.Col_Order)
                             .ThenBy(obj => obj.SubRow)
                             .ThenBy(obj => obj.SubCol)
+                            .ThenBy(obj => obj.SubCol_Order)
                             .ToList();
                     UIform viewFilterUI = this.CreateFilterUI(this._mapper.Map<List<BecaViewFilterUI>, List<BecaViewUI>>(filterUI));
                     return viewFilterUI;
@@ -113,8 +115,10 @@ namespace Repository
                             .Where(obj => obj.idBecaView == idView)
                             .OrderBy(obj => obj.Row)
                             .ThenBy(obj => obj.Col)
+                            .ThenBy(obj => obj.Col_Order)
                             .ThenBy(obj => obj.SubRow)
                             .ThenBy(obj => obj.SubCol)
+                            .ThenBy(obj => obj.SubCol_Order)
                             .ToList();
                     UIform viewDetailUI = this.CreateFilterUI(this._mapper.Map<List<BecaViewDetailUI>, List<BecaViewUI>>(detailUI));
                     return viewDetailUI;
