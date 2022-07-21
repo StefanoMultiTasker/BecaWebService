@@ -54,7 +54,7 @@ namespace Entities.Contexts
 
     public static class DbdatiContextExtension
     {
-        public static List<T> ExecuteQuery<T>(this DbDatiContext db, string formName, string query, params object[] parameters) where T : class, new()
+        public static List<T> ExecuteQuery<T>(this DbDatiContext db, string formName, string query, bool hasChildren = false, params object[] parameters) where T : class, new()
         {
             using (var command = db.Database.GetDbConnection().CreateCommand())
             {
@@ -79,8 +79,8 @@ namespace Entities.Contexts
                     var lstColumns = new T().GetType().GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).ToList();
                     if (lstColumns.Count() == 0)
                     {
-                        Type generatedType = db._formTool.GetFormCfg(formName, reader);
-                        PropertyInfo[] props = generatedType.GetProperties();
+                        Type generatedType = db._formTool.GetFormCfg(formName, reader,false, hasChildren);
+                        PropertyInfo[] props = generatedType.GetProperties().Where(p=>p.Name!="__children").ToArray();
                         while (reader.Read())
                         {
                             var generatedObject = Activator.CreateInstance(generatedType);
@@ -149,19 +149,18 @@ namespace Entities.Contexts
                     var lstColumns = new T().GetType().GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).ToList();
                     if (lstColumns.Count() == 0)
                     {
-                        Type generatedType = db._formTool.GetFormCfg(formName, reader);
-                        var generatedObject = Activator.CreateInstance(generatedType);
                         string identityName = "";
-                        foreach (DbColumn col in reader.GetColumnSchema())
+                        DbColumn idntityCol = reader.GetColumnSchema().FirstOrDefault(c => c.IsAutoIncrement == true);
+                        if(idntityCol != null) identityName = idntityCol.ColumnName;
+                        
+                        Type generatedType = db._formTool.GetFormCfg(formName, reader, identityName!="");
+                        var generatedObject = Activator.CreateInstance(generatedType);
+                        
+                        if(identityName!="")
                         {
-                            if ((bool)col.IsAutoIncrement)
-                            {
-                                identityName = col.ColumnName;
-                                break;
-                            }
+                            MethodInfo method = generatedObject.GetType().GetMethod("set_identityName");
+                            method.Invoke(generatedObject, new object[] { identityName });
                         }
-                        MethodInfo method = generatedObject.GetType().GetMethod("set_identityName");
-                        method.Invoke(generatedObject, new object[] { identityName });
                         return generatedObject;
                     }
                     else
@@ -224,7 +223,7 @@ namespace Entities.Contexts
             List<object> pars = new List<object>();
             pars.Add(name);
             string commandText = $"SELECT PARAMETER_NAME, DATA_TYPE FROM information_schema.parameters WHERE specific_name = '{name}'";
-            List<object> names = ExecuteQuery<object>(db, "", commandText, pars.ToArray());
+            List<object> names = ExecuteQuery<object>(db, "", commandText, false, pars.ToArray());
             if (name == null || names.Count == 0) return new List<string>();
             return names.Select(n => n.GetPropertyValue("PARAMETER_NAME").ToString()).ToList();
         }

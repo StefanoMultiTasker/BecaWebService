@@ -99,15 +99,15 @@ namespace Entities.Models
         public bool LoadInGrid { get; set; }
         public bool LoadInDetails { get; set; }
         public int DefaultRows { get; set; }
-        public string ComboAddSql { get; set; }
-        public string ComboAddSql1 { get; set; }
-        public string ComboAddSql2 { get; set; }
-        public string ComboAddSp { get; set; }
-        public string ComboAddSp1 { get; set; }
-        public string ComboAddSp2 { get; set; }
-        public string ChildAddOk { get; set; }
-        public string ChildAddErr { get; set; }
-        public string ChildAddSaveBefore { get; set; }
+        public string? ComboAddSql { get; set; }
+        public string? ComboAddSql1 { get; set; }
+        public string? ComboAddSql2 { get; set; }
+        public string? ComboAddSp { get; set; }
+        public string? ComboAddSp1 { get; set; }
+        public string? ComboAddSp2 { get; set; }
+        public string? ChildAddOk { get; set; }
+        public string? ChildAddErr { get; set; }
+        public string? ChildAddSaveBefore { get; set; }
     }
 
     public class BecaFormField

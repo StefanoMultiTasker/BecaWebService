@@ -19,7 +19,7 @@ namespace Entities
             _cache = memoryCache.Cache;
         }
 
-        public Type GetFormCfg(string formName, DbDataReader result)
+        public Type GetFormCfg(string formName, DbDataReader result, bool hasIdentity = true, bool hasChildren=false)
         {
             Type generatedType = null;
             //if (formName == "" || !_cache.TryGetValue("FormCfg_" + formName, out generatedType))
@@ -56,22 +56,46 @@ namespace Entities
                 //DynamicMethod idn = new DynamicMethod("identityName", typeof(string), null, module);
                 //ILGenerator ilg = idn.GetILGenerator();
 
-                var tFieldType2 = typeof(string);
-                var fieldBuilder2 = typeBuilder.DefineField("_identityName", tFieldType2, FieldAttributes.Private);
-                fieldBuilder2.SetConstant(identityName);
-                var GetSetAttr2 = MethodAttributes.Public | MethodAttributes.HideBySig;
-                var currGetPropMethodBuilder2 = typeBuilder.DefineMethod("identityName", GetSetAttr2, typeof(string), Type.EmptyTypes);
-                var currGetIL2 = currGetPropMethodBuilder2.GetILGenerator();
-                currGetIL2.Emit(OpCodes.Ldarg_0);
-                currGetIL2.Emit(OpCodes.Ldfld, fieldBuilder2);
-                currGetIL2.Emit(OpCodes.Ret);
-                var currSetPropMethodBuilder2 = typeBuilder.DefineMethod("set_identityName", GetSetAttr2, null, new Type[] { typeof(string) });
-                var currSetIL2 = currSetPropMethodBuilder2.GetILGenerator();
-                currSetIL2.Emit(OpCodes.Ldarg_0);
-                currSetIL2.Emit(OpCodes.Ldarg_1);
-                currSetIL2.Emit(OpCodes.Stfld, fieldBuilder2);
-                currSetIL2.Emit(OpCodes.Ret);
+                if (hasIdentity)
+                {
+                    var tFieldType2 = typeof(string);
+                    var fieldBuilder2 = typeBuilder.DefineField("_identityName", tFieldType2, FieldAttributes.Private);
+                    fieldBuilder2.SetConstant(identityName);
+                    var GetSetAttr2 = MethodAttributes.Public | MethodAttributes.HideBySig;
+                    var currGetPropMethodBuilder2 = typeBuilder.DefineMethod("identityName", GetSetAttr2, typeof(string), Type.EmptyTypes);
+                    var currGetIL2 = currGetPropMethodBuilder2.GetILGenerator();
+                    currGetIL2.Emit(OpCodes.Ldarg_0);
+                    currGetIL2.Emit(OpCodes.Ldfld, fieldBuilder2);
+                    currGetIL2.Emit(OpCodes.Ret);
+                    var currSetPropMethodBuilder2 = typeBuilder.DefineMethod("set_identityName", GetSetAttr2, null, new Type[] { typeof(string) });
+                    var currSetIL2 = currSetPropMethodBuilder2.GetILGenerator();
+                    currSetIL2.Emit(OpCodes.Ldarg_0);
+                    currSetIL2.Emit(OpCodes.Ldarg_1);
+                    currSetIL2.Emit(OpCodes.Stfld, fieldBuilder2);
+                    currSetIL2.Emit(OpCodes.Ret);
+                }
 
+                if (hasChildren)
+                {
+                    List<object> children = new List<object>();
+                    var tFieldType3 = GetNullableType(children.GetType());
+                    var fieldBuilder3 = typeBuilder.DefineField("_children" , tFieldType3, FieldAttributes.Private);
+                    var propertyBuilder = typeBuilder.DefineProperty("__children", PropertyAttributes.None, tFieldType3, new Type[] { tFieldType3 });
+                    var GetSetAttr3 = MethodAttributes.Public | MethodAttributes.HideBySig;
+                    var currGetPropMethodBuilder3 = typeBuilder.DefineMethod("get_value", GetSetAttr3, tFieldType3, Type.EmptyTypes);
+                    var currGetIL3 = currGetPropMethodBuilder3.GetILGenerator();
+                    currGetIL3.Emit(OpCodes.Ldarg_0);
+                    currGetIL3.Emit(OpCodes.Ldfld, fieldBuilder3);
+                    currGetIL3.Emit(OpCodes.Ret);
+                    var currSetPropMethodBuilder3 = typeBuilder.DefineMethod("set_value", GetSetAttr3, null, new Type[] { tFieldType3 });
+                    var currSetIL3 = currSetPropMethodBuilder3.GetILGenerator();
+                    currSetIL3.Emit(OpCodes.Ldarg_0);
+                    currSetIL3.Emit(OpCodes.Ldarg_1);
+                    currSetIL3.Emit(OpCodes.Stfld, fieldBuilder3);
+                    currSetIL3.Emit(OpCodes.Ret);
+                    propertyBuilder.SetGetMethod(currGetPropMethodBuilder3);
+                    propertyBuilder.SetSetMethod(currSetPropMethodBuilder3);
+                }
 
                 generatedType = typeBuilder.CreateType();
                 //if(formName != "") _cache.Set("FormCfg_" + formName, generatedType);

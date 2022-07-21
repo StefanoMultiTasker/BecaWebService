@@ -54,7 +54,7 @@ namespace Repository
             {
                 if ((form.AddProcedureName ?? "") != "" && !form.AddProcedureName.Contains("#After"))
                 {
-                    int? resSPBefore = await UpdateDataByProcedure<T>(form.TableNameDB,form.AddProcedureName, record);
+                    int? resSPBefore = await UpdateDataByProcedure<T>(form.TableNameDB, form.AddProcedureName, record);
                     if (!form.AddProcedureName.Contains("#Before"))
                     {
                         List<T> spRes = this.GetDataByForm<T>(Form, record);
@@ -272,16 +272,102 @@ namespace Repository
                 foreach (BecaFormField field in fields)
                 {
                     sqlOrd += (sqlOrd.Length == 0 ? " Order By " : ", ") +
-                        (field.OrderOnField == null ? field.Name :  field.OrderOnField) +
+                        (field.OrderOnField == null ? field.Name : field.OrderOnField) +
                         (field.OrderSequence < 0 ? " DESC" : "");
                 }
                 sql += sqlOrd;
-                return getContext(db).ExecuteQuery<T>(Form, sql, pars.ToArray());
+
+                List<BecaFormLevels> subForms = _context.BecaFormLevels
+                    .Where(f => f.Form == Form)
+                    .ToList();
+
+                List<T> res = getContext(db).ExecuteQuery<T>(Form, sql, subForms.Count>0, pars.ToArray());
+
+                foreach (BecaFormLevels level in subForms)
+                {
+                    BecaForm childForm = _context.BecaForm
+                        .FirstOrDefault(f => f.Form == level.ChildForm);
+
+                    string parent = (form.ViewName == null || form.ViewName.ToString() == "" ? form.TableName : form.ViewName);
+                    string child = (childForm.ViewName == null || childForm.ViewName.ToString() == "" ? childForm.TableName : childForm.ViewName);
+
+                    sql = "Select " +
+                        string.Join(",", level.RelationColumn.Split(",").Select(n => parent + "." + n.Trim())) +
+                        " From " + parent;
+                    object objRelation = getContext(db).GetQueryDef<object>("", sql + " Where 0 = 1");
+                    
+                    sql = "Select * From (" +
+                        "Select " + child + ".*" +
+                        " From " + parent +
+                        " Inner Join " + child +
+                        " On " + string.Join(" And ", level.RelationColumn.Split(",").Select(n => parent + "." + n.Trim() + " = " + child + "." + n.Trim())) +
+                        ") T";
+                    List<object> children = this.GetDataBySQL(db, sql, parameters);
+
+                    var groupJoin2 = res.GroupJoin(children,  //inner sequence
+                               p => this.getRelationObjectString(level.RelationColumn, p), //outerKeySelector 
+                               c => this.getRelationObjectString(level.RelationColumn, c),     //innerKeySelector
+                               (oParent, oChildren) =>  // resultSelector 
+                               {
+                                   List<object> children2 = oChildren.ToList();
+                                   //List<object> children2 = new List<object>();
+                                   //foreach (var oChild in oChildren)
+                                   //{
+                                   //    children2.Add(oChild);
+                                   //}
+                                   List<object> curChildren = oParent.GetPropertyValueArray("__children");
+                                   if (curChildren == null) curChildren = new List<object>();
+                                   if (curChildren.Count < level.SubLevel) curChildren.Add(new List<object>());
+
+                                   curChildren[level.SubLevel - 1] = children2;
+
+                                   oParent.SetPropertyValuearray("__children", curChildren);
+                                   return oParent;
+                               });
+                    //var groupJoin = res.GroupJoin(children,  //inner sequence
+                    //            p => new {FFCL=p.GetPropertyValue("FFCL").ToString(),CODC= p.GetPropertyValue("CODC").ToString()}, //outerKeySelector 
+                    //            c => new { FFCL = c.GetPropertyValue("FFCL").ToString(), CODC = c.GetPropertyValue("CODC").ToString() },     //innerKeySelector
+                    //            (oParent, oChildren) => new // resultSelector 
+                    //            {
+                    //                data = oParent,
+                    //                _children = oChildren
+                    //            });
+                    //string ttt = "";
+                    //foreach (var item in groupJoin)
+                    //{
+                    //    string ss = "";
+                    //}
+                    //foreach (var item in groupJoin2) {
+                    //    string rr = "";
+                    //}
+                    res = groupJoin2.ToList();
+                    //List<T> res2 = (List<T>)groupJoin;
+                }
+
+                return res;
             }
             else
             {
                 return null;
             }
+        }
+
+        public string getRelationObjectString(string relation, object record)
+        {
+            string rel= string.Join("", relation.Split(",").Select(n => record.GetPropertyValue(n).ToString()));
+            return rel;
+        }
+
+        public object getRelationObject(object relation, object record)
+        {
+            Type tRel = relation.GetType();
+            object rel = Activator.CreateInstance(tRel);
+            foreach (var prop in rel.GetType().GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+            {
+                rel.SetPropertyValue(prop.Name, record.GetPropertyValue(prop.Name));
+                //rel.GetType().GetProperty(prop.Name).SetValue(rel, prop.GetValue(record));
+            }
+            return rel;
         }
 
         public List<T> GetDataByForm<T>(string Form, object record) where T : class, new()
@@ -435,7 +521,7 @@ namespace Repository
                 .Find(Form, field);
             //BecaFormFieldLevel formFieldCust = _context.BecaFormFieldLevel
             //    .Find(Form, field, null);
-            string ddl =   formField.DropDownList ;
+            string ddl = formField.DropDownList;
             string ddlPar = formField.Parameters;
             //string ddl = formFieldCust == null ? formField.DropDownList : formFieldCust.DropDownList;
             //string ddlPar = formFieldCust == null ? formField.Parametri : formFieldCust.Parametri;
@@ -512,7 +598,7 @@ namespace Repository
                     }
                 }
                 sql = sql + " " + sqlGroup + " " + sqlOrd;
-                return getContext(formField.DropDownListDB).ExecuteQuery<object>(Form + '_' + field, sql, pars.ToArray());
+                return getContext(formField.DropDownListDB).ExecuteQuery<object>(Form + '_' + field, sql,false, pars.ToArray());
             }
             else
             {
@@ -591,7 +677,7 @@ namespace Repository
                 }
             }
             sql = sql + " " + sqlGroup + " " + sqlOrd;
-            return getContext(dbName).ExecuteQuery<object>("", sql, pars.ToArray());
+            return getContext(dbName).ExecuteQuery<object>("", sql,false, pars.ToArray());
         }
 
         public IDictionary<string, object> GetDataDictBySQL(string dbName, string sql, List<BecaParameter> parameters)
@@ -703,7 +789,7 @@ namespace Repository
         {
             if (_databases.ContainsKey(dbName)) return _databases[dbName];
 
-            DbDatiContext db =  new DbDatiContext(_formTool, _activeCompany.Connections.FirstOrDefault(c => c.ConnectionName == dbName).ConnectionString);
+            DbDatiContext db = new DbDatiContext(_formTool, _activeCompany.Connections.FirstOrDefault(c => c.ConnectionName == dbName).ConnectionString);
             _databases.Add(dbName, db);
             return db;
         }

@@ -37,5 +37,27 @@ namespace ExtensionsLib
             //property.SetValue(@this, Convert.ChangeType(value, property.PropertyType));
             return true;
         }
+
+        public static List<object> GetPropertyValueArray<T>(this T @this, string propertyName) where T : class, new()
+        {
+            Type type = @this.GetType();
+            PropertyInfo property = type.GetProperty(propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+
+            return (List<object>)property.GetValue(@this, null);
+        }
+        public static object SetPropertyValuearray<T>(this T @this, string propertyName, List<object> value) where T : class, new()
+        {
+            Type type = @this.GetType();
+            PropertyInfo property = type.GetProperty(propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+
+            if (property != null)
+            {
+                Type t = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+                object safeValue = (value == null) ? null : Convert.ChangeType(value, t);
+                property.SetValue(@this, safeValue, null);
+            }
+            //property.SetValue(@this, Convert.ChangeType(value, property.PropertyType));
+            return true;
+        }
     }
 }
