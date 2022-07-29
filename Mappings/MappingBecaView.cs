@@ -31,13 +31,15 @@ namespace BecaWebService.Mappings
                             )
                         )
                 .ForMember(dest => dest.Field1,
-                        opts => opts.MapFrom((src, dest) => {
+                        opts => opts.MapFrom((src, dest) =>
+                        {
                             string[] f = (src.FilterReference ?? "").Split(",");
                             return f.Length > 0 ? f[0].ToLowerToCamelCase() : null;
                         })
                         )
                 .ForMember(dest => dest.Field2,
-                        opts => opts.MapFrom((src, dest) => {
+                        opts => opts.MapFrom((src, dest) =>
+                        {
                             string[] f = (src.FilterReference ?? "").Split(",");
                             return f.Length > 1 ? f[1].ToLowerToCamelCase() : null;
                         })
@@ -59,16 +61,18 @@ namespace BecaWebService.Mappings
                             )
                         )
                 .ForMember(dest => dest.Field1,
-                        opts => opts.MapFrom((src, dest) => {
+                        opts => opts.MapFrom((src, dest) =>
+                        {
                             string[] f = (src.FilterReference ?? "").Split(",");
-                            return f.Length > 0 ?  f[0] : null;
-                            })
+                            return f.Length > 0 ? f[0] : null;
+                        })
                         )
                 .ForMember(dest => dest.Field2,
-                        opts => opts.MapFrom((src, dest) => {
+                        opts => opts.MapFrom((src, dest) =>
+                        {
                             string[] f = (src.FilterReference ?? "").Split(",");
                             return f.Length > 1 ? f[1] : null;
-                            })
+                        })
                         );
             CreateMap<BecaFormulaDataFilters, dtoBecaFilter>()
                 .ForMember(dest => dest.FieldsUse,
@@ -87,13 +91,15 @@ namespace BecaWebService.Mappings
                             )
                         )
                 .ForMember(dest => dest.Field1,
-                        opts => opts.MapFrom((src, dest) => {
+                        opts => opts.MapFrom((src, dest) =>
+                        {
                             string[] f = (src.FilterReference ?? "").Split(",");
                             return f.Length > 0 ? f[0] : null;
                         })
                         )
                 .ForMember(dest => dest.Field2,
-                        opts => opts.MapFrom((src, dest) => {
+                        opts => opts.MapFrom((src, dest) =>
+                        {
                             string[] f = (src.FilterReference ?? "").Split(",");
                             return f.Length > 1 ? f[1] : null;
                         })
@@ -162,6 +168,36 @@ namespace BecaWebService.Mappings
                             src => src.idDataType
                             )
                         );
+
+            CreateMap<BecaViewChildData, dtoBecaData>()
+                .ForMember(dest => dest.Name,
+                        opts => opts.MapFrom(
+                            src => src.field.ToLowerToCamelCase()//.ToCamelCase()
+                            )
+                        )
+                .ForMember(dest => dest.DataType,
+                        opts => opts.MapFrom(
+                            src => src.idDataType
+                            )
+                        );
+
+            CreateMap<BecaViewChild, dtoBecaViewChild>()
+                .ForMember(dest => dest.form,
+                        opts => opts.MapFrom(
+                            src => src.childForm
+                            )
+                        )
+                .ForMember(dest => dest.Caption,
+                        opts => opts.MapFrom(
+                            src => src.childCaption
+                            )
+                        )
+                .ForPath(dest => dest.ChildFields,
+                        opts => opts.MapFrom(
+                            src => src.BecaFormChildData
+                            )
+                        )
+                ;
 
             CreateMap<BecaView, dtoBecaView>()
                 .ForMember(dest => dest.idView,
@@ -240,15 +276,21 @@ namespace BecaWebService.Mappings
                             )
                         )
                 .ForPath(dest => dest.ViewDefinition.viewFields,
-                opts => opts.MapFrom(
-                    src => src.BecaViewData
-                    )
-                )
+                        opts => opts.MapFrom(
+                            src => src.BecaViewData
+                            )
+                        )
                 .ForPath(dest => dest.ViewDefinition.viewPanels,
-                opts => opts.MapFrom(
-                    src => src.BecaViewPanels
-                    )
-                );
+                        opts => opts.MapFrom(
+                            src => src.BecaViewPanels
+                            )
+                        )
+                .ForPath(dest=>dest.ViewDefinition.childrenForm,
+                        opts=>opts.MapFrom(
+                            src=>src.BecaViewChildren
+                            )
+                        )
+                ;
 
             CreateMap<BecaViewUI, BecaViewFilterUI>().ReverseMap();
             CreateMap<BecaViewUI, BecaViewDetailUI>().ReverseMap();

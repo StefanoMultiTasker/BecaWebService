@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
 namespace Entities.Models
@@ -11,6 +14,7 @@ namespace Entities.Models
             BecaViewFilterValues = new List<BecaViewFilterValues>();
             BecaViewFilters = new List<BecaViewFilters>();
             BecaViewPanels = new List<BecaViewPanels>();
+            BecaViewChildren = new List<BecaViewChild>();
         }
 
         public int idBecaView { get; set; }
@@ -36,6 +40,8 @@ namespace Entities.Models
         public virtual ICollection<BecaViewFilterValues> BecaViewFilterValues { get; set; }
         public virtual ICollection<BecaViewFilters> BecaViewFilters { get; set; }
         public virtual ICollection<BecaViewPanels> BecaViewPanels { get; set; }
+        [NotMapped]
+        public ICollection<BecaViewChild> BecaViewChildren { get; set; }
     }
 
     public partial class BecaViewData 
@@ -315,5 +321,37 @@ namespace Entities.Models
 
         public virtual ICollection<BecaFormulaData> BecaFormulaData { get; set; }
         public virtual ICollection<BecaViewPanels> BecaViewPanels { get; set; }
+    }
+
+    public partial class BecaViewChild
+    {
+        public int idBecaView { get; set; }
+        public string form { get; set; }
+        public string childForm { get; set; }
+        public int subLevel { get; set; }
+        public string childCaption { get; set; }
+        public ICollection<BecaViewChildData> BecaFormChildData { get; set; }
+
+        public BecaViewChild()
+        {
+            BecaFormChildData = new List<BecaViewChildData>();
+        }
+    }
+
+    //[Owned]
+    public partial class BecaViewChildData
+    {
+        //public virtual BecaViewChild idBecaViewChildNavigation { get; set; }
+        public string form { get; set; }
+        public string field { get; set; }
+        public short idDataType { get; set; }
+        public short? FormulaFooter { get; set; }
+        public string? Title { get; set; }
+        public string? Format { get; set; }
+        public bool isGridOptional { get; set; }
+        public bool isGridVisible { get; set; }
+        public short GridOrder { get; set; }
+        public string? GridHeatColor { get; set; }
+        public BecaViewChild containerForm { get; set; }
     }
 }

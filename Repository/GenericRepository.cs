@@ -291,6 +291,7 @@ namespace Repository
                     string parent = (form.ViewName == null || form.ViewName.ToString() == "" ? form.TableName : form.ViewName);
                     string child = (childForm.ViewName == null || childForm.ViewName.ToString() == "" ? childForm.TableName : childForm.ViewName);
 
+                    string sqlParent = sql;
                     sql = "Select " +
                         string.Join(",", level.RelationColumn.Split(",").Select(n => parent + "." + n.Trim())) +
                         " From " + parent;
@@ -298,11 +299,11 @@ namespace Repository
                     
                     sql = "Select * From (" +
                         "Select " + child + ".*" +
-                        " From " + parent +
+                        " From (" + sqlParent + ") Parent " +
                         " Inner Join " + child +
-                        " On " + string.Join(" And ", level.RelationColumn.Split(",").Select(n => parent + "." + n.Trim() + " = " + child + "." + n.Trim())) +
+                        " On " + string.Join(" And ", level.RelationColumn.Split(",").Select(n => "Parent." + n.Trim() + " = " + child + "." + n.Trim())) +
                         ") T";
-                    List<object> children = this.GetDataBySQL(db, sql, parameters);
+                    List<object> children = this.GetDataBySQL(db, sql, pars.ToArray());
 
                     var groupJoin2 = res.GroupJoin(children,  //inner sequence
                                p => this.getRelationObjectString(level.RelationColumn, p), //outerKeySelector 
@@ -678,6 +679,11 @@ namespace Repository
             }
             sql = sql + " " + sqlGroup + " " + sqlOrd;
             return getContext(dbName).ExecuteQuery<object>("", sql,false, pars.ToArray());
+        }
+
+        public List<object> GetDataBySQL(string dbName, string sql, object[] parameters)
+        {
+            return getContext(dbName).ExecuteQuery<object>("", sql, false, parameters);
         }
 
         public IDictionary<string, object> GetDataDictBySQL(string dbName, string sql, List<BecaParameter> parameters)

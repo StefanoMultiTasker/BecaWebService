@@ -45,9 +45,19 @@ namespace Repository
                         .Where(view => view.idBecaView == idView)
                         .ToList();
 
+            //List<BecaViewChild> children = from c in dbBecaContext.BecaViewChildren
+            //                               join d in dbBecaContext.BecaViewChildData
+            //                               on c.childForm equals d.form;
+
+            List<BecaViewChild> children = dbBecaContext.BecaViewChildren
+                        .Include(c => c.BecaFormChildData)
+                        .Where(view => view.idBecaView == idView)
+                        .ToList();
+
             view.BecaViewData = cols;
             view.BecaViewFilters = vFilters;
             view.BecaViewFilterValues = vFilterVals;
+            view.BecaViewChildren = children;
 
             List<BecaViewPanels> panels = dbBecaContext.BecaViewPanels
                     .Where(panel => panel.idBecaView == idView)

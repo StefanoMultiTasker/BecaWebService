@@ -42,6 +42,8 @@ namespace Entities.Contexts
         public virtual DbSet<BecaAggregationTypes> BecaAggregationTypes { get; set; }
         public virtual DbSet<BecaViewFilterUI> BecaViewFilterUI { get; set; }
         public virtual DbSet<BecaViewDetailUI> BecaViewDetailUI { get; set; }
+        public virtual DbSet<BecaViewChild> BecaViewChildren { get; set; }
+        public virtual DbSet<BecaViewChildData> BecaViewChildData { get; set; }
 
         public DbSet<BecaViewForm> BecaViewForms { get; set; }
         public DbSet<BecaForm> BecaForm { get; set; }
@@ -77,7 +79,7 @@ namespace Entities.Contexts
                     a.Property<int>("idCompany")
                         //.ValueGeneratedOnAdd()
                         .HasColumnType("int");
-                        //.HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                    //.HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     a.Property<string>("ConnectionName")
                         .HasColumnType("string");
@@ -219,7 +221,7 @@ namespace Entities.Contexts
             modelBuilder.Entity<BasicMenu>(entity =>
             {
                 entity.ToView("MenuItems");
-                entity.HasKey(e =>  e.idItem );
+                entity.HasKey(e => e.idItem);
             });
 
             #endregion
@@ -362,6 +364,67 @@ namespace Entities.Contexts
                 entity.HasKey(e => new { e.idBecaView, e.Name });
 
             });
+            modelBuilder.Entity<BecaViewChild>(entity =>
+            {
+                entity.ToView("vBecaFormChild");
+                entity.HasKey(e => new { e.form, e.childForm });
+                entity.HasAlternateKey(p => p.childForm);
+                entity.HasMany<BecaViewChildData>(e => e.BecaFormChildData)
+                    .WithOne(x => x.containerForm)
+                    .HasPrincipalKey(x => x.childForm)
+                    .HasForeignKey(x => x.form);
+                //entity.OwnsMany(p => p.BecaFormChildData, a =>
+                //{
+                //    a.Property<string>("form")
+                //        .HasColumnType("varchar(50)");
+                //    //a.Property<string>("childForm")
+                //    //    .HasColumnType("varchar(50)");
+                //    a.Property<string>("field")
+                //        .HasColumnType("varchar(50)");
+
+                //    a.Property<short>("idDataType")
+                //        .HasColumnType("smallint");
+                //    a.Property<Nullable<short>>("FormulaFooter")
+                //        .HasColumnType("smallint");
+
+                //    a.Property<string>("Title")
+                //        .HasColumnType("varchar(100)");
+                //    a.Property<string>("Format")
+                //        .HasColumnType("varchar(50)");
+
+                //    a.Property<bool>("isGridOptional")
+                //        .HasColumnType("bit");
+                //    a.Property<bool>("isGridVisible")
+                //        .HasColumnType("bit");
+
+                //    a.Property<short>("GridOrder")
+                //        .HasColumnType("smallint");
+
+                //    a.Property<string>("GridHeatColor")
+                //        .HasColumnType("varchar(50)");
+
+                //    a.HasKey("form", "childForm");
+                //    a.WithOwner().HasForeignKey("childForm");
+                //    a.ToTable("vBecaFormChildFields");
+                //});
+            });
+            modelBuilder.Entity<BecaViewChildData>(entity =>
+            {
+                entity.ToView("vBecaFormChildFields");
+                entity.HasKey(e => new { e.form, e.field });
+                //entity.HasOne<BecaViewChild>(p => p.containerForm)
+                //    .WithMany(p => p.BecaFormChildData)
+                //    .HasForeignKey(p => p.form)
+                //    .HasPrincipalKey(p => p.childForm);
+                //entity.HasOne(p => p.containerForm)
+                //    .WithMany(b => b.BecaFormChildData)
+                //    .HasForeignKey(p => p.form)
+                //    .HasPrincipalKey(b => b.childForm);
+                //entity.HasOne(d => d.idBecaViewChildNavigation)
+                //    .WithMany(p => p.BecaFormChildData)
+                //    .HasForeignKey(d => d.form)
+                //    .HasConstraintName("FK_BecaViewData_BecaView");
+            });
 
             #endregion
 
@@ -373,7 +436,7 @@ namespace Entities.Contexts
             modelBuilder.Entity<BecaForm>().ToTable("vBecaForm");
             modelBuilder.Entity<BecaForm>().HasKey(p => new { p.Form });
 
-            modelBuilder.Entity<BecaFormLevels>().ToTable("_dbaFormsLevels");
+            modelBuilder.Entity<BecaFormLevels>().ToTable("BecaFormChild");
             modelBuilder.Entity<BecaFormLevels>().HasKey(p => new { p.Form, p.SubLevel });
 
             modelBuilder.Entity<BecaFormField>().ToTable("vBecaFormFields");
