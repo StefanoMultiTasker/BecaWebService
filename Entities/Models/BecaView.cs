@@ -330,6 +330,24 @@ namespace Entities.Models
         public string childForm { get; set; }
         public int subLevel { get; set; }
         public string childCaption { get; set; }
+        public bool LoadInGrid { get; set; }
+        public bool LoadInDetails { get; set; }
+        public int DefaultRows { get; set; }
+        public string? ComboAddSql1 { get; set; }
+        public string? ComboAddSql1Keys { get; set; }
+        public string? ComboAddSql1Display { get; set; }
+        public string? ComboAddSql2 { get; set; }
+        public string? ComboAddSql2Keys { get; set; }
+        public string? ComboAddSql2Display { get; set; }
+        public string? ComboAddSql3 { get; set; }
+        public string? ComboAddSql3Keys { get; set; }
+        public string? ComboAddSql3Display { get; set; }
+        public string? ComboAddSp1 { get; set; }
+        public string? ComboAddSp2 { get; set; }
+        public string? ComboAddSp3 { get; set; }
+        public string? ChildAddOk { get; set; }
+        public string? ChildAddErr { get; set; }
+        public string? ChildAddSaveBefore { get; set; }
         public ICollection<BecaViewChildData> BecaFormChildData { get; set; }
 
         public BecaViewChild()

@@ -192,6 +192,21 @@ namespace Entities.DataTransferObjects
         public string form { get; set; }
         public int subLevel { get; set; }
         public string Caption { get; set; }
+        public bool LoadInGrid { get; set; }
+        public bool LoadInDetails { get; set; }
+        public int DefaultRows { get; set; }
+        public bool ComboAddSql1 { get; set; }
+        public string ComboAddSql1Keys { get; set; }
+        public string ComboAddSql1Display { get; set; }
+        public bool ComboAddSql2 { get; set; }
+        public string ComboAddSql2Keys { get; set; }
+        public string ComboAddSql2Display { get; set; }
+        public bool ComboAddSql3 { get; set; }
+        public string ComboAddSql3Keys { get; set; }
+        public string ComboAddSql3Display { get; set; }
+        public string ChildAddOk { get; set; }
+        public string ChildAddErr { get; set; }
+        public string ChildAddSaveBefore { get; set; }
         public ICollection<dtoBecaData> ChildFields { get; set; }
 
         public dtoBecaViewChild()

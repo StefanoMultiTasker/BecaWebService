@@ -107,6 +107,32 @@ namespace BecaWebService.Controllers
             }
         }
 
+        [HttpPost("DataFormChildSelect")]
+        public async Task<IActionResult> DataFormChildSelect([FromBody] dataFormChildElem data, System.Threading.CancellationToken cancel)
+        {
+            try
+            {
+                string form = data.idView == null ? data.Form : getFormByView(data.idView.Value);
+                if ((form ?? "") == "")
+                    return BadRequest("La View non ha form associate");
+                string formChild = data.FormChild;
+                short sqlNumber = data.sqlNumber;
+                object record = _genericService.CreateObjectFromJObject<object>(form, data.parentData);
+
+                IEnumerable<object> res = _genericService.GetDataByFormChildSelect(form, formChild, sqlNumber, record);
+                //string Form = data["Form"].ToString();
+                //string FormField = data["FormField"].ToString();
+                //List<BecaParameter> parameters = data["Parameters"].ToObject<BecaParameters>().parameters.ToList<BecaParameter>();
+                //IEnumerable<object> res = _genericService.GetDataByFormField(Form, FormField, parameters);
+                //return Ok(res);
+                return await getContent(res, cancel);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+        
         [HttpPost("DataGraph")]
         public IActionResult DataGraph([FromBody] JObject data)
         {
@@ -287,6 +313,15 @@ namespace BecaWebService.Controllers
         public Boolean? force { get; set; }
         public JObject? newData { get; set; }
         public JObject? originalData { get; set; }
+    }
+
+    public class dataFormChildElem
+    {
+        public int? idView { get; set; }
+        public string? Form { get; set; }
+        public string? FormChild { get; set; }
+        public short sqlNumber { get; set; }
+        public JObject? parentData { get; set; }
     }
 
     internal class Compressor

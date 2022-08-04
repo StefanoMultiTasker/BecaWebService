@@ -281,7 +281,7 @@ namespace Repository
                     .Where(f => f.Form == Form)
                     .ToList();
 
-                List<T> res = getContext(db).ExecuteQuery<T>(Form, sql, subForms.Count>0, pars.ToArray());
+                List<T> res = getContext(db).ExecuteQuery<T>(Form, sql, subForms.Count > 0, pars.ToArray());
 
                 foreach (BecaFormLevels level in subForms)
                 {
@@ -296,7 +296,7 @@ namespace Repository
                         string.Join(",", level.RelationColumn.Split(",").Select(n => parent + "." + n.Trim())) +
                         " From " + parent;
                     object objRelation = getContext(db).GetQueryDef<object>("", sql + " Where 0 = 1");
-                    
+
                     sql = "Select * From (" +
                         "Select " + child + ".*" +
                         " From (" + sqlParent + ") Parent " +
@@ -355,7 +355,7 @@ namespace Repository
 
         public string getRelationObjectString(string relation, object record)
         {
-            string rel= string.Join("", relation.Split(",").Select(n => record.GetPropertyValue(n).ToString()));
+            string rel = string.Join("", relation.Split(",").Select(n => record.GetPropertyValue(n).ToString()));
             return rel;
         }
 
@@ -599,7 +599,51 @@ namespace Repository
                     }
                 }
                 sql = sql + " " + sqlGroup + " " + sqlOrd;
-                return getContext(formField.DropDownListDB).ExecuteQuery<object>(Form + '_' + field, sql,false, pars.ToArray());
+                return getContext(formField.DropDownListDB).ExecuteQuery<object>(Form + '_' + field, sql, false, pars.ToArray());
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public List<object> GetDataByFormChildSelect(string Form, string childForm, short sqlNumber, object parent)
+        {
+            BecaFormLevels child = _context.BecaFormLevels
+                .FirstOrDefault(c => c.Form == Form && c.ChildForm == childForm);
+            BecaForm form = _context.BecaForm.FirstOrDefault(f => f.Form == childForm);
+
+            string ddl = child.GetPropertyValue("ComboAddSql" + sqlNumber.ToString()).ToString();
+            string ddlKeys = child.GetPropertyValue("ComboAddSql" + sqlNumber.ToString() + "Keys").ToString();
+            string ddlDisplay = child.GetPropertyValue("ComboAddSql" + sqlNumber.ToString() + "Display").ToString();
+
+            if (child != null && form !=null)
+            {
+                string key = ddlKeys.Replace(",", " + ");
+
+                List<object> pars = new List<object>();
+                string sqlChk = "Select * From " + form.TableName;
+                object colCheck = getContext(form.TableNameDB).GetQueryDef<object>(form + "_ca" + sqlNumber.ToString() + "_chk", sqlChk + " Where 0 = 1");
+                if (colCheck.GetType().GetProperty("idUtente") != null)
+                {
+                    ddlKeys += ",idUtente";
+                    pars.Add(_currentUser.idUtente);
+                }
+
+                string sql = ddl + " Where " + key + 
+                    " Not In ("+
+                    "Select " + key + " From " + form.TableName +
+                    " Where " + string.Join(" And ", child.RelationColumn.Split(",").Select((n,i) => n.Trim() + " = {" + i.ToString() + "}")) + 
+                    ") Order By " + ddlDisplay;
+
+                if (parent != null)
+                {
+                    foreach (string par in child.RelationColumn.Split(","))
+                    {
+                        if(parent.HasPropertyValue(par)) pars.Add(parent.GetPropertyValue(par));
+                    }
+                }
+                return getContext(form.TableNameDB).ExecuteQuery<object>(form + "_ca" + sqlNumber.ToString(), sql, false, pars.ToArray());
             }
             else
             {
@@ -678,7 +722,7 @@ namespace Repository
                 }
             }
             sql = sql + " " + sqlGroup + " " + sqlOrd;
-            return getContext(dbName).ExecuteQuery<object>("", sql,false, pars.ToArray());
+            return getContext(dbName).ExecuteQuery<object>("", sql, false, pars.ToArray());
         }
 
         public List<object> GetDataBySQL(string dbName, string sql, object[] parameters)

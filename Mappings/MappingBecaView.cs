@@ -14,36 +14,82 @@ namespace BecaWebService.Mappings
     {
         public MappingBecaView()
         {
+            MapFilter();
+            MapPanel();
+            MapFormula();
+            MapChild();
+            MapView();
+
+            CreateMap<BecaViewUI, BecaViewFilterUI>().ReverseMap();
+            CreateMap<BecaViewUI, BecaViewDetailUI>().ReverseMap();
+        }
+
+        private void MapFilter()
+        {
             CreateMap<BecaViewFilters, dtoBecaFilter>()
-                .ForMember(dest => dest.FieldsUse,
+                    .ForMember(dest => dest.FieldsUse,
+                            opts => opts.MapFrom(
+                                src => src.idFieldsUse
+                                )
+                            )
+                    .ForMember(dest => dest.FieldName,
+                            opts => opts.MapFrom(
+                                src => src.FieldName//.ToLowerToCamelCase()
+                                )
+                            )
+                    .ForMember(dest => dest.Type,
+                            opts => opts.MapFrom(
+                                src => src.idFilterType
+                                )
+                            )
+                    .ForMember(dest => dest.Field1,
+                            opts => opts.MapFrom((src, dest) =>
+                            {
+                                string[] f = (src.FilterReference ?? "").Split(",");
+                                return f.Length > 0 ? f[0].ToLowerToCamelCase() : null;
+                            })
+                            )
+                    .ForMember(dest => dest.Field2,
+                            opts => opts.MapFrom((src, dest) =>
+                            {
+                                string[] f = (src.FilterReference ?? "").Split(",");
+                                return f.Length > 1 ? f[1].ToLowerToCamelCase() : null;
+                            })
+                            );
+
+            CreateMap<BecaViewFilterValues, dtoBecaFilterValue>()
+                .ForMember(dest => dest.filterName,
                         opts => opts.MapFrom(
-                            src => src.idFieldsUse
+                            src => src.Name
                             )
                         )
-                .ForMember(dest => dest.FieldName,
+                .ForMember(dest => dest.Default,
                         opts => opts.MapFrom(
-                            src => src.FieldName//.ToLowerToCamelCase()
+                            src => src.DefaultValue
                             )
-                        )
-                .ForMember(dest => dest.Type,
-                        opts => opts.MapFrom(
-                            src => src.idFilterType
-                            )
-                        )
-                .ForMember(dest => dest.Field1,
-                        opts => opts.MapFrom((src, dest) =>
-                        {
-                            string[] f = (src.FilterReference ?? "").Split(",");
-                            return f.Length > 0 ? f[0].ToLowerToCamelCase() : null;
-                        })
-                        )
-                .ForMember(dest => dest.Field2,
-                        opts => opts.MapFrom((src, dest) =>
-                        {
-                            string[] f = (src.FilterReference ?? "").Split(",");
-                            return f.Length > 1 ? f[1].ToLowerToCamelCase() : null;
-                        })
                         );
+
+        }
+
+        private void MapPanel()
+        {
+            CreateMap<BecaViewPanels, dtoBecaPanel>()
+                .ForMember(dest => dest.AggregationType,
+                        opts => opts.MapFrom(
+                            src => src.IdAggregationType
+                            )
+                        )
+                .ForMember(dest => dest.formula,
+                        opts => opts.MapFrom(
+                            src => src.IdFormulaNavigation
+                            )
+                        )
+                .ForMember(dest => dest.Filters,
+                        opts => opts.MapFrom(
+                            src => src.BecaPanelFilters
+                            )
+                        );
+
             CreateMap<BecaPanelFilters, dtoBecaFilter>()
                 .ForMember(dest => dest.FieldsUse,
                         opts => opts.MapFrom(
@@ -74,6 +120,34 @@ namespace BecaWebService.Mappings
                             return f.Length > 1 ? f[1] : null;
                         })
                         );
+        }
+
+        private void MapFormula()
+        {
+            CreateMap<BecaFormula, dtoBecaFormula>()
+                .ForMember(dest => dest.data,
+                        opts => opts.MapFrom(
+                            src => src.BecaFormulaData
+                            )
+                        );
+
+            CreateMap<BecaFormulaData, dtoBecaFormulaData>()
+                .ForMember(dest => dest.AggregationType,
+                        opts => opts.MapFrom(
+                            src => src.IdAggregationType
+                            )
+                        )
+                .ForMember(dest => dest.Name,
+                        opts => opts.MapFrom(
+                            src => src.FormulaDataName
+                            )
+                        )
+                .ForMember(dest => dest.Filters,
+                        opts => opts.MapFrom(
+                            src => src.BecaFormulaDataFilters
+                            )
+                        );
+
             CreateMap<BecaFormulaDataFilters, dtoBecaFilter>()
                 .ForMember(dest => dest.FieldsUse,
                         opts => opts.MapFrom(
@@ -104,71 +178,10 @@ namespace BecaWebService.Mappings
                             return f.Length > 1 ? f[1] : null;
                         })
                         );
+        }
 
-            CreateMap<BecaViewFilterValues, dtoBecaFilterValue>()
-                .ForMember(dest => dest.filterName,
-                        opts => opts.MapFrom(
-                            src => src.Name
-                            )
-                        )
-                .ForMember(dest => dest.Default,
-                        opts => opts.MapFrom(
-                            src => src.DefaultValue
-                            )
-                        );
-
-            CreateMap<BecaFormulaData, dtoBecaFormulaData>()
-                .ForMember(dest => dest.AggregationType,
-                        opts => opts.MapFrom(
-                            src => src.IdAggregationType
-                            )
-                        )
-                .ForMember(dest => dest.Name,
-                        opts => opts.MapFrom(
-                            src => src.FormulaDataName
-                            )
-                        )
-                .ForMember(dest => dest.Filters,
-                        opts => opts.MapFrom(
-                            src => src.BecaFormulaDataFilters
-                            )
-                        );
-            CreateMap<BecaFormula, dtoBecaFormula>()
-                .ForMember(dest => dest.data,
-                        opts => opts.MapFrom(
-                            src => src.BecaFormulaData
-                            )
-                        );
-
-            CreateMap<BecaViewPanels, dtoBecaPanel>()
-                .ForMember(dest => dest.AggregationType,
-                        opts => opts.MapFrom(
-                            src => src.IdAggregationType
-                            )
-                        )
-                .ForMember(dest => dest.formula,
-                        opts => opts.MapFrom(
-                            src => src.IdFormulaNavigation
-                            )
-                        )
-                .ForMember(dest => dest.Filters,
-                        opts => opts.MapFrom(
-                            src => src.BecaPanelFilters
-                            )
-                        );
-
-            CreateMap<BecaViewData, dtoBecaData>()
-                .ForMember(dest => dest.Name,
-                        opts => opts.MapFrom(
-                            src => src.Field.ToLowerToCamelCase()//.ToCamelCase()
-                            )
-                        )
-                .ForMember(dest => dest.DataType,
-                        opts => opts.MapFrom(
-                            src => src.idDataType
-                            )
-                        );
-
+        private void MapChild()
+        {
             CreateMap<BecaViewChildData, dtoBecaData>()
                 .ForMember(dest => dest.Name,
                         opts => opts.MapFrom(
@@ -179,7 +192,8 @@ namespace BecaWebService.Mappings
                         opts => opts.MapFrom(
                             src => src.idDataType
                             )
-                        );
+                        )
+                ;
 
             CreateMap<BecaViewChild, dtoBecaViewChild>()
                 .ForMember(dest => dest.form,
@@ -197,8 +211,26 @@ namespace BecaWebService.Mappings
                             src => src.BecaFormChildData
                             )
                         )
+                .ForMember(dest => dest.ComboAddSql1,
+                        opts => opts.MapFrom(
+                            src => ((src.ComboAddSql1 ?? "") != "" || (src.ComboAddSp1 ?? "") != "") ? true : false
+                            )
+                        )
+                .ForMember(dest => dest.ComboAddSql2,
+                        opts => opts.MapFrom(
+                            src => ((src.ComboAddSql2 ?? "") != "" || (src.ComboAddSp2 ?? "") != "") ? true : false
+                            )
+                        )
+                .ForMember(dest => dest.ComboAddSql3,
+                        opts => opts.MapFrom(
+                            src => ((src.ComboAddSql3 ?? "") != "" || (src.ComboAddSp3 ?? "") != "") ? true : false
+                            )
+                        )
                 ;
+        }
 
+        private void MapView()
+        {
             CreateMap<BecaView, dtoBecaView>()
                 .ForMember(dest => dest.idView,
                         opts => opts.MapFrom(
@@ -216,10 +248,10 @@ namespace BecaWebService.Mappings
                             )
                         )
                 .ForMember(dest => dest.FilterValues,
-                opts => opts.MapFrom(
-                    src => src.BecaViewFilterValues
-                    )
-                )
+                        opts => opts.MapFrom(
+                            src => src.BecaViewFilterValues
+                            )
+                        )
                 .ForPath(dest => dest.ViewDefinition.HasGrid,
                         opts => opts.MapFrom(
                             src => src.HasGrid
@@ -285,15 +317,25 @@ namespace BecaWebService.Mappings
                             src => src.BecaViewPanels
                             )
                         )
-                .ForPath(dest=>dest.ViewDefinition.childrenForm,
-                        opts=>opts.MapFrom(
-                            src=>src.BecaViewChildren
+                .ForPath(dest => dest.ViewDefinition.childrenForm,
+                        opts => opts.MapFrom(
+                            src => src.BecaViewChildren
                             )
                         )
                 ;
 
-            CreateMap<BecaViewUI, BecaViewFilterUI>().ReverseMap();
-            CreateMap<BecaViewUI, BecaViewDetailUI>().ReverseMap();
+            CreateMap<BecaViewData, dtoBecaData>()
+                .ForMember(dest => dest.Name,
+                        opts => opts.MapFrom(
+                            src => src.Field.ToLowerToCamelCase()//.ToCamelCase()
+                            )
+                        )
+                .ForMember(dest => dest.DataType,
+                        opts => opts.MapFrom(
+                            src => src.idDataType
+                            )
+                        );
+
         }
     }
 }

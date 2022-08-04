@@ -18,6 +18,7 @@ namespace Contracts
         Task<T> AddDataByForm<T>(string Form, object record) where T : class, new();
         Task<int> DeleteDataByForm<T>(string Form, object record) where T : class, new();
         List<object> GetDataByFormField(string Form, string field, List<BecaParameter> parameters);
+        List<object> GetDataByFormChildSelect(string Form, string childForm, short sqlNumber, object parent);
         List<object> GetDataBySQL(string dbName, string sql, List<BecaParameter> parameters, bool useidUtente = true);
         IDictionary<string, object> GetDataDictBySQL(string dbName, string sql, List<BecaParameter> parameters);
         List<object> GetDataByFormLevel(string Form, int subLevel, List<BecaParameter> parameters);

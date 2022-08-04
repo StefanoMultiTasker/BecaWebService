@@ -151,6 +151,11 @@ namespace BecaWebService.Services
             return _genericRepository.GetDataByFormField(Form, field, parameters);
         }
 
+        public List<object> GetDataByFormChildSelect(string Form, string childForm, short sqlNumber, object parent)
+        {
+            return _genericRepository.GetDataByFormChildSelect(Form,childForm, sqlNumber, parent);
+        }
+
         public List<object> GetDataBySQL(string dbName, string sql, List<BecaParameter> parameters)
         {
             return _genericRepository.GetDataBySQL(dbName, sql, parameters);
