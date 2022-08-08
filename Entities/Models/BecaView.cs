@@ -34,6 +34,7 @@ namespace Entities.Models
         public string? viewAxisXZoomTo { get; set; }
         public short? viewAxisXStep { get; set; }
         public string? HttpGetUrl { get; set; }
+        public string PrimaryKey { get; set; }
 
         public virtual BecaViewTypes idBecaViewTypeNavigation { get; set; }
         public virtual ICollection<BecaViewData> BecaViewData { get; set; }

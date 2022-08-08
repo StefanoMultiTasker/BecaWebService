@@ -38,6 +38,7 @@ namespace Entities.DataTransferObjects
             viewAxisXZoomIf = new List<string>();
             viewAxisXZoomTo = new List<string>();
             childrenForm = new List<dtoBecaViewChild>();
+            KeyFields = new List<string>();
         }
         public IList<dtoBecaData> viewFields { get; set; }
         public IList<dtoBecaPanel> viewPanels { get; set; }
@@ -54,6 +55,7 @@ namespace Entities.DataTransferObjects
         public IList<string> viewAxisXZoomTo { get; set; }
         public short? viewAxisXStep { get; set; }
         public string HttpGetUrl { get; set; }
+        public List<string> KeyFields { get; set; }
         public IList<dtoBecaViewChild> childrenForm { get; set; }
     }
 

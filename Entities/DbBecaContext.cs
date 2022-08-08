@@ -278,6 +278,7 @@ namespace Entities.Contexts
             modelBuilder.Entity<BecaView>(entity =>
             {
                 entity.HasKey(e => e.idBecaView);
+                entity.ToView("vBecaView");
 
                 entity.HasOne(d => d.idBecaViewTypeNavigation)
                     .WithMany(p => p.BecaView)

@@ -7,6 +7,7 @@ using Entities.Models;
 using ExtensionsLib;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -63,7 +64,7 @@ namespace Repository
                 }
                 object def = getContext(form.TableNameDB).GetQueryDef<object>(Form, "Select * From " + form.TableName + " Where 0 = 1");
                 MethodInfo method = def.GetType().GetMethod("identityName");
-                string idName = method.Invoke(def, null).ToString();
+                string idName = method == null ? "" : method.Invoke(def, null).ToString();
 
                 int numP = 0;
                 string sql = "Insert Into " + form.TableName + " (";
@@ -118,6 +119,33 @@ namespace Repository
             {
                 return null;
             }
+        }
+
+        public async Task<T> AddDataByFormChild<T>(string form, string formChild, object parent, List<object> childElements) where T : class, new()
+        {
+            BecaForm _form = _context.BecaForm
+                .FirstOrDefault(f => f.Form == formChild);
+            object def = getContext(_form.TableNameDB).GetQueryDef<object>(formChild, "Select * From " + _form.TableName + " Where 0 = 1");
+            
+            foreach(PropertyInfo p in def.GetType().GetProperties())
+            {
+                if(parent.HasPropertyValue(p.Name)) def.SetPropertyValue(p.Name, parent.GetPropertyValue(p.Name));
+                foreach(JObject c in childElements)
+                {
+                    if (c.ContainsKey(p.Name.ToLower())) def.SetPropertyValue(p.Name, c[p.Name.ToLower()]);
+                }
+            }
+
+            var res = await AddDataByForm<T>(formChild, def);
+            if (res == null) return null;
+
+            return GetDataByForm<T>(form, parent)[0];
+        }
+
+        public object CreateObjectFromJSON<T>(string jsonRecord) where T : class, new()
+        {
+            dynamic json = JsonConvert.DeserializeObject<dynamic>(jsonRecord);
+            return (object)json;
         }
 
         public T CreateObjectFromJSON<T>(string Form, string jsonRecord) where T : class, new()

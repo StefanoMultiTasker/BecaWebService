@@ -226,6 +226,21 @@ namespace BecaWebService.Mappings
                             src => ((src.ComboAddSql3 ?? "") != "" || (src.ComboAddSp3 ?? "") != "") ? true : false
                             )
                         )
+                .ForMember(dest => dest.ComboAddSql1Display,
+                        opts => opts.MapFrom(
+                            src => src.ComboAddSql1Display.ToCamelCase()
+                            )
+                        )
+                .ForMember(dest => dest.ComboAddSql2Display,
+                        opts => opts.MapFrom(
+                            src => src.ComboAddSql2Display.ToCamelCase()
+                            )
+                        )
+                .ForMember(dest => dest.ComboAddSql3Display,
+                        opts => opts.MapFrom(
+                            src => src.ComboAddSql3Display.ToCamelCase()
+                            )
+                        )
                 ;
         }
 
@@ -240,6 +255,11 @@ namespace BecaWebService.Mappings
                 .ForMember(dest => dest.Type,
                         opts => opts.MapFrom(
                             src => src.idBecaViewType
+                            )
+                        )
+                .ForPath(dest => dest.ViewDefinition.KeyFields,
+                        opts => opts.MapFrom(
+                            src => src.PrimaryKey.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(k => k.ToLowerToCamelCase()).ToList()
                             )
                         )
                 .ForMember(dest => dest.Filters,

@@ -72,6 +72,11 @@ namespace BecaWebService.Services
             //var res = jsonRecord.ToAnonymousType(obj);
             return obj;
         }
+
+        public object CreateObjectFromJSON<T>(  string jsonRecord) where T : class, new() {
+            return _genericRepository.CreateObjectFromJSON<object>(jsonRecord);
+        }
+
         public T CreateObjectFromJSON<T>(string Form, string jsonRecord) where T : class, new()
         {
             return _genericRepository.CreateObjectFromJSON<T>(Form, jsonRecord);
@@ -110,6 +115,20 @@ namespace BecaWebService.Services
             try
             {
                 object res = await _genericRepository.AddDataByForm<object>(Form, record);
+                if (res == null) return new GenericResponse("Il record non è stato inserito");
+                return new GenericResponse(res);
+            }
+            catch (Exception ex)
+            {
+                return new GenericResponse(ex.Message);
+            }
+        }
+
+        public async Task<GenericResponse> AddDataByFormChild(string form, string formChild, object parent, List<object> childElements)
+        {
+            try
+            {
+                object res = await _genericRepository.AddDataByFormChild<object>(form, formChild, parent, childElements);
                 if (res == null) return new GenericResponse("Il record non è stato inserito");
                 return new GenericResponse(res);
             }

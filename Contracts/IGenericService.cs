@@ -11,6 +11,7 @@ namespace Contracts
 {
     public interface IGenericService
     {
+        object CreateObjectFromJSON<T>(string jsonRecord) where T : class, new();
         T CreateObjectFromJObject<T>(string Form, JObject jsonRecord) where T : class, new();
         T CreateObjectFromJSON<T>(string Form, string jsonRecord) where T : class, new();
 
@@ -24,6 +25,7 @@ namespace Contracts
 
         Task<GenericResponse> AddDataByView(Int32 idView, object record, bool forceInsert);
         Task<GenericResponse> AddDataByForm(string Form, object record, bool forceInsert);
+        Task<GenericResponse> AddDataByFormChild(string form, string formChild, object parent, List<object> childElements);
 
         Task<GenericResponse> DeleteDataByView(Int32 idView, object record);
         Task<GenericResponse> DeleteDataByForm(string Form, object record);

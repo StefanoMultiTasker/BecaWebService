@@ -13,9 +13,11 @@ namespace Contracts
         string GetFormByView(int idView);
         List<T> GetDataByForm<T>(string Form, List<BecaParameter> parameters) where T : class, new();
         List<T> GetDataByForm<T>(string Form, object record) where T : class, new();
+        object CreateObjectFromJSON<T>(string jsonRecord) where T : class, new();
         T CreateObjectFromJSON<T>(string Form, string jsonRecord) where T : class, new();
         Task<int?> UpdateDataByForm<T>(string Form, object recordOld, object recordNewd) where T : class, new();
         Task<T> AddDataByForm<T>(string Form, object record) where T : class, new();
+        Task<T> AddDataByFormChild<T>(string form, string formChild, object parent, List<object> childElements) where T : class, new();
         Task<int> DeleteDataByForm<T>(string Form, object record) where T : class, new();
         List<object> GetDataByFormField(string Form, string field, List<BecaParameter> parameters);
         List<object> GetDataByFormChildSelect(string Form, string childForm, short sqlNumber, object parent);
