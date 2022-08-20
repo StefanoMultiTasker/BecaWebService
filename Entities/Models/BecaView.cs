@@ -106,6 +106,8 @@ namespace Entities.Models
         public bool ParametersReq { get; set; }
         public string? HelpShort { get; set; }
         public string? HelpFull { get; set; }
+        public bool Locked { get; set; }
+        public bool Required { get; set; }
     }
 
     public  class BecaViewFilterUI : BecaViewUI { }

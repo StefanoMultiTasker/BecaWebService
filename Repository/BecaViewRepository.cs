@@ -169,6 +169,8 @@ namespace Repository
                     field.subCol = BecaCfgFormField.SubCol;
                     field.ColSize = BecaCfgFormField.ColSize;
                     field.SubColSize = BecaCfgFormField.SubColSize;
+                    field.disabled = BecaCfgFormField.Locked;
+                    field.required = BecaCfgFormField.Required;
 
                     filter.fields.Add(field);
                     //UIrow row = filter.rows.GetRow(BecaCfgFormField.Row, true);

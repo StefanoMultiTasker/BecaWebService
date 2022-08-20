@@ -29,9 +29,9 @@ namespace Entities.Models
         public int subCol { get; set; }
         public string? ColSize { get; set; }
         public string? SubColSize { get; set; }
-        //public bool? disabled { get; set; }
+        public bool? disabled { get; set; }
         //public bool? Readonly { get; set; }
-        //public bool? required { get; set; }
+        public bool? required { get; set; }
         //[Optional] public string help { get; set; }
         //[Optional] public string[] options { get; set; }
         //[Optional] public string icon { get; set; }
