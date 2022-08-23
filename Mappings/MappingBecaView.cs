@@ -342,6 +342,21 @@ namespace BecaWebService.Mappings
                             src => src.BecaViewChildren
                             )
                         )
+                .ForPath(dest => dest.ViewDefinition.AddRecord,
+                        opts => opts.MapFrom(
+                            src => src.AddRecord
+                            )
+                        )
+                .ForPath(dest => dest.ViewDefinition.EditRecord,
+                        opts => opts.MapFrom(
+                            src => src.EditRecord
+                            )
+                        )
+                .ForPath(dest => dest.ViewDefinition.DeleteRecord,
+                        opts => opts.MapFrom(
+                            src => src.DeleteRecord
+                            )
+                        )
                 ;
 
             CreateMap<BecaViewData, dtoBecaData>()

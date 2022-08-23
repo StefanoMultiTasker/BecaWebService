@@ -57,6 +57,9 @@ namespace Entities.DataTransferObjects
         public string HttpGetUrl { get; set; }
         public List<string> KeyFields { get; set; }
         public IList<dtoBecaViewChild> childrenForm { get; set; }
+        public bool AddRecord { get; set; }
+        public bool EditRecord { get; set; }
+        public bool DeleteRecord { get; set; }
     }
 
     public class dtoBecaData

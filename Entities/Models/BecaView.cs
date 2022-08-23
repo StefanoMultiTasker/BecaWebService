@@ -35,6 +35,9 @@ namespace Entities.Models
         public short? viewAxisXStep { get; set; }
         public string? HttpGetUrl { get; set; }
         public string PrimaryKey { get; set; }
+        public bool AddRecord { get; set; }
+        public bool EditRecord { get; set; }
+        public bool DeleteRecord { get; set; }
 
         public virtual BecaViewTypes idBecaViewTypeNavigation { get; set; }
         public virtual ICollection<BecaViewData> BecaViewData { get; set; }
