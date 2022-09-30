@@ -18,6 +18,7 @@ namespace Entities.Models
         [Key]
         public int idCompany { get; set; }
         public string CompanyName { get; set; }
+        public string MainFolder { get; set; }
         public List<Connection> Connections { get; set; }
     }
 

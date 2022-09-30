@@ -5,6 +5,7 @@ using Entities.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using System;
@@ -158,6 +159,7 @@ namespace BecaWebService.Controllers
         {
             try
             {
+                var modelData = JsonConvert.DeserializeObject<dataFormPostParameter>(Request.Form["data"]);
                 string form = data.idView == null ? data.Form : getFormByView(data.idView.Value);
                 if ((form ?? "") == "")
                     return BadRequest("La View non ha form associate");

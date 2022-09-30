@@ -40,13 +40,10 @@ namespace BecaWebService.Controllers
             .ToArray();
         }
 
-        [HttpGet("{sp}")]
-        public IActionResult Getsp(int sp)
+        [HttpGet("now")]
+        public IActionResult GetNow()
         {
-            List<object> parameters = new List<object>();
-            parameters.Add(9);
-            _repo.ExecuteSqlCommand("DbDati", "Select * From Mesi Where Mese={0}", parameters.ToArray());
-            return Ok();
+            return Ok(DateTime.Now);
         }
     }
 }

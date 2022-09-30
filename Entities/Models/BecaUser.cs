@@ -82,6 +82,7 @@ namespace Entities.Models
         public string Color3 { get; set; }
         public string Color4 { get; set; }
         public string Color5 { get; set; }
+        public string MainFolder { get; set; }
 
         public List<UserProfile> Profiles { get; set; }
     }

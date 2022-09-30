@@ -179,6 +179,9 @@ namespace Entities.Contexts
                     a.Property<string>("Color5")
                         .HasColumnType("nvarchar(50)");
 
+                    a.Property<string>("MainFolder")
+                        .HasColumnType("varchar(50)");
+
                     a.HasKey("idUtente", "idCompany");
                     a.WithOwner()
                         .HasForeignKey("idUtente");

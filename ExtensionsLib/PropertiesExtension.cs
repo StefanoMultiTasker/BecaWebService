@@ -23,6 +23,15 @@ namespace ExtensionsLib
 
             return property.GetValue(@this, null);
         }
+
+        public static string GetPropertyString<T>(this T @this, string propertyName) where T : class, new()
+        {
+            Type type = @this.GetType();
+            PropertyInfo property = type.GetProperty(propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+
+            return property.GetValue(@this, null).ToString();
+        }
+
         public static object SetPropertyValue<T>(this T @this, string propertyName, object value) where T : class, new()
         {
             Type type = @this.GetType();

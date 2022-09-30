@@ -6,12 +6,16 @@ using Entities.DataTransferObjects;
 using Entities.Models;
 using ExtensionsLib;
 using Microsoft.AspNetCore.Http;
+using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -50,6 +54,10 @@ namespace Repository
         {
             BecaForm form = _context.BecaForm
                 .FirstOrDefault(f => f.Form == Form);
+
+            string tryUpload = await UploadByForm(form, record);
+            if(tryUpload!="") throw new InvalidOperationException(tryUpload);
+
             List<object> pars = new List<object>();
             if (form != null)
             {
@@ -126,11 +134,11 @@ namespace Repository
             BecaForm _form = _context.BecaForm
                 .FirstOrDefault(f => f.Form == formChild);
             object def = getContext(_form.TableNameDB).GetQueryDef<object>(formChild, "Select * From " + _form.TableName + " Where 0 = 1");
-            
-            foreach(PropertyInfo p in def.GetType().GetProperties())
+
+            foreach (PropertyInfo p in def.GetType().GetProperties())
             {
-                if(parent.HasPropertyValue(p.Name)) def.SetPropertyValue(p.Name, parent.GetPropertyValue(p.Name));
-                foreach(JObject c in childElements)
+                if (parent.HasPropertyValue(p.Name)) def.SetPropertyValue(p.Name, parent.GetPropertyValue(p.Name));
+                foreach (JObject c in childElements)
                 {
                     if (c.ContainsKey(p.Name.ToLower())) def.SetPropertyValue(p.Name, c[p.Name.ToLower()]);
                 }
@@ -230,7 +238,12 @@ namespace Repository
             List<object> pars = new List<object>();
             if (form != null)
             {
-                string sql = "Select * From " +
+                string upl = string.Join(", ", _context.BecaFormField
+                    .Where(f => f.Form == Form && f.FieldType == "upload")
+                    .ToList().Select(n => "Null As [_" + n.Name.Trim() + "_upl_], Null As [_" + n.Name.Trim() + "_uplName_]"));
+                string sql = "Select *" +
+                    (upl.Length > 0 ? ", " + upl : " ") +
+                    "From " +
                     (form.ViewName == null || form.ViewName.ToString() == "" ? form.TableName : form.ViewName);
                 string db = form.ViewName == null || form.ViewName.ToString() == "" ? form.TableNameDB : form.ViewNameDB;
 
@@ -319,7 +332,7 @@ namespace Repository
                     string parent = (form.ViewName == null || form.ViewName.ToString() == "" ? form.TableName : form.ViewName);
                     string child = (childForm.ViewName == null || childForm.ViewName.ToString() == "" ? childForm.TableName : childForm.ViewName);
 
-                    string sqlParent = sql;
+                    string sqlParent = sqlOrd=="" ? sql : sql.Replace(sqlOrd, "");
                     sql = "Select " +
                         string.Join(",", level.RelationColumn.Split(",").Select(n => parent + "." + n.Trim())) +
                         " From " + parent;
@@ -467,6 +480,10 @@ namespace Repository
         {
             BecaForm form = _context.BecaForm
                 .FirstOrDefault(f => f.Form == Form);
+
+            string tryUpload = await UploadByForm(form, recordNew);
+            if (tryUpload != "") throw new InvalidOperationException(tryUpload);
+
             List<object> pars = new List<object>();
             if (form != null)
             {
@@ -645,7 +662,7 @@ namespace Repository
             string ddlKeys = child.GetPropertyValue("ComboAddSql" + sqlNumber.ToString() + "Keys").ToString();
             string ddlDisplay = child.GetPropertyValue("ComboAddSql" + sqlNumber.ToString() + "Display").ToString();
 
-            if (child != null && form !=null)
+            if (child != null && form != null)
             {
                 string key = ddlKeys.Replace(",", " + ");
 
@@ -658,17 +675,17 @@ namespace Repository
                     pars.Add(_currentUser.idUtente);
                 }
 
-                string sql = ddl + " Where " + key + 
-                    " Not In ("+
+                string sql = ddl + " Where " + key +
+                    " Not In (" +
                     "Select " + key + " From " + form.TableName +
-                    " Where " + string.Join(" And ", child.RelationColumn.Split(",").Select((n,i) => n.Trim() + " = {" + i.ToString() + "}")) + 
+                    " Where " + string.Join(" And ", child.RelationColumn.Split(",").Select((n, i) => n.Trim() + " = {" + i.ToString() + "}")) +
                     ") Order By " + ddlDisplay;
 
                 if (parent != null)
                 {
                     foreach (string par in child.RelationColumn.Split(","))
                     {
-                        if(parent.HasPropertyValue(par)) pars.Add(parent.GetPropertyValue(par));
+                        if (parent.HasPropertyValue(par)) pars.Add(parent.GetPropertyValue(par));
                     }
                 }
                 return getContext(form.TableNameDB).ExecuteQuery<object>(form + "_ca" + sqlNumber.ToString(), sql, false, pars.ToArray());
@@ -871,5 +888,137 @@ namespace Repository
             _databases.Add(dbName, db);
             return db;
         }
+
+        private async Task<string> UploadByForm(BecaForm form, object record)
+        {
+            List<BecaFormField> upl = _context.BecaFormField
+                .Where(f => f.Form == form.Form && f.FieldType == "upload" && record.GetPropertyValue("_" + f.Name + "_upl_").ToString() != "")
+                .ToList();
+            foreach (BecaFormField field in upl)
+            {
+                string res = await SaveFileByField(form, field, record);
+                if (res.Contains("ERR: ")) return res.Replace("ERR: ", "");
+                record.SetPropertyValue(field.Parameters.Split("|").Last(), res);
+            }
+            return "";
+        }
+
+        private async Task<string> SaveFileByField(BecaForm form, BecaFormField field, object record)
+        {
+            try
+            {
+                //Cerco i parametri x salvare il file
+                // il primo è la tabella/vista in cui cercare il tipo documento
+                // il secondo il nome del campo codice documento
+                // il terzo il nome del campo folder in cui salvare
+                // il quarto il nome del campo name da usare eventualmente per rinominare il file
+                // il quinto le estensioni permesse
+                // il sesto la dimensione massima
+                // il settimo il codice documento da usare o il nome del campo da cui prendere il nome
+                string[] pars = field.Parameters.Split("|");
+
+                string cod = pars[6];
+                if (cod.Contains("'"))
+                {
+                    //se è fra apici allora mi viene fornito il valore da cercare
+                    cod = cod.Replace("'", "");
+                }
+                else
+                {
+                    //altrimento mi viene fornito il nome del campo in cui cercare il tipo documento che sto caricando
+                    if (record.HasPropertyValue(cod)) cod = record.GetPropertyValue(cod).ToString(); else cod = "";
+                }
+
+                string sql = "Select " + pars[1] + " as Cod, " + pars[2] + " As Fld, " + pars[3] + " As Name, " + pars[4] + " As ext, " + pars[5] + " As MB From " + pars[0];
+                List<object> parameters = new List<object>();
+                parameters.Add(record.GetPropertyValue(pars[1]));
+                List<object> data = this.GetDataBySQL(form.TableNameDB, sql, parameters.ToArray());
+
+                string folderNameSub = GetSaveName(data.GetPropertyValue("Fld").ToString(), record);
+                string folderName = folderNameSub.Contains(@"\\") || folderNameSub.Contains(@":\") ? folderNameSub : @"E:\BecaWeb\Web\Upload\" + _activeCompany.MainFolder;
+                string fileName = GetSaveName(data.GetPropertyValue("Name").ToString(), record);
+
+                if(folderName=="")
+                {
+                    return "ERR: C'è stato un problema nella definizione della cartella di destinazione (" + field.Name + "). Contattare il fornitore";
+                }
+                if (fileName == "" && data.GetPropertyValue("Name").ToString() != "") { 
+                    return "ERR: C'è stato un problema nella definizione del nome del file (" + field.Name + "). Contattare il fornitore";
+                }
+
+                if (!Directory.Exists(folderName)) Directory.CreateDirectory(folderName);
+
+
+                string fileUploaded = record.GetPropertyValue("_" + field.Name + "_upl_").ToString();
+                string fileUploadedName = record.GetPropertyValue("_" + field.Name + "_uplName_").ToString();
+              
+                if (fileName == "") fileName = fileUploadedName;
+                if (fileUploaded.Length > 0)
+                {
+                    string sFileExtension = fileUploadedName.Remove(0, fileUploadedName.LastIndexOf(".") + 1);
+                    if (data.GetPropertyValue("MB").ToString() != "" && data.GetPropertyString("MB") != "0" && getBase64Dimension(fileUploaded) > int.Parse(data.GetPropertyString("MB")))
+                    {
+                        return "ERR: Il file " + fileUploadedName + " eccede la dimensione permessa (" + Math.Round((decimal)(int.Parse(data.GetPropertyString("MB")) /  1024 / 1024), 2).ToString() + "MB)";
+                    }
+                    if (data.GetPropertyString("ext").Contains( sFileExtension ) && data.GetPropertyString("ext") != "")
+                    {
+                        return "ERR: Il tipo di file (" + sFileExtension + ") non è ammesso. Seleziona uno tra questi tipi: " + data.GetPropertyString("ext");
+                    }
+                    else
+                    {
+                        fileName = fileName.Replace("." + sFileExtension, "");
+                        if (File.Exists(folderName + @"\" + fileName))
+                            System.IO.File.Delete(folderName + @"\" + fileName + "." + sFileExtension);
+                        await System.IO.File.WriteAllBytesAsync(folderName + @"\" + fileName + "." + sFileExtension, Convert.FromBase64String(fileUploaded));
+                        return  fileName + "." + sFileExtension;
+                    }
+                } else { return ""; }
+            }
+            catch (Exception ex) { return "ERR: " + ex.Message;  }
+        }
+
+        private string GetSaveName(string Name, object record)
+        {
+            int p1, p2;
+            string ph = "";
+            DateTime dt;
+
+            while (Name.Contains("#"))
+            {
+                p1 = Name.IndexOf("#");
+                p2 = Name.IndexOf("#", p1 + 1);
+                ph = Name.Substring(p1 + 1, p2 - p1 - 1);
+                if (record.HasPropertyValue(ph))
+                {
+                    if (record.GetPropertyValue(ph).GetType() == typeof(DateTime))
+                        Name = Name.Replace("#" + ph + "#", ((DateTime)record.GetPropertyValue(ph)).ToString("yyyyMMdd"));
+                    else if (record.GetPropertyValue(ph).ToString().isDate())
+                        Name = Name.Replace("#" + ph + "#", DateTime.Parse(record.GetPropertyValue(ph).ToString()).ToString("yyyyMMdd"));
+                    else
+                        Name = Name.Replace("#" + ph + "#", record.GetPropertyValue(ph).ToString());
+                }
+                else
+                    return "";
+            }
+            return Name;
+        }
+
+        private double getBase64Dimension(string base64String)
+        {
+            bool applyPaddingsRules = true;
+
+            // Remove MIME-type from the base64 if exists
+            int base64Length = base64String.AsSpan().Slice(base64String.IndexOf(',') + 1).Length;
+
+            double fileSizeInByte = Math.Ceiling((double)base64Length / 4) * 3;
+
+            if (applyPaddingsRules && base64Length >= 2)
+            {
+                var paddings = base64String[^2..];
+                fileSizeInByte = paddings.Equals("==") ? fileSizeInByte - 2 : paddings[1].Equals('=') ? fileSizeInByte - 1 : fileSizeInByte;
+            }
+            return fileSizeInByte > 0 ? fileSizeInByte / 1_048_576 : 0;
+        }
+
     }
 }

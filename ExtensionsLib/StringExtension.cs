@@ -53,5 +53,19 @@ namespace BecaWebService.ExtensionsLib
                 return false;
             }
         }
+
+        public static bool isDate(this string date)
+        {
+            try
+            {
+                DateTime dt = DateTime.Parse(date);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+
+        }
     }
 }
