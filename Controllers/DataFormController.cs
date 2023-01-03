@@ -118,7 +118,7 @@ namespace BecaWebService.Controllers
                     return BadRequest("La View non ha form associate");
                 string formChild = data.FormChild;
                 short sqlNumber = data.sqlNumber;
-                object record = _genericService.CreateObjectFromJObject<object>(form, data.parentData);
+                object record = _genericService.CreateObjectFromJObject<object>(form, data.parentData, true);
 
                 IEnumerable<object> res = _genericService.GetDataByFormChildSelect(form, formChild, sqlNumber, record);
                 //string Form = data["Form"].ToString();
@@ -159,13 +159,13 @@ namespace BecaWebService.Controllers
         {
             try
             {
-                var modelData = JsonConvert.DeserializeObject<dataFormPostParameter>(Request.Form["data"]);
+                //var modelData = JsonConvert.DeserializeObject<dataFormPostParameter>(Request.Form["data"]);
                 string form = data.idView == null ? data.Form : getFormByView(data.idView.Value);
                 if ((form ?? "") == "")
                     return BadRequest("La View non ha form associate");
 
-                object recordNew = _genericService.CreateObjectFromJObject<object>(form, data.newData);
-                object recordOld = _genericService.CreateObjectFromJObject<object>(form, data.originalData);
+                object recordNew = _genericService.CreateObjectFromJObject<object>(form, data.newData, true);
+                object recordOld = _genericService.CreateObjectFromJObject<object>(form, data.originalData, true);
 
                 GenericResponse result = await _genericService.UpdateDataByForm(form, recordOld, recordNew);
                 if (!result.Success)
@@ -200,7 +200,7 @@ namespace BecaWebService.Controllers
                 if ((form ?? "") == "")
                     return BadRequest("La View non ha form associate");
 
-                object recordNew = _genericService.CreateObjectFromJObject<object>(form, data.newData);
+                object recordNew = _genericService.CreateObjectFromJObject<object>(form, data.newData,false);
 
                 GenericResponse result = await _genericService.AddDataByForm(form, recordNew, data.force.Value);
                 if (!result.Success)
@@ -234,7 +234,7 @@ namespace BecaWebService.Controllers
                 if ((form ?? "") == "")
                     return BadRequest("La View non ha form associate");
 
-                object recordNew = _genericService.CreateObjectFromJObject<object>(form, data.newData);
+                object recordNew = _genericService.CreateObjectFromJObject<object>(form, data.newData, true);
 
                 GenericResponse result = await _genericService.DeleteDataByForm(form, recordNew);
                 if (!result.Success)
@@ -266,7 +266,7 @@ namespace BecaWebService.Controllers
                 if ((form ?? "") == "")
                     return BadRequest("La View non ha form associate");
                 string formChild = data.FormChild;
-                object record = _genericService.CreateObjectFromJObject<object>(form, data.parentData);
+                object record = _genericService.CreateObjectFromJObject<object>(form, data.parentData, true);
 
                 List<object> childElements = new List<object>();
                 if (data.child1 != null) childElements.Add(data.child1);
@@ -339,8 +339,8 @@ namespace BecaWebService.Controllers
         public string? Form { get; set; }
         public int? idView { get; set; }
         public string? FormField { get; set; }
-        public BecaParameters Parameters { get; set; }
-        public Boolean? force { get; set; }
+        public BecaParameters? Parameters { get; set; }
+        public bool? force { get; set; }
         public JObject? newData { get; set; }
         public JObject? originalData { get; set; }
     }

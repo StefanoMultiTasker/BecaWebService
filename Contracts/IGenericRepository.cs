@@ -9,7 +9,7 @@ namespace Contracts
 {
     public interface IGenericRepository
     {
-        T getFormObject<T>(string Form);
+        T getFormObject<T>(string Form, bool view, bool noUpload = false);
         string GetFormByView(int idView);
         List<T> GetDataByForm<T>(string Form, List<BecaParameter> parameters) where T : class, new();
         List<T> GetDataByForm<T>(string Form, object record) where T : class, new();

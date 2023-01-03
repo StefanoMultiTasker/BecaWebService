@@ -37,9 +37,9 @@ namespace BecaWebService.Services
             return _genericRepository.GetDataByForm<object>(Form, parameters);
         }
 
-        public T CreateObjectFromJObject<T>(string Form, JObject jsonRecord) where T : class, new()
+        public T CreateObjectFromJObject<T>(string Form, JObject jsonRecord, bool view) where T : class, new()
         {
-            var obj = _genericRepository.getFormObject<T>(Form);
+            var obj = _genericRepository.getFormObject<T>(Form,view);
             foreach (JProperty jproperty in jsonRecord.Properties())
             {
                 foreach (PropertyInfo property in obj.GetType().GetProperties())

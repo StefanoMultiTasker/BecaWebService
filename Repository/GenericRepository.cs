@@ -56,7 +56,7 @@ namespace Repository
                 .FirstOrDefault(f => f.Form == Form);
 
             string tryUpload = await UploadByForm(form, record);
-            if(tryUpload!="") throw new InvalidOperationException(tryUpload);
+            if (tryUpload != "") throw new InvalidOperationException(tryUpload);
 
             List<object> pars = new List<object>();
             if (form != null)
@@ -241,10 +241,7 @@ namespace Repository
                 string upl = string.Join(", ", _context.BecaFormField
                     .Where(f => f.Form == Form && f.FieldType == "upload")
                     .ToList().Select(n => "Null As [_" + n.Name.Trim() + "_upl_], Null As [_" + n.Name.Trim() + "_uplName_]"));
-                string sql = "Select *" +
-                    (upl.Length > 0 ? ", " + upl : " ") +
-                    "From " +
-                    (form.ViewName == null || form.ViewName.ToString() == "" ? form.TableName : form.ViewName);
+                string sql = getFormSQL(form, true);
                 string db = form.ViewName == null || form.ViewName.ToString() == "" ? form.TableNameDB : form.ViewNameDB;
 
                 object colCheck = getContext(db).GetQueryDef<object>(Form, sql + " Where 0 = 1");
@@ -332,7 +329,7 @@ namespace Repository
                     string parent = (form.ViewName == null || form.ViewName.ToString() == "" ? form.TableName : form.ViewName);
                     string child = (childForm.ViewName == null || childForm.ViewName.ToString() == "" ? childForm.TableName : childForm.ViewName);
 
-                    string sqlParent = sqlOrd=="" ? sql : sql.Replace(sqlOrd, "");
+                    string sqlParent = sqlOrd == "" ? sql : sql.Replace(sqlOrd, "");
                     sql = "Select " +
                         string.Join(",", level.RelationColumn.Split(",").Select(n => parent + "." + n.Trim())) +
                         " From " + parent;
@@ -444,14 +441,29 @@ namespace Repository
             return GetDataByForm<object>(childFiliali.ChildForm, parameters);
         }
 
-        public T getFormObject<T>(string Form)
+        private string getFormSQL(BecaForm form, bool view, bool uplWithoutUnderscore = false, bool noUpload = false)
+        {
+            string upl = noUpload ? "" : string.Join(", ", _context.BecaFormField
+                .Where(f => f.Form == form.Form && f.FieldType == "upload")
+                .ToList().Select(n => "'' As [_" + n.Name.Trim() + "_upl_], '' As [_" + n.Name.Trim() + "_uplName_]"));
+            if (uplWithoutUnderscore) upl = upl.Replace("_", "");
+            string sql = "Select *" +
+                (upl.Length > 0 ? ", " + upl + " " : " ") +
+                "From " +
+                (view ? ((form.ViewName == null || form.ViewName.ToString() == "" ? form.TableName : form.ViewName)) : form.TableName);
+
+            return sql;
+        }
+
+        public T getFormObject<T>(string Form, bool view, bool noUpload = false)
         {
             BecaForm form = _context.BecaForm
                 .FirstOrDefault(f => f.Form == Form);
             List<object> pars = new List<object>();
             if (form != null)
             {
-                object def = getContext(form.TableNameDB).GetQueryDef<object>(Form, "Select * From " + form.TableName + " Where 0 = 1");
+                string sql = getFormSQL(form, view, true, noUpload);
+                object def = getContext(form.TableNameDB).GetQueryDef<object>(Form, sql + " Where 0 = 1");
                 return (T)def;
             }
             else
@@ -492,40 +504,46 @@ namespace Repository
                     int? resSPBefore = await UpdateDataByProcedure<T>(form.TableNameDB, form.UpdateProcedureName, recordNew);
                     if (!form.UpdateProcedureName.Contains("#Before")) return resSPBefore;
                 }
+
+                object tblform = getFormObject<object>(Form, false, true);
+
                 int numP = 0;
                 string sql = "Update " + form.TableName + " Set ";
                 PropertyInfo[] colsOld = recordOld.GetType().GetProperties();
                 PropertyInfo[] colsNew = recordNew.GetType().GetProperties();
-                if (colsOld.Count() > 0)
+                if (colsNew.Count() > 0)
                 {
-                    for (int i = 0; i < colsOld.Count(); i++)
+                    for (int i = 0; i < colsNew.Count(); i++)
                     {
-                        PropertyInfo p1 = colsOld.ElementAt(i);
                         PropertyInfo p2 = colsNew.ElementAt(i);
-                        bool update = false;
-                        if (
-                            (Equals(p2.GetValue(recordNew), null) && !Equals(p1.GetValue(recordOld), null)) ||
-                            (!Equals(p2.GetValue(recordNew), null) && Equals(p1.GetValue(recordOld), null))
-                           )
+                        if (colsOld.FirstOrDefault(p => p.Name == p2.Name) != null && tblform.HasPropertyValue(p2.Name))
                         {
-                            update = true;
-                        }
-                        if (!update)
-                        {
-                            if (Equals(p2.GetValue(recordNew), null) && Equals(p1.GetValue(recordOld), null))
+                            PropertyInfo p1 = colsOld.ElementAt(i);
+                            bool update = false;
+                            if (
+                                (Equals(p2.GetValue(recordNew), null) && !Equals(p1.GetValue(recordOld), null)) ||
+                                (!Equals(p2.GetValue(recordNew), null) && Equals(p1.GetValue(recordOld), null))
+                               )
                             {
-                                update = false;
+                                update = true;
                             }
-                            else
+                            if (!update)
                             {
-                                if (!p2.GetValue(recordNew).Equals(p1.GetValue(recordOld))) update = true;
+                                if (Equals(p2.GetValue(recordNew), null) && Equals(p1.GetValue(recordOld), null))
+                                {
+                                    update = false;
+                                }
+                                else
+                                {
+                                    if (!p2.GetValue(recordNew).Equals(p1.GetValue(recordOld))) update = true;
+                                }
                             }
-                        }
-                        if (update)
-                        {
-                            pars.Add(p2.GetValue(recordNew));
-                            sql += (numP > 0 ? ", " : "") + p1.Name + " = {" + numP.ToString() + "}";
-                            numP++;
+                            if (update)
+                            {
+                                pars.Add(p2.GetValue(recordNew));
+                                sql += (numP > 0 ? ", " : "") + p1.Name + " = {" + numP.ToString() + "}";
+                                numP++;
+                            }
                         }
                     }
                 }
@@ -864,13 +882,20 @@ namespace Repository
         public async Task<int> ExecuteProcedure(string dbName, string spName, List<BecaParameter> parameters)
         {
             List<string> names = getContext(dbName).GetProcedureParams(spName);
-            string sql = $"Exec {spName} " + string.Join(", ", names.Select((x, i) => $"{{{i}}}"));
-            var pars = names.Select((x, i) =>
-                parameters.Find(p => p.name == x.Replace("@", "")) == null ?
-                null
-                :
-                parameters.Find(p => p.name == x.Replace("@", "")).value1
-                ).ToArray();
+            string sql = $"Exec {spName} " +
+                string.Join(", ", names.Where(x => parameters.Exists(p => p.name == x.Replace("@", ""))).Select((x, i) => x +
+                    @" = {" + i.ToString() + "}"));
+            var pars = names.Where(x => parameters.Exists(p => p.name == x.Replace("@", ""))).Select((x, i) =>
+            {
+                BecaParameter par = parameters.Find(p => p.name == x.Replace("@", ""));
+                return par == null ?
+                    null
+                    :
+                    (par.value1 != null && par.value1.ToString().IsValidDateTimeJson()) ?
+                        par.value1.ToDateTimeFromJson()
+                        :
+                        par.value1;
+            }).ToArray();
             return await getContext(dbName).ExecuteSqlCommandAsync(sql, pars);
         }
         #endregion "SQL"
@@ -892,9 +917,9 @@ namespace Repository
         private async Task<string> UploadByForm(BecaForm form, object record)
         {
             List<BecaFormField> upl = _context.BecaFormField
-                .Where(f => f.Form == form.Form && f.FieldType == "upload" && record.GetPropertyValue("_" + f.Name + "_upl_").ToString() != "")
+                .Where(f => f.Form == form.Form && f.FieldType == "upload")
                 .ToList();
-            foreach (BecaFormField field in upl)
+            foreach (BecaFormField field in upl.Where(f => record.GetPropertyValue(f.Name + "upl").ToString() != ""))
             {
                 string res = await SaveFileByField(form, field, record);
                 if (res.Contains("ERR: ")) return res.Replace("ERR: ", "");
@@ -933,48 +958,53 @@ namespace Repository
                 List<object> parameters = new List<object>();
                 parameters.Add(record.GetPropertyValue(pars[1]));
                 List<object> data = this.GetDataBySQL(form.TableNameDB, sql, parameters.ToArray());
+                if (data.Count < 1)
+                    return "ERR: C'è stato un problema nella reperimento del tipo documento (" + field.Name + "). Contattare il fornitore";
 
-                string folderNameSub = GetSaveName(data.GetPropertyValue("Fld").ToString(), record);
-                string folderName = folderNameSub.Contains(@"\\") || folderNameSub.Contains(@":\") ? folderNameSub : @"E:\BecaWeb\Web\Upload\" + _activeCompany.MainFolder;
-                string fileName = GetSaveName(data.GetPropertyValue("Name").ToString(), record);
+                object tipoDoc = data[0];
+                string folderNameSub = GetSaveName(tipoDoc.GetPropertyValue("Fld").ToString(), record);
+                string folderName = folderNameSub.Contains(@"\\") || folderNameSub.Contains(@":\") ? folderNameSub : @"E:\BecaWeb\Web\Upload\" + _activeCompany.MainFolder + @"\" + folderNameSub;
+                string fileName = GetSaveName(tipoDoc.GetPropertyValue("Name").ToString(), record);
 
-                if(folderName=="")
+                if (folderName == "")
                 {
                     return "ERR: C'è stato un problema nella definizione della cartella di destinazione (" + field.Name + "). Contattare il fornitore";
                 }
-                if (fileName == "" && data.GetPropertyValue("Name").ToString() != "") { 
+                if (fileName == "" && tipoDoc.GetPropertyValue("Name").ToString() != "")
+                {
                     return "ERR: C'è stato un problema nella definizione del nome del file (" + field.Name + "). Contattare il fornitore";
                 }
 
                 if (!Directory.Exists(folderName)) Directory.CreateDirectory(folderName);
 
 
-                string fileUploaded = record.GetPropertyValue("_" + field.Name + "_upl_").ToString();
-                string fileUploadedName = record.GetPropertyValue("_" + field.Name + "_uplName_").ToString();
-              
+                string fileUploaded = record.GetPropertyValue(field.Name + "upl").ToString();
+                string fileUploadedName = record.GetPropertyValue(field.Name + "uplName").ToString();
+
                 if (fileName == "") fileName = fileUploadedName;
                 if (fileUploaded.Length > 0)
                 {
                     string sFileExtension = fileUploadedName.Remove(0, fileUploadedName.LastIndexOf(".") + 1);
-                    if (data.GetPropertyValue("MB").ToString() != "" && data.GetPropertyString("MB") != "0" && getBase64Dimension(fileUploaded) > int.Parse(data.GetPropertyString("MB")))
+                    if (tipoDoc.GetPropertyValue("MB").ToString() != "" && tipoDoc.GetPropertyString("MB") != "0" && getBase64Dimension(fileUploaded) > int.Parse(tipoDoc.GetPropertyString("MB")))
                     {
-                        return "ERR: Il file " + fileUploadedName + " eccede la dimensione permessa (" + Math.Round((decimal)(int.Parse(data.GetPropertyString("MB")) /  1024 / 1024), 2).ToString() + "MB)";
+                        return "ERR: Il file " + fileUploadedName + " eccede la dimensione permessa (" + Math.Round((decimal)(int.Parse(tipoDoc.GetPropertyString("MB")) / 1024 / 1024), 2).ToString() + "MB)";
                     }
-                    if (data.GetPropertyString("ext").Contains( sFileExtension ) && data.GetPropertyString("ext") != "")
+                    if (tipoDoc.GetPropertyString("ext").Contains(sFileExtension) && tipoDoc.GetPropertyString("ext") != "")
                     {
-                        return "ERR: Il tipo di file (" + sFileExtension + ") non è ammesso. Seleziona uno tra questi tipi: " + data.GetPropertyString("ext");
+                        return "ERR: Il tipo di file (" + sFileExtension + ") non è ammesso. Seleziona uno tra questi tipi: " + tipoDoc.GetPropertyString("ext");
                     }
                     else
                     {
-                        fileName = fileName.Replace("." + sFileExtension, "");
+                        fileName = fileName.Replace("." + sFileExtension, "") + "." + sFileExtension;
                         if (File.Exists(folderName + @"\" + fileName))
                             System.IO.File.Delete(folderName + @"\" + fileName + "." + sFileExtension);
-                        await System.IO.File.WriteAllBytesAsync(folderName + @"\" + fileName + "." + sFileExtension, Convert.FromBase64String(fileUploaded));
-                        return  fileName + "." + sFileExtension;
+                        await System.IO.File.WriteAllBytesAsync(folderName + @"\" + fileName, Convert.FromBase64String(fileUploaded));
+                        return fileName;
                     }
-                } else { return ""; }
+                }
+                else { return ""; }
             }
-            catch (Exception ex) { return "ERR: " + ex.Message;  }
+            catch (Exception ex) { return "ERR: " + ex.Message; }
         }
 
         private string GetSaveName(string Name, object record)
