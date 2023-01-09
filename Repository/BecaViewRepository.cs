@@ -167,6 +167,7 @@ namespace Repository
                     field.col = BecaCfgFormField.Col;
                     field.subRow = BecaCfgFormField.SubRow;
                     field.subCol = BecaCfgFormField.SubCol;
+                    field.ColClass = BecaCfgFormField.ColClass;
                     field.ColSize = BecaCfgFormField.ColSize;
                     field.SubColSize = BecaCfgFormField.SubColSize;
                     field.disabled = BecaCfgFormField.Locked;

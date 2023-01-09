@@ -90,6 +90,7 @@ namespace Entities.Models
         public short Col_Order { get; set; }
         public short SubCol { get; set; }
         public short SubCol_Order { get; set; }
+        public string? ColClass { get; set; }
         public string? ColSize { get; set; }
         public string? SubColSize { get; set; }
         public string? Filter_options { get; set; }
