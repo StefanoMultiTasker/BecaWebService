@@ -1,10 +1,7 @@
-﻿using System.Collections.Generic;
-
-using System.ComponentModel.DataAnnotations;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Entities.Models
 {
@@ -47,41 +44,45 @@ namespace Entities.Models
         public List<RefreshToken> RefreshTokens { get; set; }
     }
 
-    [Owned]
+    //[Owned]
+    [PrimaryKey(nameof(idProfile), nameof(idCompany))]
     public partial class UserProfile
     {
         [JsonIgnore]
         public int idUtente { get; set; }
+        //[Key, Column(Order = 0)]
         public int idProfile { get; set; }
         [JsonIgnore]
+        //[Key, Column(Order = 1)]
         public int idCompany { get; set; }
         public string Profile { get; set; }
         public bool PasswordChange { get; set; }
         [JsonIgnore]
-        public string Flags { get; set; }
+        public string? Flags { get; set; }
         public bool isDefault { get; set; }
     }
 
-    [Owned]
+    //[Owned]
     public partial class UserCompany
     {
         [JsonIgnore]
         public int idUtente { get; set; }
-        private int isDefault { get ; set; }
+        private int isDefault { get; set; }
         [NotMapped]
         public bool IsDefault { get => isDefault != 0; set => isDefault = value ? 1 : 0; }
+        [Key]
         public int idCompany { get; set; }
         public string CompanyName { get; set; }
-        public string Logo1url { get; set; }
-        public string Logo2url { get; set; }
-        public string Logo3url { get; set; }
-        public string Logo4url { get; set; }
-        public string Logo5url { get; set; }
-        public string Color1 { get; set; }
-        public string Color2 { get; set; }
-        public string Color3 { get; set; }
-        public string Color4 { get; set; }
-        public string Color5 { get; set; }
+        public string? Logo1url { get; set; }
+        public string? Logo2url { get; set; }
+        public string? Logo3url { get; set; }
+        public string? Logo4url { get; set; }
+        public string? Logo5url { get; set; }
+        public string? Color1 { get; set; }
+        public string? Color2 { get; set; }
+        public string? Color3 { get; set; }
+        public string? Color4 { get; set; }
+        public string? Color5 { get; set; }
         public string MainFolder { get; set; }
 
         public List<UserProfile> Profiles { get; set; }

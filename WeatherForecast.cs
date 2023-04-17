@@ -1,5 +1,3 @@
-using System;
-
 namespace BecaWebService
 {
     public class WeatherForecast

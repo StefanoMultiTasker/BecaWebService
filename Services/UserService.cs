@@ -1,16 +1,12 @@
-﻿using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using BecaWebService.Models.Users;
-using Entities.Models;
-using Entities.Contexts;
-using BecaWebService.Helpers;
-using System.Security.Cryptography;
-using System.Text;
-using Microsoft.AspNetCore.Cryptography.KeyDerivation;
-using BecaWebService.Authorization;
+﻿using BecaWebService.Authorization;
 using BecaWebService.ExtensionsLib;
+using BecaWebService.Helpers;
+using BecaWebService.Models.Users;
+using Entities.Contexts;
+using Entities.Models;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using Microsoft.Extensions.Options;
+using System.Text;
 
 namespace BecaWebService.Services
 {
@@ -60,14 +56,12 @@ namespace BecaWebService.Services
             removeOldRefreshTokens(user);
 
             // save changes to db
-            _context.Update(user);
+            //_context.Update(user);
             _context.SaveChanges();
             if (_memoryContext.Users.SingleOrDefault(u => u.idUtente == user.idUtente) != null)
-            {
-                _memoryContext.Users.Remove(_memoryContext.Users.Find(user.idUtente));
-                //_memoryContext.SaveChanges();
-            }
-            _memoryContext.Users.Add(user.deepCopy());
+                _memoryContext.Users.Update(_memoryContext.Users.Find(user.idUtente));
+            else
+                _memoryContext.Users.Add(user.deepCopy());
             _memoryContext.SaveChanges();
 
             return new AuthenticateResponse(user, jwtToken, refreshToken.Token);
@@ -146,7 +140,7 @@ namespace BecaWebService.Services
 
             var parents = rawUserMenu
                 .Where(m => m.ParentItem != null)
-                .GroupBy(m => new { m.idCompany,  m.CompanyName,  m.ParentItem },
+                .GroupBy(m => new { m.idCompany, m.CompanyName, m.ParentItem },
                     (key) => new { idCompany = key.idCompany, CompanyName = key.CompanyName, ParentItem = key.ParentItem })
                 .ToList();
 

@@ -6,18 +6,10 @@ using Entities.DataTransferObjects;
 using Entities.Models;
 using ExtensionsLib;
 using Microsoft.AspNetCore.Http;
-using Microsoft.VisualBasic;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Security.Policy;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Repository
 {
@@ -48,6 +40,15 @@ namespace Repository
                 .FirstOrDefault(f => f.idBecaView == idView && f.isMain == true);
             if (form != null) return form.Form;
             else return null;
+        }
+
+        public async Task<T> AddOrUpdateDataByForm<T>(string Form, object record) where T : class, new()
+        {
+            List<object> data = GetDataByForm<object>(Form, record);
+            if (data.Count == 0)
+                return await AddDataByForm<T>(Form, record);
+            else
+                return await UpdateDataByForm<T>(Form, data[0], record);
         }
 
         public async Task<T> AddDataByForm<T>(string Form, object record) where T : class, new()
@@ -231,20 +232,37 @@ namespace Repository
             }
         }
 
-        public List<T> GetDataByForm<T>(string Form, List<BecaParameter> parameters) where T : class, new()
+        public List<T> GetDataByForm<T>(string Form, List<BecaParameter> parameters, bool view = true, bool getChildren = true) where T : class, new()
         {
             BecaForm form = _context.BecaForm
                 .FirstOrDefault(f => f.Form == Form);
             List<object> pars = new List<object>();
             if (form != null)
             {
+                if((form.SelectProcedureName ?? "") != "") return this.GetDataBySP<T>(form.TableNameDB, form.SelectProcedureName, parameters);
                 string upl = string.Join(", ", _context.BecaFormField
                     .Where(f => f.Form == Form && f.FieldType == "upload")
                     .ToList().Select(n => "Null As [_" + n.Name.Trim() + "_upl_], Null As [_" + n.Name.Trim() + "_uplName_]"));
-                string sql = getFormSQL(form, true);
-                string db = form.ViewName == null || form.ViewName.ToString() == "" ? form.TableNameDB : form.ViewNameDB;
+                string sql = getFormSQL(form, view);
+                string db = form.ViewName.isNullOrempty() ? form.TableNameDB : form.ViewNameDB;
 
-                object colCheck = getContext(db).GetQueryDef<object>(Form, sql + " Where 0 = 1");
+                int numP = 0;
+                if (sql.Contains("("))
+                {
+                    string[] funcPars = sql.inside("(", ")").Replace(" ", "").Split(",");
+                    string funcPar = "";
+                    foreach (BecaParameter par in parameters.Where(p => funcPars.Contains(p.name)))
+                    {
+                        funcPar += "{" + numP + "}";
+                        pars.Add(par.value1);
+                        numP++;
+                        par.used = true;
+                    }
+                    funcPar = funcPar.Replace("}{", "},{");
+                    sql = sql.Replace(sql.inside("(", ")"), funcPar);
+                }
+
+                object colCheck = getContext(db).GetQueryDef<object>(Form, sql + " Where 0 = 1", pars.ToArray());
                 if (form.UseDefaultParam)
                 {
                     if (colCheck.GetType().GetProperty("idUtente") != null)
@@ -261,10 +279,9 @@ namespace Repository
                 if (parameters != null && parameters.Count() > 0)
                 {
                     //pars = new object[] { };
-                    int numP = 0;
-                    foreach (BecaParameter par in parameters)
+                    foreach (BecaParameter par in parameters.Where(p => p.used == false))
                     {
-                        sql += numP == 0 ? " Where " : " And ";
+                        sql += (numP - parameters.Count(p => p.used == true)) == 0 ? " Where " : " And ";
                         sql += par.name + " " + par.comparison;
                         switch (par.comparison.ToLower())
                         {
@@ -321,66 +338,69 @@ namespace Repository
 
                 List<T> res = getContext(db).ExecuteQuery<T>(Form, sql, subForms.Count > 0, pars.ToArray());
 
-                foreach (BecaFormLevels level in subForms)
+                if (getChildren)
                 {
-                    BecaForm childForm = _context.BecaForm
-                        .FirstOrDefault(f => f.Form == level.ChildForm);
+                    foreach (BecaFormLevels level in subForms)
+                    {
+                        BecaForm childForm = _context.BecaForm
+                            .FirstOrDefault(f => f.Form == level.ChildForm);
 
-                    string parent = (form.ViewName == null || form.ViewName.ToString() == "" ? form.TableName : form.ViewName);
-                    string child = (childForm.ViewName == null || childForm.ViewName.ToString() == "" ? childForm.TableName : childForm.ViewName);
+                        string parent = (form.ViewName == null || form.ViewName.ToString() == "" ? form.TableName : form.ViewName);
+                        string child = (childForm.ViewName == null || childForm.ViewName.ToString() == "" ? childForm.TableName : childForm.ViewName);
 
-                    string sqlParent = sqlOrd == "" ? sql : sql.Replace(sqlOrd, "");
-                    sql = "Select " +
-                        string.Join(",", level.RelationColumn.Split(",").Select(n => parent + "." + n.Trim())) +
-                        " From " + parent;
-                    object objRelation = getContext(db).GetQueryDef<object>("", sql + " Where 0 = 1");
+                        string sqlParent = sqlOrd == "" ? sql : sql.Replace(sqlOrd, "");
+                        sql = "Select " +
+                            string.Join(",", level.RelationColumn.Split(",").Select(n => parent + "." + n.Trim())) +
+                            " From " + parent;
+                        object objRelation = getContext(db).GetQueryDef<object>("", sql + " Where 0 = 1");
 
-                    sql = "Select * From (" +
-                        "Select " + child + ".*" +
-                        " From (" + sqlParent + ") Parent " +
-                        " Inner Join " + child +
-                        " On " + string.Join(" And ", level.RelationColumn.Split(",").Select(n => "Parent." + n.Trim() + " = " + child + "." + n.Trim())) +
-                        ") T";
-                    List<object> children = this.GetDataBySQL(db, sql, pars.ToArray());
+                        sql = "Select * From (" +
+                            "Select " + child + ".*" +
+                            " From (" + sqlParent + ") Parent " +
+                            " Inner Join " + child +
+                            " On " + string.Join(" And ", level.RelationColumn.Split(",").Select(n => "Parent." + n.Trim() + " = " + child + "." + n.Trim())) +
+                            ") T";
+                        List<object> children = this.GetDataBySQL(db, sql, pars.ToArray());
 
-                    var groupJoin2 = res.GroupJoin(children,  //inner sequence
-                               p => this.getRelationObjectString(level.RelationColumn, p), //outerKeySelector 
-                               c => this.getRelationObjectString(level.RelationColumn, c),     //innerKeySelector
-                               (oParent, oChildren) =>  // resultSelector 
-                               {
-                                   List<object> children2 = oChildren.ToList();
-                                   //List<object> children2 = new List<object>();
-                                   //foreach (var oChild in oChildren)
-                                   //{
-                                   //    children2.Add(oChild);
-                                   //}
-                                   List<object> curChildren = oParent.GetPropertyValueArray("__children");
-                                   if (curChildren == null) curChildren = new List<object>();
-                                   if (curChildren.Count < level.SubLevel) curChildren.Add(new List<object>());
+                        var groupJoin2 = res.GroupJoin(children,  //inner sequence
+                                   p => this.getRelationObjectString(level.RelationColumn, p), //outerKeySelector 
+                                   c => this.getRelationObjectString(level.RelationColumn, c),     //innerKeySelector
+                                   (oParent, oChildren) =>  // resultSelector 
+                                   {
+                                       List<object> children2 = oChildren.ToList();
+                                       //List<object> children2 = new List<object>();
+                                       //foreach (var oChild in oChildren)
+                                       //{
+                                       //    children2.Add(oChild);
+                                       //}
+                                       List<object> curChildren = oParent.GetPropertyValueArray("__children");
+                                       if (curChildren == null) curChildren = new List<object>();
+                                       if (curChildren.Count < level.SubLevel) curChildren.Add(new List<object>());
 
-                                   curChildren[level.SubLevel - 1] = children2;
+                                       curChildren[level.SubLevel - 1] = children2;
 
-                                   oParent.SetPropertyValuearray("__children", curChildren);
-                                   return oParent;
-                               });
-                    //var groupJoin = res.GroupJoin(children,  //inner sequence
-                    //            p => new {FFCL=p.GetPropertyValue("FFCL").ToString(),CODC= p.GetPropertyValue("CODC").ToString()}, //outerKeySelector 
-                    //            c => new { FFCL = c.GetPropertyValue("FFCL").ToString(), CODC = c.GetPropertyValue("CODC").ToString() },     //innerKeySelector
-                    //            (oParent, oChildren) => new // resultSelector 
-                    //            {
-                    //                data = oParent,
-                    //                _children = oChildren
-                    //            });
-                    //string ttt = "";
-                    //foreach (var item in groupJoin)
-                    //{
-                    //    string ss = "";
-                    //}
-                    //foreach (var item in groupJoin2) {
-                    //    string rr = "";
-                    //}
-                    res = groupJoin2.ToList();
-                    //List<T> res2 = (List<T>)groupJoin;
+                                       oParent.SetPropertyValuearray("__children", curChildren);
+                                       return oParent;
+                                   });
+                        //var groupJoin = res.GroupJoin(children,  //inner sequence
+                        //            p => new {FFCL=p.GetPropertyValue("FFCL").ToString(),CODC= p.GetPropertyValue("CODC").ToString()}, //outerKeySelector 
+                        //            c => new { FFCL = c.GetPropertyValue("FFCL").ToString(), CODC = c.GetPropertyValue("CODC").ToString() },     //innerKeySelector
+                        //            (oParent, oChildren) => new // resultSelector 
+                        //            {
+                        //                data = oParent,
+                        //                _children = oChildren
+                        //            });
+                        //string ttt = "";
+                        //foreach (var item in groupJoin)
+                        //{
+                        //    string ss = "";
+                        //}
+                        //foreach (var item in groupJoin2) {
+                        //    string rr = "";
+                        //}
+                        res = groupJoin2.ToList();
+                        //List<T> res2 = (List<T>)groupJoin;
+                    }
                 }
 
                 return res;
@@ -409,7 +429,7 @@ namespace Repository
             return rel;
         }
 
-        public List<T> GetDataByForm<T>(string Form, object record) where T : class, new()
+        public List<T> GetDataByForm<T>(string Form, object record, bool view = true, bool getChildren = true) where T : class, new()
         {
             BecaForm form = _context.BecaForm
                 .FirstOrDefault(f => f.Form == Form);
@@ -419,9 +439,9 @@ namespace Repository
                 BecaParameters aPar = new BecaParameters();
                 foreach (string orderField in form.PrimaryKey.Split(","))
                 {
-                    aPar.Add(orderField, record.GetPropertyValue(orderField));
+                    aPar.Add(orderField.Trim(), record.GetPropertyValue(orderField.Trim()));
                 }
-                List<T> data = this.GetDataByForm<T>(Form, aPar.parameters);
+                List<T> data = this.GetDataByForm<T>(Form, aPar.parameters, view, getChildren);
                 return data;
             }
             else
@@ -453,6 +473,26 @@ namespace Repository
                 (view ? ((form.ViewName == null || form.ViewName.ToString() == "" ? form.TableName : form.ViewName)) : form.TableName);
 
             return sql;
+        }
+
+        public List<T> GetDataBySP<T>(string dbName, string spName, List<BecaParameter> parameters) where T : class, new()
+        {
+            List<string> names = getContext(dbName).GetProcedureParams(spName);
+            string sql = $"Exec {spName} " +
+                string.Join(", ", names.Where(x => parameters.Exists(p => p.name == x.Replace("@", ""))).Select((x, i) => x +
+                    @" = {" + i.ToString() + "}"));
+            var pars = names.Where(x => parameters.Exists(p => p.name == x.Replace("@", ""))).Select((x, i) =>
+            {
+                BecaParameter par = parameters.Find(p => p.name == x.Replace("@", ""));
+                return par == null ?
+                    null
+                    :
+                    (par.value1 != null && par.value1.ToString().IsValidDateTimeJson()) ?
+                        par.value1.ToDateTimeFromJson()
+                        :
+                        par.value1;
+            }).ToArray();
+            return getContext(dbName).ExecuteQuery<T>(spName, sql, false, pars.ToArray());
         }
 
         public T getFormObject<T>(string Form, bool view, bool noUpload = false)
@@ -488,10 +528,19 @@ namespace Repository
             return await getContext(dbName).ExecuteSqlCommandAsync(sql, pars);
         }
 
-        public async Task<int?> UpdateDataByForm<T>(string Form, object recordOld, object recordNew) where T : class, new()
+        public async Task<T> UpdateDataByForm<T>(string Form, object recordOld, object recordNew) where T : class, new()
         {
             BecaForm form = _context.BecaForm
                 .FirstOrDefault(f => f.Form == Form);
+
+            if (form != null && form.ForceInsertOnUpdate)
+            {
+                List<T> data = this.GetDataByForm<T>(Form, recordNew, false, false);
+                if (data.Count == 0)
+                {
+                    return await this.AddDataByForm<T>(Form, recordNew);
+                }
+            }
 
             string tryUpload = await UploadByForm(form, recordNew);
             if (tryUpload != "") throw new InvalidOperationException(tryUpload);
@@ -502,7 +551,12 @@ namespace Repository
                 if ((form.UpdateProcedureName ?? "") != "" && !form.UpdateProcedureName.Contains("#After"))
                 {
                     int? resSPBefore = await UpdateDataByProcedure<T>(form.TableNameDB, form.UpdateProcedureName, recordNew);
-                    if (!form.UpdateProcedureName.Contains("#Before")) return resSPBefore;
+                    if (!form.UpdateProcedureName.Contains("#Before"))
+                    {
+                        List<T> inserted1 = this.GetDataByForm<T>(Form, recordNew);
+                        if (inserted1.Count == 0) return null;
+                        return inserted1[0];
+                    }
                 }
 
                 object tblform = getFormObject<object>(Form, false, true);
@@ -548,7 +602,7 @@ namespace Repository
                     }
                 }
                 else return null;
-                if (numP == 0) return 0;
+                if (numP == 0) return null;
 
                 string sqlW = "";
                 int numPW = 0;
@@ -566,9 +620,11 @@ namespace Repository
                 if ((form.UpdateProcedureName ?? "") != "" && form.UpdateProcedureName.Contains("#After"))
                 {
                     await _context.SaveChangesAsync();
-                    return await UpdateDataByProcedure<T>(form.TableNameDB, form.UpdateProcedureName, recordNew);
+                    await UpdateDataByProcedure<T>(form.TableNameDB, form.UpdateProcedureName, recordNew);
                 }
-                return resSave;
+                List<T> inserted2 = this.GetDataByForm<T>(Form, recordNew);
+                if (inserted2.Count == 0) return null;
+                return inserted2[0];
             }
             else
             {
@@ -597,9 +653,28 @@ namespace Repository
                 string sqlChk = "Select * From " + ddl.Substring(ddl.ToUpper().IndexOf("FROM") + 5);
                 if (sqlChk.ToUpper().Contains("WHERE")) sqlChk = sqlChk.Substring(0, sqlChk.ToUpper().IndexOf("WHERE") - 1);
                 if (sqlChk.ToUpper().Contains("ORDER")) sqlChk = sqlChk.Substring(0, sqlChk.ToUpper().IndexOf("ORDER") - 1);
+
+                List<object> pars = new List<object>();
+                int numP = 0;
+                if (sqlChk.Contains("("))
+                {
+                    string[] funcPars = sqlChk.inside("(", ")").Replace(" ", "").Split(",");
+                    string funcPar = "";
+                    foreach (BecaParameter par in parameters.Where(p => funcPars.Contains(p.name)))
+                    {
+                        funcPar += "{" + numP + "}";
+                        pars.Add(par.value1);
+                        numP++;
+                        par.used = true;
+                    }
+                    funcPar = funcPar.Replace("}{", "},{");
+                    sqlChk = sqlChk.Replace(sqlChk.inside("(", ")"), funcPar);
+                    sql = sql.Replace(sql.inside("(", ")"), funcPar);
+                }
+
                 if (ddlPar != null && ddlPar.Contains("idUtente"))
                 {
-                    object colCheck = getContext(formField.DropDownListDB).GetQueryDef<object>(Form + '_' + field + "_chk", sqlChk + " Where 0 = 1");
+                    object colCheck = getContext(formField.DropDownListDB).GetQueryDef<object>(Form + '_' + field + "_chk", sqlChk + " Where 0 = 1", pars.ToArray());
                     if (colCheck.GetType().GetProperty("idUtente") != null)
                     {
                         parameters.Add(new BecaParameter()
@@ -610,6 +685,7 @@ namespace Repository
                         });
                     }
                 }
+
                 string sqlOrd = "";
                 if (sql.ToUpper().Contains("ORDER"))
                 {
@@ -629,15 +705,13 @@ namespace Repository
                     sql = sql.Substring(0, sql.ToUpper().IndexOf("WHERE") - 1);
                 }
                 sql = sql + " " + sqlWhere;
-                List<object> pars = new List<object>();
                 if (parameters != null && parameters.Count() > 0)
                 {
-                    int numP = 0;
-                    foreach (BecaParameter par in parameters)
+                    foreach (BecaParameter par in parameters.Where(p => p.used == false))
                     {
                         if (par.value1 != null && par.value1.ToString().IsValidDateTimeJson()) par.value1 = par.value1.ToDateTimeFromJson();
                         if (par.value2 != null && par.value2.ToString().IsValidDateTimeJson()) par.value2 = par.value2.ToDateTimeFromJson();
-                        sql += numP == 0 && sql.ToUpper().IndexOf("WHERE") < 0 ? " Where " : " And ";
+                        sql += (numP - parameters.Count(p => p.used == true)) == 0 && sql.ToUpper().IndexOf("WHERE") < 0 ? " Where " : " And ";
                         sql += par.name + " " + par.comparison;
                         switch (par.comparison)
                         {
@@ -907,6 +981,8 @@ namespace Repository
 
         private DbDatiContext getContext(string dbName)
         {
+            if (dbName == "")
+                dbName = _activeCompany.Connections.FirstOrDefault(c => c.Default == true).ConnectionName;
             if (_databases.ContainsKey(dbName)) return _databases[dbName];
 
             DbDatiContext db = new DbDatiContext(_formTool, _activeCompany.Connections.FirstOrDefault(c => c.ConnectionName == dbName).ConnectionString);
@@ -1011,7 +1087,6 @@ namespace Repository
         {
             int p1, p2;
             string ph = "";
-            DateTime dt;
 
             while (Name.Contains("#"))
             {

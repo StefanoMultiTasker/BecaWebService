@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace BecaWebService.Models.Communications
+﻿namespace BecaWebService.Models.Communications
 {
     public class GenericResponse : BaseResponse
     {
         public bool _result { get; private set; }
         public object _extraLoad { get; set; }
+        public List<object> _extraLoads { get; set; }
 
         private GenericResponse(bool success, string message, bool result) : base(success, message)
         {
@@ -25,6 +21,9 @@ namespace BecaWebService.Models.Communications
 
         public GenericResponse(object ExtraLoad) : this(true, string.Empty, true)
         { _extraLoad = ExtraLoad; }
+
+        public GenericResponse(List<object> ExtraLoads) : this(true, string.Empty, true)
+        { _extraLoads = ExtraLoads; }
 
         /// <summary>
         /// Creates am error response.

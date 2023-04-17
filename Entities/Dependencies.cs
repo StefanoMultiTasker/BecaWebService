@@ -1,13 +1,7 @@
 ﻿using AutoMapper;
-using Entities;
 using Entities.Contexts;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 
 namespace Entities
 {
@@ -33,7 +27,7 @@ namespace Entities
         private readonly FormTool _formTool;
         //private readonly HttpContext _httpContext;
 
-        public Dependencies(IConfiguration configuration, IMapper mapper, MyMemoryCache cache, 
+        public Dependencies(IConfiguration configuration, IMapper mapper, MyMemoryCache cache,
             DbBecaContext context, DbMemoryContext memoryContext, FormTool formTool)
         {
             _cache = cache.Cache;
@@ -51,7 +45,7 @@ namespace Entities
 
         public IMapper mapper => _mapper;
 
-        public DbBecaContext context=> _context;
+        public DbBecaContext context => _context;
 
         public DbMemoryContext memoryContext => _memoryContext;
 

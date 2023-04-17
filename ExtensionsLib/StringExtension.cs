@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
+﻿using System.Globalization;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace BecaWebService.ExtensionsLib
 {
@@ -40,6 +35,19 @@ namespace BecaWebService.ExtensionsLib
                         });
         }
 
+        public static string coalesce(this string str) => str ?? "";
+
+        public static bool isNullOrempty(this string str) => str == null || str == "";
+
+        public static string left(this string str, int chars) =>
+            String.Concat(str.ToCharArray().Take(chars));
+
+        public static string right(this string str, int chars) =>
+            String.Concat(str.ToCharArray().TakeLast(chars));
+
+        public static string inside(this string str, string from, string to) =>
+            str.Substring(str.IndexOf(from) + 1, str.IndexOf(to) - str.IndexOf(from) - 1);
+
         public static bool IsValidDateTimeJson(this string dateString)
         {
             string format = "ddd, dd MMM yyyy hh:mm:ss GMT";
@@ -51,6 +59,21 @@ namespace BecaWebService.ExtensionsLib
             else
             {
                 return false;
+            }
+        }
+
+        public static DateTime? ToDateTimeFromJsonText(this string source)
+        {
+            string format = "ddd, dd MMM yyyy hh:mm:ss GMT";
+            string dateString = source.ToString();
+            DateTime dateTime;
+            if (DateTime.TryParseExact(dateString, format, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal, out dateTime))
+            {
+                return dateTime;
+            }
+            else
+            {
+                return null;
             }
         }
 

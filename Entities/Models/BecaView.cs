@@ -1,8 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Entities.Models
 {
@@ -48,7 +44,7 @@ namespace Entities.Models
         public ICollection<BecaViewChild> BecaViewChildren { get; set; }
     }
 
-    public partial class BecaViewData 
+    public partial class BecaViewData
     {
         public int idBecaView { get; set; }
         //public int idDataDefinition { get; set; }
@@ -59,8 +55,10 @@ namespace Entities.Models
         public string? Format { get; set; }
         public bool isGridOptional { get; set; }
         public bool isGridVisible { get; set; }
+        public bool isGridEdit { get; set; }
         public short GridOrder { get; set; }
         public string? GridHeatColor { get; set; }
+        public string? Grid_ColSize { get; set; }
 
         public virtual BecaView idBecaViewNavigation { get; set; }
     }
@@ -77,8 +75,9 @@ namespace Entities.Models
 
     public partial class BecaViewUI
     {
-        public int idBecaView { get; set; }
-        public string ViewName { get; set; }
+        public int? idBecaView { get; set; }
+        public string? ViewName { get; set; }
+        public string Form { get; set; }
         public string Name { get; set; }
         public short idDataType { get; set; }
         public string DataType { get; set; }
@@ -114,7 +113,7 @@ namespace Entities.Models
         public bool Required { get; set; }
     }
 
-    public  class BecaViewFilterUI : BecaViewUI { }
+    public class BecaViewFilterUI : BecaViewUI { }
     public partial class BecaViewDetailUI : BecaViewUI { }
 
 
@@ -148,7 +147,7 @@ namespace Entities.Models
     //    public string? HelpFull { get; set; }
     //}
 
-    public partial class BecaViewFilterValues 
+    public partial class BecaViewFilterValues
     {
         public int idBecaView { get; set; }
         public int idFilterValue { get; set; }
@@ -165,7 +164,7 @@ namespace Entities.Models
         public virtual BecaView idBecaViewNavigation { get; set; }
     }
 
-    public partial class BecaViewFilters 
+    public partial class BecaViewFilters
     {
         public int idBecaView { get; set; }
         public string? FilterReference { get; set; }
@@ -183,7 +182,7 @@ namespace Entities.Models
         public string? Parameter2 { get; set; }
         public string? ValueModifier1 { get; set; }
         public string? ValueModifier2 { get; set; }
-  
+
         public virtual BecaView idBecaViewNavigation { get; set; }
     }
 
@@ -223,7 +222,7 @@ namespace Entities.Models
         public virtual IList<BecaPanelFilters> BecaPanelFilters { get; set; }
     }
 
-    public partial class BecaPanelFilters  
+    public partial class BecaPanelFilters
     {
         public int idBecaViewPanel { get; set; }
         public int idBecaFilter { get; set; }
@@ -280,7 +279,7 @@ namespace Entities.Models
         public virtual IList<BecaFormulaDataFilters> BecaFormulaDataFilters { get; set; }
     }
 
-    public partial class BecaFormulaDataFilters 
+    public partial class BecaFormulaDataFilters
     {
         public int IdFormulaData { get; set; }
         public int idBecaFilter { get; set; }
@@ -337,6 +336,7 @@ namespace Entities.Models
         public string childForm { get; set; }
         public int subLevel { get; set; }
         public string childCaption { get; set; }
+        public string PrimaryKey { get; set; }
         public bool LoadInGrid { get; set; }
         public bool LoadInDetails { get; set; }
         public int DefaultRows { get; set; }
@@ -355,6 +355,9 @@ namespace Entities.Models
         public string? ChildAddOk { get; set; }
         public string? ChildAddErr { get; set; }
         public string? ChildAddSaveBefore { get; set; }
+        public bool AddRecord { get; set; }
+        public bool EditRecord { get; set; }
+        public bool DeleteRecord { get; set; }
         public ICollection<BecaViewChildData> BecaFormChildData { get; set; }
 
         public BecaViewChild()
@@ -375,8 +378,10 @@ namespace Entities.Models
         public string? Format { get; set; }
         public bool isGridOptional { get; set; }
         public bool isGridVisible { get; set; }
+        public bool isGridEdit { get; set; }
         public short GridOrder { get; set; }
         public string? GridHeatColor { get; set; }
+        public string? Grid_ColSize { get; set; }
         public BecaViewChild containerForm { get; set; }
     }
 }

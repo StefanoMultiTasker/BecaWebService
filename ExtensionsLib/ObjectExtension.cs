@@ -1,13 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Xml.Serialization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BecaWebService.ExtensionsLib
 {

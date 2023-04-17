@@ -1,17 +1,6 @@
 ﻿using Entities.Models;
-using ExtensionsLib;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Storage;
-using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
-using System.Linq;
-using System.Reflection;
-using System.Threading.Tasks;
 
 namespace Entities.Contexts
 {
@@ -20,7 +9,7 @@ namespace Entities.Contexts
         //public string domain;
         //public int idUtente;
 
-        private readonly IConfiguration Configuration;
+        //private readonly IConfiguration Configuration;
 
         public virtual DbSet<BecaUser> BecaUsers { get; set; }
         public virtual DbSet<UserMenu> RawUserMenu { get; set; }
@@ -86,6 +75,9 @@ namespace Entities.Contexts
 
                     a.Property<string>("ConnectionString")
                         .HasColumnType("string");
+
+                    a.Property<bool>("Default")
+                        .HasColumnType("bit");
 
                     a.HasKey("idCompany", "idConnection");
                     a.WithOwner()
@@ -365,7 +357,8 @@ namespace Entities.Contexts
             modelBuilder.Entity<BecaViewDetailUI>(entity =>
             {
                 entity.ToView("vBecaViewDetailUI");
-                entity.HasKey(e => new { e.idBecaView, e.Name });
+                entity.HasKey(e => new { e.Form, e.Name });
+                //entity.HasAlternateKey(e => new {e.idBecaView, e.Name}); 
 
             });
             modelBuilder.Entity<BecaViewChild>(entity =>

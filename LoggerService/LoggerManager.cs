@@ -1,8 +1,5 @@
 ﻿using Contracts;
 using NLog;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace LoggerService
 {

@@ -1,17 +1,11 @@
-﻿using Contracts;
-using Entities.Contexts;
-using Entities.Models;
+﻿using AutoMapper;
 using BecaWebService.ExtensionsLib;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
-using System.Linq;
-using Entities.DataTransferObjects;
+using Contracts;
 using Entities;
+using Entities.DataTransferObjects;
+using Entities.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 
 namespace Repository
 {
@@ -136,6 +130,21 @@ namespace Repository
             }
         }
 
+        public UIform GetViewUI(string form)
+        {
+            List<BecaViewDetailUI> detailUI = dbBecaContext.BecaViewDetailUI
+                    .Where(obj => obj.Form == form)
+                    .OrderBy(obj => obj.Row)
+                    .ThenBy(obj => obj.Col)
+                    .ThenBy(obj => obj.Col_Order)
+                    .ThenBy(obj => obj.SubRow)
+                    .ThenBy(obj => obj.SubCol)
+                    .ThenBy(obj => obj.SubCol_Order)
+                    .ToList();
+            UIform viewDetailUI = this.CreateFilterUI(this._mapper.Map<List<BecaViewDetailUI>, List<BecaViewUI>>(detailUI));
+            return viewDetailUI;
+        }
+
         private UIform CreateFilterUI(List<BecaViewUI> items)
         {
             if (items.Count == 0) return null;
@@ -151,7 +160,7 @@ namespace Repository
                     field.placeholder = BecaCfgFormField.HelpShort;
                     field.fieldType = BecaCfgFormField.FieldType;
                     field.inputType = BecaCfgFormField.FieldInput;
-                    field.format = BecaCfgFormField.Format;
+                    field.format = BecaCfgFormField.Format ?? "";
                     field.reference = BecaCfgFormField.Filter_Reference;
                     field.filter_API = BecaCfgFormField.Filter_API;
                     string opts = BecaCfgFormField.Filter_options ?? "";

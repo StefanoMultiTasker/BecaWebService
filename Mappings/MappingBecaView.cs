@@ -2,11 +2,6 @@
 using BecaWebService.ExtensionsLib;
 using Entities.DataTransferObjects;
 using Entities.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace BecaWebService.Mappings
 {
@@ -206,6 +201,11 @@ namespace BecaWebService.Mappings
                             src => src.childCaption
                             )
                         )
+                .ForPath(dest => dest.KeyFields,
+                        opts => opts.MapFrom(
+                            src => src.PrimaryKey.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(k => k.ToLowerToCamelCase()).ToList()
+                            )
+                        )
                 .ForPath(dest => dest.ChildFields,
                         opts => opts.MapFrom(
                             src => src.BecaFormChildData
@@ -282,11 +282,6 @@ namespace BecaWebService.Mappings
                             src => src.HasChart
                             )
                         )
-                .ForPath(dest => dest.ViewDefinition.ChartHasDetail,
-                        opts => opts.MapFrom(
-                            src => src.ChartHasDetail
-                            )
-                        )
                 .ForPath(dest => dest.ViewDefinition.IsChartFromApi,
                         opts => opts.MapFrom(
                             src => src.IsChartFromApi
@@ -297,29 +292,44 @@ namespace BecaWebService.Mappings
                             src => src.isPanelsFromApi
                             )
                         )
-                .ForPath(dest => dest.ViewDefinition.viewAxisXData,
+                .ForPath(dest => dest.ViewDefinition.ChartDefinition.ChartHasDetail,
+                        opts => opts.MapFrom(
+                            src => src.ChartHasDetail
+                            )
+                        )
+                .ForPath(dest => dest.ViewDefinition.ChartDefinition.viewAxisXformula,
+                        opts => opts.MapFrom(
+                            src => src.viewAxisXformula
+                            )
+                        )
+                .ForPath(dest => dest.ViewDefinition.ChartDefinition.viewAxisXData,
                         opts => opts.MapFrom(
                             src => src.viewAxisXData.Split(",", StringSplitOptions.RemoveEmptyEntries).ToList<string>()
                             )
                         )
-                .ForPath(dest => dest.ViewDefinition.viewAxisXFilters,
+                .ForPath(dest => dest.ViewDefinition.ChartDefinition.viewAxisXFilters,
                         opts => opts.MapFrom(
                             src => src.viewAxisXFilters.Split(",", StringSplitOptions.RemoveEmptyEntries).ToList<string>()
                             )
                         )
-                .ForPath(dest => dest.ViewDefinition.viewAxisXActions,
+                .ForPath(dest => dest.ViewDefinition.ChartDefinition.viewAxisXActions,
                         opts => opts.MapFrom(
                             src => src.viewAxisXActions.Split(",", StringSplitOptions.RemoveEmptyEntries).ToList<string>()
                             )
                         )
-                .ForPath(dest => dest.ViewDefinition.viewAxisXZoomIf,
+                .ForPath(dest => dest.ViewDefinition.ChartDefinition.viewAxisXZoomIf,
                         opts => opts.MapFrom(
                             src => src.viewAxisXZoomIf.Split(",", StringSplitOptions.RemoveEmptyEntries).ToList<string>()
                             )
                         )
-                .ForPath(dest => dest.ViewDefinition.viewAxisXZoomTo,
+                .ForPath(dest => dest.ViewDefinition.ChartDefinition.viewAxisXZoomTo,
                         opts => opts.MapFrom(
                             src => src.viewAxisXZoomTo.Split(",", StringSplitOptions.RemoveEmptyEntries).ToList<string>()
+                            )
+                        )
+                .ForPath(dest => dest.ViewDefinition.ChartDefinition.viewAxisXStep,
+                        opts => opts.MapFrom(
+                            src => src.viewAxisXStep
                             )
                         )
                 .ForPath(dest => dest.ViewDefinition.HttpGetUrl,
@@ -368,6 +378,11 @@ namespace BecaWebService.Mappings
                 .ForMember(dest => dest.DataType,
                         opts => opts.MapFrom(
                             src => src.idDataType
+                            )
+                        )
+                .ForMember(dest => dest.Format,
+                        opts => opts.MapFrom(
+                            src => src.Format ?? ""
                             )
                         );
 

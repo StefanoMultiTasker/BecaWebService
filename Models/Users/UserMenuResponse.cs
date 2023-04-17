@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace BecaWebService.Models.Users
+﻿namespace BecaWebService.Models.Users
 {
     public class UserMenuResponse
     {
         public UserMenuResponse() => Companies = new List<UserMenuCompany>();
         public List<UserMenuCompany> Companies { get; set; }
-}
+    }
 
     public class UserMenuCompany
     {

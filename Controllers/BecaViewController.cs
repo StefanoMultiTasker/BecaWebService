@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-//using System.Web.Http;
+﻿//using System.Web.Http;
 using AutoMapper;
 using Contracts;
 using Entities.DataTransferObjects;
 using Entities.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BecaWebService.Controllers
@@ -39,6 +34,10 @@ namespace BecaWebService.Controllers
                 UIform viewDetailUI = _repository.GetViewUI(idView, "D");
                 oView.FilterUI = viewFilterUI;
                 oView.DetailUI = viewDetailUI;
+                foreach(dtoBecaViewChild child in oView.ViewDefinition.childrenForm) { 
+                    UIform childDetailUI = _repository.GetViewUI(child.form);
+                    child.DetailUI= childDetailUI;
+                }
                 _logger.LogInfo($"Returned View for id {idView}.");
 
                 return Ok(oView);

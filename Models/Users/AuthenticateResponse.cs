@@ -1,6 +1,5 @@
 ﻿using Entities.Models;
 using Newtonsoft.Json;
-using System.Collections.Generic;
 
 namespace BecaWebService.Models.Users
 {

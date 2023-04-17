@@ -1,10 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Entities.Models
 {
@@ -29,5 +24,6 @@ namespace Entities.Models
         public int idConnection { get; set; }
         public string ConnectionName { get; set; }
         public string ConnectionString { get; set; }
+        public bool Default { get; set; }
     }
 }

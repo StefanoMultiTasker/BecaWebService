@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Reflection;
 
 namespace ExtensionsLib
 {
-    public  static partial class PropertiesExtension
+    public static partial class PropertiesExtension
     {
         public static bool HasPropertyValue<T>(this T @this, string propertyName) where T : class, new()
         {
@@ -54,6 +49,7 @@ namespace ExtensionsLib
 
             return (List<object>)property.GetValue(@this, null);
         }
+
         public static object SetPropertyValuearray<T>(this T @this, string propertyName, List<object> value) where T : class, new()
         {
             Type type = @this.GetType();

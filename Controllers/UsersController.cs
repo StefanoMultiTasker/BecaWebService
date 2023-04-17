@@ -1,13 +1,7 @@
 ﻿using BecaWebService.Authorization;
 using BecaWebService.Models.Users;
 using BecaWebService.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace BecaWebService.Controllers
 {

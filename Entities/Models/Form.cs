@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Entities.Models
+﻿namespace Entities.Models
 {
     public class BecaParameters
     {
@@ -47,6 +41,7 @@ namespace Entities.Models
         public object? value2 { get; set; }
         public string comparison { get; set; }
         public string? dataType { get; set; }
+        public bool? used { get; set; } = false;
 
         public BecaParameter() { }
         public BecaParameter(string name, object value1) { this.name = name; this.value1 = value1; this.comparison = "="; }
@@ -74,6 +69,7 @@ namespace Entities.Models
         public string? ViewNameDB { get; set; }
         public string? ViewName { get; set; }
         public string? PrimaryKey { get; set; }
+        public bool ForceInsertOnUpdate { get; set; }
         public string? SelectProcedureName { get; set; }
         public string? UpdateProcedureName { get; set; }
         public string? AddProcedureName { get; set; }
@@ -126,7 +122,7 @@ namespace Entities.Models
         //public string DescCampo { get; set; }
         //public string Titolo { get; set; }
         public string? Title { get; set; }
-        public string FieldType { get; set; }
+        public string? FieldType { get; set; }
         //public string? TipoInput { get; set; }
         //public string? Struttura { get; set; }
         //public Int16 LunghezzaMin { get; set; }

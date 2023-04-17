@@ -1,7 +1,4 @@
 ﻿using Entities.Models;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Entities.DataTransferObjects
 {
@@ -32,28 +29,29 @@ namespace Entities.DataTransferObjects
         {
             viewFields = new List<dtoBecaData>();
             viewPanels = new List<dtoBecaPanel>();
-            viewAxisXData = new List<string>();
-            viewAxisXFilters = new List<string>();
-            viewAxisXActions = new List<string>();
-            viewAxisXZoomIf = new List<string>();
-            viewAxisXZoomTo = new List<string>();
+            //viewAxisXData = new List<string>();
+            //viewAxisXFilters = new List<string>();
+            //viewAxisXActions = new List<string>();
+            //viewAxisXZoomIf = new List<string>();
+            //viewAxisXZoomTo = new List<string>();
             childrenForm = new List<dtoBecaViewChild>();
             KeyFields = new List<string>();
         }
         public IList<dtoBecaData> viewFields { get; set; }
         public IList<dtoBecaPanel> viewPanels { get; set; }
+        public dtoBecaViewChartDefinition ChartDefinition { get; set; }
         public bool HasGrid { get; set; }
         public bool HasChart { get; set; }
-        public bool ChartHasDetail { get; set; }
+        //public bool ChartHasDetail { get; set; }
         public bool IsChartFromApi { get; set; }
         public bool isPanelsFromApi { get; set; }
-        public short viewAxisXformula { get; set; }
-        public IList<string> viewAxisXData { get; set; }
-        public IList<string> viewAxisXFilters { get; set; }
-        public IList<string> viewAxisXActions { get; set; }
-        public IList<string> viewAxisXZoomIf { get; set; }
-        public IList<string> viewAxisXZoomTo { get; set; }
-        public short? viewAxisXStep { get; set; }
+        //public short viewAxisXformula { get; set; }
+        //public IList<string> viewAxisXData { get; set; }
+        //public IList<string> viewAxisXFilters { get; set; }
+        //public IList<string> viewAxisXActions { get; set; }
+        //public IList<string> viewAxisXZoomIf { get; set; }
+        //public IList<string> viewAxisXZoomTo { get; set; }
+        //public short? viewAxisXStep { get; set; }
         public string HttpGetUrl { get; set; }
         public List<string> KeyFields { get; set; }
         public IList<dtoBecaViewChild> childrenForm { get; set; }
@@ -71,8 +69,10 @@ namespace Entities.DataTransferObjects
         public string? Format { get; set; }
         public bool isGridOptional { get; set; }
         public bool isGridVisible { get; set; }
+        public bool isGridEdit { get; set; }
         public short GridOrder { get; set; }
         public string GridHeatColor { get; set; }
+        public string? Grid_ColSize { get; set; }
     }
 
     public class dtoBecaDataUser
@@ -197,6 +197,7 @@ namespace Entities.DataTransferObjects
         public string form { get; set; }
         public int subLevel { get; set; }
         public string Caption { get; set; }
+        public List<string> KeyFields { get; set; }
         public bool LoadInGrid { get; set; }
         public bool LoadInDetails { get; set; }
         public int DefaultRows { get; set; }
@@ -212,11 +213,37 @@ namespace Entities.DataTransferObjects
         public string ChildAddOk { get; set; }
         public string ChildAddErr { get; set; }
         public string ChildAddSaveBefore { get; set; }
+        public bool AddRecord { get; set; }
+        public bool EditRecord { get; set; }
+        public bool DeleteRecord { get; set; }
         public ICollection<dtoBecaData> ChildFields { get; set; }
+        public UIform DetailUI { get; set; }
 
         public dtoBecaViewChild()
         {
+            KeyFields = new List<string>();
             ChildFields = new List<dtoBecaData>();
         }
     }
+
+    public class dtoBecaViewChartDefinition
+    {
+        public dtoBecaViewChartDefinition()
+        {
+            viewAxisXData = new List<string>();
+            viewAxisXFilters = new List<string>();
+            viewAxisXActions = new List<string>();
+            viewAxisXZoomIf = new List<string>();
+            viewAxisXZoomTo = new List<string>();
+        }
+        public bool ChartHasDetail { get; set; }
+        public short viewAxisXformula { get; set; }
+        public IList<string> viewAxisXData { get; set; }
+        public IList<string> viewAxisXFilters { get; set; }
+        public IList<string> viewAxisXActions { get; set; }
+        public IList<string> viewAxisXZoomIf { get; set; }
+        public IList<string> viewAxisXZoomTo { get; set; }
+        public short? viewAxisXStep { get; set; }
+    }
+
 }

@@ -1,9 +1,6 @@
-using Microsoft.AspNetCore.Http;
+using Entities.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using System;
-using System.Linq;
-using Entities.Models;
 
 namespace BecaWebService.Authorization
 {

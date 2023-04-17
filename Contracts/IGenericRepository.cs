@@ -1,9 +1,4 @@
 ﻿using Entities.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Contracts
 {
@@ -11,24 +6,33 @@ namespace Contracts
     {
         T getFormObject<T>(string Form, bool view, bool noUpload = false);
         string GetFormByView(int idView);
-        List<T> GetDataByForm<T>(string Form, List<BecaParameter> parameters) where T : class, new();
-        List<T> GetDataByForm<T>(string Form, object record) where T : class, new();
         object CreateObjectFromJSON<T>(string jsonRecord) where T : class, new();
         T CreateObjectFromJSON<T>(string Form, string jsonRecord) where T : class, new();
-        Task<int?> UpdateDataByForm<T>(string Form, object recordOld, object recordNewd) where T : class, new();
+
+        List<T> GetDataByForm<T>(string Form, List<BecaParameter> parameters, bool view = true, bool getChildren = true) where T : class, new();
+        List<T> GetDataByForm<T>(string Form, object record, bool view = true, bool getChildren = true) where T : class, new();
+        List<T> GetDataBySP<T>(string dbName, string spName, List<BecaParameter> parameters) where T : class, new();
+
+        Task<T> AddOrUpdateDataByForm<T>(string Form, object record) where T : class, new();
+        Task<T> UpdateDataByForm<T>(string Form, object recordOld, object recordNewd) where T : class, new();
         Task<T> AddDataByForm<T>(string Form, object record) where T : class, new();
         Task<T> AddDataByFormChild<T>(string form, string formChild, object parent, List<object> childElements) where T : class, new();
         Task<int> DeleteDataByForm<T>(string Form, object record) where T : class, new();
+
         List<object> GetDataByFormField(string Form, string field, List<BecaParameter> parameters);
         List<object> GetDataByFormChildSelect(string Form, string childForm, short sqlNumber, object parent);
-        List<object> GetDataBySQL(string dbName, string sql, List<BecaParameter> parameters, bool useidUtente = true);
-        IDictionary<string, object> GetDataDictBySQL(string dbName, string sql, List<BecaParameter> parameters);
-        List<object> GetDataByFormLevel(string Form, int subLevel, List<BecaParameter> parameters);
-        object GetPanelsByForm(string Form, List<BecaParameter> parameters);
-        ViewChart GetGraphByFormField(string Form, string field, List<BecaParameter> parameters);
         Task<int> ExecuteSqlCommandAsync(string dbName, string commandText, params object[] parameters);
         int ExecuteSqlCommand(string dbName, string commandText, params object[] parameters);
         Task<int> ExecuteProcedure(string dbName, string spName, List<BecaParameter> parameters);
+
+        List<object> GetDataBySQL(string dbName, string sql, List<BecaParameter> parameters, bool useidUtente = true);
+        IDictionary<string, object> GetDataDictBySQL(string dbName, string sql, List<BecaParameter> parameters);
+
+        List<object> GetDataByFormLevel(string Form, int subLevel, List<BecaParameter> parameters);
+
+        object GetPanelsByForm(string Form, List<BecaParameter> parameters);
+        ViewChart GetGraphByFormField(string Form, string field, List<BecaParameter> parameters);
+
         BecaUser GetLoggedUser();
     }
 }

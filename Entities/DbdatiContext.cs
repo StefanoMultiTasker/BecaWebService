@@ -2,14 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
-using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Entities.Contexts
 {
@@ -29,6 +24,7 @@ namespace Entities.Contexts
         private string _connection;
         public FormTool _formTool;
 
+        public DbSet<object> generic { get; set; }
         //public DbDatiContext(string connectionString)
         //{
         //    _connection = connectionString;
@@ -45,6 +41,11 @@ namespace Entities.Contexts
         //    _connection = connection;
         //    _formTool = formTool;
         //}
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<object>().HasNoKey();
+        }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -79,8 +80,8 @@ namespace Entities.Contexts
                     var lstColumns = new T().GetType().GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).ToList();
                     if (lstColumns.Count() == 0)
                     {
-                        Type generatedType = db._formTool.GetFormCfg(formName, reader,false, hasChildren);
-                        PropertyInfo[] props = generatedType.GetProperties().Where(p=>p.Name!="__children").ToArray();
+                        Type generatedType = db._formTool.GetFormCfg(formName, reader, false, hasChildren);
+                        PropertyInfo[] props = generatedType.GetProperties().Where(p => p.Name != "__children").ToArray();
                         while (reader.Read())
                         {
                             var generatedObject = Activator.CreateInstance(generatedType);
@@ -151,12 +152,12 @@ namespace Entities.Contexts
                     {
                         string identityName = "";
                         DbColumn idntityCol = reader.GetColumnSchema().FirstOrDefault(c => c.IsAutoIncrement == true);
-                        if(idntityCol != null) identityName = idntityCol.ColumnName;
-                        
-                        Type generatedType = db._formTool.GetFormCfg(formName, reader, identityName!="");
+                        if (idntityCol != null) identityName = idntityCol.ColumnName;
+
+                        Type generatedType = db._formTool.GetFormCfg(formName, reader, identityName != "");
                         var generatedObject = Activator.CreateInstance(generatedType);
-                        
-                        if(identityName!="")
+
+                        if (identityName != "")
                         {
                             MethodInfo method = generatedObject.GetType().GetMethod("set_identityName");
                             method.Invoke(generatedObject, new object[] { identityName });
@@ -173,22 +174,6 @@ namespace Entities.Contexts
 
         public static async Task<int> ExecuteSqlCommandAsync(this DbDatiContext db, string commandText, params object[] parameters)
         {
-            //using (var command = db.Database.GetDbConnection().CreateCommand())
-            //{
-            //    var rawSqlCommand = db.Database
-            //         .GetService<IRawSqlCommandBuilder>()
-            //         .Build(commandText, parameters);
-
-            //    command.CommandText = commandText;
-            //    command.CommandType = CommandType.Text;
-
-            //    db.Database.OpenConnection();
-            //    var paramObject = new RelationalCommandParameterObject(db.Database.GetService<IRelationalConnection>(), rawSqlCommand.ParameterValues, null, null);
-
-            //    return await rawSqlCommand
-            //        .RelationalCommand
-            //        .ExecuteNonQueryAsync(paramObject);
-            //}
             return await db.Database.ExecuteSqlRawAsync(commandText, parameters);
         }
 

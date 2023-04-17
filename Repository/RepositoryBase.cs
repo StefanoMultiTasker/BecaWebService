@@ -1,17 +1,10 @@
 ﻿using Contracts;
-using Entities.Contexts;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using System.IdentityModel.Tokens.Jwt;
-using Entities.Models;
 using Entities;
+using Entities.Contexts;
+using Entities.Models;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Repository
 {
@@ -30,7 +23,7 @@ namespace Repository
         {
             this.dbBecaContext = deps.context;
             //urrentUser = deps.memoryContext.Users.Find(httpContextAccessor.HttpContext.Items["User"]);
-            _currentUser = (BecaUser)httpContextAccessor.HttpContext.Items["User"] ;
+            _currentUser = (BecaUser)httpContextAccessor.HttpContext.Items["User"];
             _currentCompany = (Company)httpContextAccessor.HttpContext.Items["Company"];
         }
 

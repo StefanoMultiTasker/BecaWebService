@@ -1,12 +1,7 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
-using System;
-using System.Collections.Generic;
 using System.Data.Common;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Entities
 {
@@ -19,7 +14,7 @@ namespace Entities
             _cache = memoryCache.Cache;
         }
 
-        public Type GetFormCfg(string formName, DbDataReader result, bool hasIdentity = true, bool hasChildren=false)
+        public Type GetFormCfg(string formName, DbDataReader result, bool hasIdentity = true, bool hasChildren = false)
         {
             Type generatedType = null;
             //if (formName == "" || !_cache.TryGetValue("FormCfg_" + formName, out generatedType))
@@ -79,7 +74,7 @@ namespace Entities
                 {
                     List<object> children = new List<object>();
                     var tFieldType3 = GetNullableType(children.GetType());
-                    var fieldBuilder3 = typeBuilder.DefineField("_children" , tFieldType3, FieldAttributes.Private);
+                    var fieldBuilder3 = typeBuilder.DefineField("_children", tFieldType3, FieldAttributes.Private);
                     var propertyBuilder = typeBuilder.DefineProperty("__children", PropertyAttributes.None, tFieldType3, new Type[] { tFieldType3 });
                     var GetSetAttr3 = MethodAttributes.Public | MethodAttributes.HideBySig;
                     var currGetPropMethodBuilder3 = typeBuilder.DefineMethod("get_value", GetSetAttr3, tFieldType3, Type.EmptyTypes);

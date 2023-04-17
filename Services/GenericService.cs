@@ -1,13 +1,10 @@
-﻿using BecaWebService.Models.Communications;
+﻿using BecaWebService.Helpers;
+using BecaWebService.Models.Communications;
 using Contracts;
 using Entities.Models;
 using ExtensionsLib;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 
 namespace BecaWebService.Services
 {
@@ -24,22 +21,48 @@ namespace BecaWebService.Services
         {
             return _genericRepository.GetFormByView(idView);
             //if (form == null) throw new ArgumentException("La View non ha form associate");
-           // return form;
+            // return form;
         }
 
-        public List<object> GetDataByView(int idView, List<BecaParameter> parameters)
+        public GenericResponse GetDataByView(int idView, List<BecaParameter> parameters)
         {
-            return GetDataByForm(GetFormByView(idView), parameters);
+            try
+            {
+                return GetDataByForm(GetFormByView(idView), parameters);
+            }
+            catch (Exception ex)
+            {
+                return ex.Message.toResponse();
+            }
         }
 
-        public List<object> GetDataByForm(string Form, List<BecaParameter> parameters)
+        public GenericResponse GetDataByForm(string Form, List<BecaParameter> parameters)
         {
-            return _genericRepository.GetDataByForm<object>(Form, parameters);
+            try
+            {
+                return _genericRepository.GetDataByForm<object>(Form, parameters).toResponse();
+            }
+            catch (Exception ex)
+            {
+                return ex.Message.toResponse();
+            }
+        }
+
+        public GenericResponse GetDataBySP(string dbName, string Form, List<BecaParameter> parameters)
+        {
+            try
+            {
+                return _genericRepository.GetDataBySP<object>(dbName, Form, parameters).toResponse();
+            }
+            catch (Exception ex)
+            {
+                return ex.Message.toResponse();
+            }
         }
 
         public T CreateObjectFromJObject<T>(string Form, JObject jsonRecord, bool view) where T : class, new()
         {
-            var obj = _genericRepository.getFormObject<T>(Form,view);
+            var obj = _genericRepository.getFormObject<T>(Form, view);
             foreach (JProperty jproperty in jsonRecord.Properties())
             {
                 foreach (PropertyInfo property in obj.GetType().GetProperties())
@@ -73,13 +96,26 @@ namespace BecaWebService.Services
             return obj;
         }
 
-        public object CreateObjectFromJSON<T>(  string jsonRecord) where T : class, new() {
+        public object CreateObjectFromJSON<T>(string jsonRecord) where T : class, new()
+        {
             return _genericRepository.CreateObjectFromJSON<object>(jsonRecord);
         }
 
         public T CreateObjectFromJSON<T>(string Form, string jsonRecord) where T : class, new()
         {
             return _genericRepository.CreateObjectFromJSON<T>(Form, jsonRecord);
+        }
+
+        public async Task<GenericResponse> AddOrUpdateDataByForm(string Form, object record)
+        {
+            try
+            {
+                return (await _genericRepository.AddOrUpdateDataByForm<object>(Form, record)).toResponse();
+            }
+            catch (Exception ex)
+            {
+                return ex.Message.toResponse();
+            }
         }
 
         public async Task<GenericResponse> UpdateDataByView(int idView, object recordOld, object recordNew)
@@ -89,14 +125,21 @@ namespace BecaWebService.Services
 
         public async Task<GenericResponse> UpdateDataByForm(string Form, object recordOld, object recordNew)
         {
-            List<object> data = _genericRepository.GetDataByForm<object>(Form, recordOld);
-            if (data.Count == 0) return new GenericResponse("Il record non esiste più");
+            try
+            {
+                List<object> data = _genericRepository.GetDataByForm<object>(Form, recordOld);
+                if (data.Count == 0) return new GenericResponse("Il record non esiste più");
 
-            int res = (int)await _genericRepository.UpdateDataByForm<object>(Form, recordOld, recordNew);
-            if (res == 0) return new GenericResponse("Il record non è stato aggiornato");
+                object res = await _genericRepository.UpdateDataByForm<object>(Form, recordOld, recordNew);
+                if (res == null) return new GenericResponse("Il record non è stato aggiornato");
 
-            List<object> dataNew = _genericRepository.GetDataByForm<object>(Form, recordNew);
-            return new GenericResponse(dataNew);
+                return res.toResponse();    
+                //return _genericRepository.GetDataByForm<object>(Form, recordNew).toResponse();
+            }
+            catch (Exception ex)
+            {
+                return ex.Message.toResponse();
+            }
         }
 
         public async Task<GenericResponse> AddDataByView(int idView, object record, bool forceInsert)
@@ -106,21 +149,21 @@ namespace BecaWebService.Services
 
         public async Task<GenericResponse> AddDataByForm(string Form, object record, bool forceInsert)
         {
-            if (!forceInsert)
-            {
-                List<object> data = _genericRepository.GetDataByForm<object>(Form, record);
-                if (data.Count > 0) return new GenericResponse("Il record esiste già");
-            }
-
             try
             {
+                if (!forceInsert)
+                {
+                    List<object> data = _genericRepository.GetDataByForm<object>(Form, record);
+                    if (data.Count > 0) return new GenericResponse("Il record esiste già");
+                }
+
                 object res = await _genericRepository.AddDataByForm<object>(Form, record);
                 if (res == null) return new GenericResponse("Il record non è stato inserito");
-                return new GenericResponse(res);
+                return res.toResponse();
             }
             catch (Exception ex)
             {
-                return new GenericResponse(ex.Message);
+                return ex.Message.toResponse();
             }
         }
 
@@ -130,11 +173,11 @@ namespace BecaWebService.Services
             {
                 object res = await _genericRepository.AddDataByFormChild<object>(form, formChild, parent, childElements);
                 if (res == null) return new GenericResponse("Il record non è stato inserito");
-                return new GenericResponse(res);
+                return res.toResponse();
             }
             catch (Exception ex)
             {
-                return new GenericResponse(ex.Message);
+                return ex.Message.toResponse();
             }
         }
 
@@ -152,37 +195,65 @@ namespace BecaWebService.Services
             {
                 int res = await _genericRepository.DeleteDataByForm<object>(Form, record);
                 if (res == 0) return new GenericResponse("Il record non è stato eliminato");
-                return new GenericResponse(res);
+                return res.toResponse();
             }
             catch (Exception ex)
             {
-                return new GenericResponse(ex.Message);
+                return ex.Message.toResponse();
             }
         }
 
-        public List<object> GetDataByViewField(int idView, string field, List<BecaParameter> parameters)
+        public GenericResponse GetDataByViewField(int idView, string field, List<BecaParameter> parameters)
         {
             return GetDataByFormField(GetFormByView(idView), field, parameters);
         }
 
-        public List<object> GetDataByFormField(string Form, string field, List<BecaParameter> parameters)
+        public GenericResponse GetDataByFormField(string Form, string field, List<BecaParameter> parameters)
         {
-            return _genericRepository.GetDataByFormField(Form, field, parameters);
+            try
+            {
+                return _genericRepository.GetDataByFormField(Form, field, parameters).toResponse();
+            }
+            catch (Exception ex)
+            {
+                return ex.Message.toResponse();
+            }
         }
 
-        public List<object> GetDataByFormChildSelect(string Form, string childForm, short sqlNumber, object parent)
+        public GenericResponse GetDataByFormChildSelect(string Form, string childForm, short sqlNumber, object parent)
         {
-            return _genericRepository.GetDataByFormChildSelect(Form,childForm, sqlNumber, parent);
+            try
+            {
+                return _genericRepository.GetDataByFormChildSelect(Form, childForm, sqlNumber, parent).toResponse();
+            }
+            catch (Exception ex)
+            {
+                return ex.Message.toResponse();
+            }
         }
 
-        public List<object> GetDataBySQL(string dbName, string sql, List<BecaParameter> parameters)
+        public GenericResponse GetDataBySQL(string dbName, string sql, List<BecaParameter> parameters)
         {
-            return _genericRepository.GetDataBySQL(dbName, sql, parameters);
+            try
+            {
+                return _genericRepository.GetDataBySQL(dbName, sql, parameters).toResponse();
+            }
+            catch (Exception ex)
+            {
+                return ex.Message.toResponse();
+            }
         }
 
-        public List<object> GetDataByFormLevel(string Form, int subLevel, List<BecaParameter> parameters)
+        public GenericResponse GetDataByFormLevel(string Form, int subLevel, List<BecaParameter> parameters)
         {
-            return _genericRepository.GetDataByFormLevel(Form, subLevel, parameters);
+            try
+            {
+                return _genericRepository.GetDataByFormLevel(Form, subLevel, parameters).toResponse();
+            }
+            catch (Exception ex)
+            {
+                return ex.Message.toResponse();
+            }
         }
 
         public ViewChart GetGraphByFormField(string Form, string field, List<BecaParameter> parameters)
@@ -204,7 +275,7 @@ namespace BecaWebService.Services
             }
             catch (Exception ex)
             {
-                return new GenericResponse(ex.Message);
+                return ex.Message.toResponse();
             }
         }
     }

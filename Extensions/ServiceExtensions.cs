@@ -1,23 +1,17 @@
-﻿using Contracts;
+﻿using BecaWebService.Authorization;
+using BecaWebService.ExtensionsLib;
+using BecaWebService.Services;
+using Contracts;
+using Entities;
 using Entities.Contexts;
 using LoggerService;
-using Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BecaWebService.Authorization;
-using BecaWebService.Services;
-using Entities;
 using Newtonsoft.Json.Serialization;
-using BecaWebService.ExtensionsLib;
+using Repository;
+using System.Text;
 
 namespace BecaWebService.Extensions
 {
@@ -47,7 +41,10 @@ namespace BecaWebService.Extensions
         {
             services.AddDbContext<DbMemoryContext>();
             services.AddDbContext<DbBecaContext>(options =>
-                options.UseSqlServer(Configuration.GetConnectionString("SQLBeca")));
+            {
+                options.UseSqlServer(Configuration.GetConnectionString("SQLBeca"));
+                options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+            });
         }
 
         public static void ConfigureAuth(this IServiceCollection services, IConfiguration Configuration)
@@ -87,7 +84,7 @@ namespace BecaWebService.Extensions
             services.AddScoped<IJwtUtils, JwtUtils>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<ICompanyService, CompanyService>();
-    
+
             services.AddScoped<IDependencies, Dependencies>();
             //services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
             services.AddSingleton<FormTool>();
@@ -104,7 +101,7 @@ namespace BecaWebService.Extensions
                     options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
                     options.SerializerSettings.ContractResolver = new DefaultContractResolver { NamingStrategy = new LowerCamelCaseNamingStrategy() };
                 })
-                .AddJsonOptions(jsonOptions => jsonOptions.JsonSerializerOptions.PropertyNamingPolicy = null); 
+                .AddJsonOptions(jsonOptions => jsonOptions.JsonSerializerOptions.PropertyNamingPolicy = null);
         }
 
         public class LowerCamelCaseNamingStrategy : NamingStrategy

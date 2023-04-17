@@ -2,9 +2,7 @@ using BecaWebService.Helpers;
 using Entities.Models;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using System;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -35,7 +33,7 @@ namespace BecaWebService.Authorization
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new[] { new Claim("id", user.idUtente.ToString()) }),
-                Expires = DateTime.UtcNow.AddMinutes(15*4*20),
+                Expires = DateTime.UtcNow.AddMinutes(15 * 4 * 20),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);

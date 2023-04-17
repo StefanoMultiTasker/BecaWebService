@@ -1,19 +1,10 @@
-﻿using BecaWebService.Helpers;
-using BecaWebService.Models.Communications;
+﻿using BecaWebService.Models.Communications;
 using Contracts;
 using Entities.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.IO.Compression;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace BecaWebService.Controllers
 {
@@ -46,10 +37,11 @@ namespace BecaWebService.Controllers
                     return BadRequest("La View non ha form associate");
 
                 List<BecaParameter> parameters = data.Parameters.parameters;
-                IEnumerable<object> res = _genericService.GetDataByForm(form, parameters);
+                GenericResponse res = _genericService.GetDataByForm(form, parameters);
+                if (!res.Success) return BadRequest(res.Message);
 
                 //return Ok(res);
-                return await getContent(res, cancel);
+                return await getContent(res._extraLoads, cancel);
             }
             catch (Exception ex)
             {
@@ -70,9 +62,10 @@ namespace BecaWebService.Controllers
                     return BadRequest("La View non ha form associate");
 
                 List<BecaParameter> parameters = data.Parameters.parameters;
-                IEnumerable<object> res = _genericService.GetDataByForm(form, parameters);
+                GenericResponse res = _genericService.GetDataByForm(form, parameters);
+                if (!res.Success) return BadRequest(res.Message);
 
-                return Ok(res);
+                return Ok(res._extraLoads);
             }
             catch (Exception ex)
             {
@@ -94,13 +87,14 @@ namespace BecaWebService.Controllers
                 string FormField = data.FormField;
 
                 List<BecaParameter> parameters = data.Parameters.parameters;
-                IEnumerable<object> res = _genericService.GetDataByFormField(form, FormField, parameters);
+                GenericResponse res = _genericService.GetDataByFormField(form, FormField, parameters);
+                if (!res.Success) return BadRequest(res.Message);
                 //string Form = data["Form"].ToString();
                 //string FormField = data["FormField"].ToString();
                 //List<BecaParameter> parameters = data["Parameters"].ToObject<BecaParameters>().parameters.ToList<BecaParameter>();
                 //IEnumerable<object> res = _genericService.GetDataByFormField(Form, FormField, parameters);
                 //return Ok(res);
-                return await getContent(res, cancel);
+                return await getContent(res._extraLoads, cancel);
             }
             catch (Exception ex)
             {
@@ -120,13 +114,9 @@ namespace BecaWebService.Controllers
                 short sqlNumber = data.sqlNumber;
                 object record = _genericService.CreateObjectFromJObject<object>(form, data.parentData, true);
 
-                IEnumerable<object> res = _genericService.GetDataByFormChildSelect(form, formChild, sqlNumber, record);
-                //string Form = data["Form"].ToString();
-                //string FormField = data["FormField"].ToString();
-                //List<BecaParameter> parameters = data["Parameters"].ToObject<BecaParameters>().parameters.ToList<BecaParameter>();
-                //IEnumerable<object> res = _genericService.GetDataByFormField(Form, FormField, parameters);
-                //return Ok(res);
-                return await getContent(res, cancel);
+                GenericResponse res = _genericService.GetDataByFormChildSelect(form, formChild, sqlNumber, record);
+                if (!res.Success) return BadRequest(res.Message);
+                return await getContent(res._extraLoads, cancel);
             }
             catch (Exception ex)
             {
@@ -171,24 +161,12 @@ namespace BecaWebService.Controllers
                 if (!result.Success)
                     return BadRequest(result.Message);
 
-                return Ok(result);
+                return Ok(result._extraLoad);
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
-
-            //string form = data["form"].ToString();  //data.form; // data["form"].ToString();
-            //object recordNew = _genericService.CreateObjectFromJObject<object>(form, data["newData"].ToObject<JObject>());  //data.newData; //data["newData"].FromObject<object>();
-            //object recordOld = _genericService.CreateObjectFromJObject<object>(form, data["originalData"].ToObject<JObject>());  //data.newData; //data["newData"].FromObject<object>();
-
-            ////var recordNew = _genericService.CreateObjectFromJSON<object>(form, Record);
-            ////var recordOld = _genericService.CreateObjectFromJSON<object>(form, oldRecord);
-            //GenericResponse result = await _genericService.UpdateDataByForm(form, recordOld, recordNew);
-            //if (!result.Success)
-            //    return BadRequest(result.Message);
-
-            //return Ok(result);
         }
 
         [HttpPost("DataFormAdd")]
@@ -200,28 +178,37 @@ namespace BecaWebService.Controllers
                 if ((form ?? "") == "")
                     return BadRequest("La View non ha form associate");
 
-                object recordNew = _genericService.CreateObjectFromJObject<object>(form, data.newData,false);
+                object recordNew = _genericService.CreateObjectFromJObject<object>(form, data.newData, false);
 
                 GenericResponse result = await _genericService.AddDataByForm(form, recordNew, data.force.Value);
                 if (!result.Success)
                     return BadRequest(result.Message);
 
-                return Ok(result);
+                return Ok(result._extraLoad);
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
+        }
 
-            //string form = data["form"].ToString();  //data.form; // data["form"].ToString();
-            //string force = data["force"].ToString();  //data.form; // data["form"].ToString();
-            //object recordNew = _genericService.CreateObjectFromJObject<object>(form, data["newData"].ToObject<JObject>());  //data.newData; //data["newData"].FromObject<object>();
-            ////var recordNew = _genericService.CreateObjectFromJSON<object>(form, Record);
-            //GenericResponse result = await _genericService.AddDataByForm(form, recordNew, (force == "0" ? false : true));
-            //if (!result.Success)
-            //    return BadRequest(result.Message);
+        [HttpPost("DataFormAddOrUpdate")]
+        public async Task<IActionResult> DataFormAddOrUpdate([FromBody] dataFormPostParameter data)
+        {
+            string form = data.idView == null ? data.Form : getFormByView(data.idView.Value);
+            if ((form ?? "") == "")
+                return BadRequest("La View non ha form associate");
+            //Log.Information($"FormAddOrUpdate {form}");
 
-            //return Ok(result);
+            object recordNew = _genericService.CreateObjectFromJObject<object>(form, data.newData, false);
+            //Log.Information($"FormAddOrUpdate {form} object generated");
+
+            GenericResponse result = await _genericService.AddOrUpdateDataByForm(form, recordNew);
+            //Log.Information($"FormAddOrUpdate done");
+            if (!result.Success)
+                return BadRequest(result.Message);
+
+            return Ok(result._extraLoad);
         }
 
         [HttpPost("DataFormDelete")]
@@ -246,15 +233,6 @@ namespace BecaWebService.Controllers
             {
                 return BadRequest(ex.Message);
             }
-
-            //string form = data["form"].ToString();  //data.form; // data["form"].ToString();
-            //object recordNew = _genericService.CreateObjectFromJObject<object>(form, data["newData"].ToObject<JObject>());  //data.newData; //data["newData"].FromObject<object>();
-            //                                                                                                                //var recordNew = _genericService.CreateObjectFromJSON<object>(form, Record);
-            //GenericResponse result = await _genericService.DeleteDataByForm(form, recordNew);
-            //if (!result.Success)
-            //    return BadRequest(result.Message);
-
-            //return Ok(result);
         }
 
         [HttpPost("DataFormChildAdd")]
@@ -277,7 +255,7 @@ namespace BecaWebService.Controllers
                 if (!result.Success)
                     return BadRequest(result.Message);
 
-                return Ok(result);
+                return Ok(result._extraLoad);
             }
             catch (Exception ex)
             {
@@ -292,8 +270,11 @@ namespace BecaWebService.Controllers
             string procName = data["ProcedureName"].ToString();
             List<BecaParameter> parameters = data["Parameters"].ToObject<BecaParameters>().parameters.ToList<BecaParameter>();                                                                                                                //var recordNew = _genericService.CreateObjectFromJSON<object>(form, Record);
 
-            object res = await _genericService.ExecCommand(dbName, procName, parameters);
-            return Ok(res);
+            GenericResponse result = await _genericService.ExecCommand(dbName, procName, parameters);
+            if (!result.Success)
+                return BadRequest(result.Message);
+
+            return Ok();
         }
 
         private async Task<IActionResult> getContent(IEnumerable<object> res, System.Threading.CancellationToken cancel)
@@ -339,6 +320,8 @@ namespace BecaWebService.Controllers
         public string? Form { get; set; }
         public int? idView { get; set; }
         public string? FormField { get; set; }
+        public string? DbName { get; set; }
+        public string? ProcedureName { get; set; }
         public BecaParameters? Parameters { get; set; }
         public bool? force { get; set; }
         public JObject? newData { get; set; }

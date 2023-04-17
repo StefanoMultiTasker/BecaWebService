@@ -1,29 +1,9 @@
-using AutoMapper;
-using FluentValidation.AspNetCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.Extensions.Logging;
-using System.Text;
+using BecaWebService.Authorization;
 using BecaWebService.Extensions;
+using BecaWebService.Helpers;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.HttpOverrides;
 using NLog;
-using System.IO;
-using BecaWebService.Helpers;
-using BecaWebService.Authorization;
-using Entities;
-using Microsoft.AspNetCore.Http;
 
 namespace BecaWebService
 {
@@ -40,7 +20,7 @@ namespace BecaWebService
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc().AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<Startup>());
+            //services.AddMvc().AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<Startup>());
             //services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
 
             services.ConfigureCors();

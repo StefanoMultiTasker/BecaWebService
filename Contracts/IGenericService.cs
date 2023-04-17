@@ -1,11 +1,6 @@
 ﻿using BecaWebService.Models.Communications;
 using Entities.Models;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Contracts
 {
@@ -17,8 +12,11 @@ namespace Contracts
 
         string GetFormByView(int idView);
 
-        List<object> GetDataByView(Int32 idView, List<BecaParameter> parameters);
-        List<object> GetDataByForm(string Form, List<BecaParameter> parameters);
+        GenericResponse GetDataByView(Int32 idView, List<BecaParameter> parameters);
+        GenericResponse GetDataByForm(string Form, List<BecaParameter> parameters);
+        GenericResponse GetDataBySP(string dbName, string Form, List<BecaParameter> parameters);
+
+        Task<GenericResponse> AddOrUpdateDataByForm(string Form, object record);
 
         Task<GenericResponse> UpdateDataByView(Int32 idView, object recordOld, object recordNew);
         Task<GenericResponse> UpdateDataByForm(string Form, object recordOld, object recordNew);
@@ -30,13 +28,13 @@ namespace Contracts
         Task<GenericResponse> DeleteDataByView(Int32 idView, object record);
         Task<GenericResponse> DeleteDataByForm(string Form, object record);
 
-        List<object> GetDataByViewField(Int32 idView, string field, List<BecaParameter> parameters);
-        List<object> GetDataByFormField(string Form, string field, List<BecaParameter> parameters);
+        GenericResponse GetDataByViewField(Int32 idView, string field, List<BecaParameter> parameters);
+        GenericResponse GetDataByFormField(string Form, string field, List<BecaParameter> parameters);
 
-        List<object> GetDataByFormChildSelect(string Form, string childForm, short sqlNumber, object parent);
+        GenericResponse GetDataByFormChildSelect(string Form, string childForm, short sqlNumber, object parent);
 
-        List<object> GetDataBySQL(string dbName, string sql, List<BecaParameter> parameters);
-        List<object> GetDataByFormLevel(string Form, int subLevel, List<BecaParameter> parameters);
+        GenericResponse GetDataBySQL(string dbName, string sql, List<BecaParameter> parameters);
+        GenericResponse GetDataByFormLevel(string Form, int subLevel, List<BecaParameter> parameters);
 
         object GetPanelsByForm(string Form, List<BecaParameter> parameters);
         ViewChart GetGraphByFormField(string Form, string field, List<BecaParameter> parameters);
