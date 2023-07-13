@@ -8,6 +8,7 @@ namespace Contracts
     {
         object CreateObjectFromJSON<T>(string jsonRecord) where T : class, new();
         T CreateObjectFromJObject<T>(string Form, JObject jsonRecord, bool view) where T : class, new();
+        T CreateObjectFromJObject<T>(string Form, JObject jsonRecord, bool view, bool partial) where T : class, new();
         T CreateObjectFromJSON<T>(string Form, string jsonRecord) where T : class, new();
 
         string GetFormByView(int idView);

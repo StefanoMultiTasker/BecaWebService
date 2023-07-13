@@ -14,7 +14,10 @@ namespace Entities
             _cache = memoryCache.Cache;
         }
 
-        public Type GetFormCfg(string formName, DbDataReader result, bool hasIdentity = true, bool hasChildren = false)
+        public Type GetFormCfg(string formName, DbDataReader result, bool hasIdentity = true, bool hasChildren = false) =>
+            this.GetFormCfg (formName, result, new List<string>(), hasIdentity, hasChildren);  
+        
+        public Type GetFormCfg(string formName, DbDataReader result, List<string> fields, bool hasIdentity = true, bool hasChildren = false)
         {
             Type generatedType = null;
             //if (formName == "" || !_cache.TryGetValue("FormCfg_" + formName, out generatedType))
@@ -27,7 +30,7 @@ namespace Entities
                 var typeBuilder = module.DefineType("TypeFormCfg_" + formName, TypeAttributes.Public | TypeAttributes.Class);
                 string identityName = "";
                 IReadOnlyCollection<DbColumn> cols = result.GetColumnSchema();
-                foreach (DbColumn col in cols)
+                foreach (DbColumn col in cols.Where(c => fields.Count == 0 || fields.Contains(c.ColumnName.ToLower())))
                 {
                     var tFieldType = GetNullableType(col.DataType);
                     var fieldBuilder = typeBuilder.DefineField("_" + col.ColumnName, tFieldType, FieldAttributes.Private);

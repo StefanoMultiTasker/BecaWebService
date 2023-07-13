@@ -126,7 +126,10 @@ namespace Entities.Contexts
             }
         }
 
-        public static object GetQueryDef<T>(this DbDatiContext db, string formName, string query, params object[] parameters) where T : class, new()
+        public static object GetQueryDef<T>(this DbDatiContext db, string formName, string query, params object[] parameters) where T : class, new() =>
+            db.GetQueryDef<T>(formName, query, new List<string>(), parameters);
+
+        public static object GetQueryDef<T>(this DbDatiContext db, string formName, string query, List<string> fields, params object[] parameters) where T : class, new()
         {
             using (var command = db.Database.GetDbConnection().CreateCommand())
             {
@@ -154,7 +157,7 @@ namespace Entities.Contexts
                         DbColumn idntityCol = reader.GetColumnSchema().FirstOrDefault(c => c.IsAutoIncrement == true);
                         if (idntityCol != null) identityName = idntityCol.ColumnName;
 
-                        Type generatedType = db._formTool.GetFormCfg(formName, reader, identityName != "");
+                        Type generatedType = db._formTool.GetFormCfg(formName, reader, fields, (identityName != ""));
                         var generatedObject = Activator.CreateInstance(generatedType);
 
                         if (identityName != "")

@@ -239,7 +239,7 @@ namespace Repository
             List<object> pars = new List<object>();
             if (form != null)
             {
-                if((form.SelectProcedureName ?? "") != "") return this.GetDataBySP<T>(form.TableNameDB, form.SelectProcedureName, parameters);
+                if ((form.SelectProcedureName ?? "") != "") return this.GetDataBySP<T>(form.TableNameDB, form.SelectProcedureName, parameters);
                 string upl = string.Join(", ", _context.BecaFormField
                     .Where(f => f.Form == Form && f.FieldType == "upload")
                     .ToList().Select(n => "Null As [_" + n.Name.Trim() + "_upl_], Null As [_" + n.Name.Trim() + "_uplName_]"));
@@ -479,7 +479,7 @@ namespace Repository
         {
             List<string> names = getContext(dbName).GetProcedureParams(spName);
 
-            if(names.Contains("@idUtente") && !parameters.Exists(p=>p.name=="idUtente"))
+            if (names.Contains("@idUtente") && !parameters.Exists(p => p.name == "idUtente"))
             {
                 parameters.Add(new BecaParameter()
                 {
@@ -506,7 +506,8 @@ namespace Repository
             return getContext(dbName).ExecuteQuery<T>(spName, sql, false, pars.ToArray());
         }
 
-        public T getFormObject<T>(string Form, bool view, bool noUpload = false)
+        public T getFormObject<T>(string Form, bool view, bool noUpload = false) => this.getFormObject<T>(Form, view, new List<string>(), noUpload);
+        public T getFormObject<T>(string Form, bool view, List<string> fields, bool noUpload = false)
         {
             BecaForm form = _context.BecaForm
                 .FirstOrDefault(f => f.Form == Form);
@@ -514,7 +515,7 @@ namespace Repository
             if (form != null)
             {
                 string sql = getFormSQL(form, view, true, noUpload);
-                object def = getContext(form.TableNameDB).GetQueryDef<object>(Form, sql + " Where 0 = 1");
+                object def = getContext(form.TableNameDB).GetQueryDef<object>(Form, sql + " Where 0 = 1", fields);
                 return (T)def;
             }
             else
@@ -581,7 +582,7 @@ namespace Repository
                     for (int i = 0; i < colsNew.Count(); i++)
                     {
                         PropertyInfo p2 = colsNew.ElementAt(i);
-                        if (colsOld.FirstOrDefault(p => p.Name == p2.Name) != null && tblform.HasPropertyValue(p2.Name))
+                        if (colsOld.FirstOrDefault(p => p.Name.ToLower() == p2.Name.ToLower()) != null && tblform.HasPropertyValue(p2.Name))
                         {
                             PropertyInfo p1 = colsOld.ElementAt(i);
                             bool update = false;

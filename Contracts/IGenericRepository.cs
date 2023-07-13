@@ -5,6 +5,7 @@ namespace Contracts
     public interface IGenericRepository
     {
         T getFormObject<T>(string Form, bool view, bool noUpload = false);
+        T getFormObject<T>(string Form, bool view, List<string> fields, bool noUpload = false);
         string GetFormByView(int idView);
         object CreateObjectFromJSON<T>(string jsonRecord) where T : class, new();
         T CreateObjectFromJSON<T>(string Form, string jsonRecord) where T : class, new();
