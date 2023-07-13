@@ -64,6 +64,7 @@ namespace Entities.DataTransferObjects
     {
         public string Name { get; set; }
         public short DataType { get; set; }
+        public string? FromValue{ get; set; }
         public short? FormulaFooter { get; set; }
         public string Title { get; set; }
         public string? Format { get; set; }

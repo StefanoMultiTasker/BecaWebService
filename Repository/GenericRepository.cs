@@ -478,12 +478,23 @@ namespace Repository
         public List<T> GetDataBySP<T>(string dbName, string spName, List<BecaParameter> parameters) where T : class, new()
         {
             List<string> names = getContext(dbName).GetProcedureParams(spName);
-            string sql = $"Exec {spName} " +
-                string.Join(", ", names.Where(x => parameters.Exists(p => p.name == x.Replace("@", ""))).Select((x, i) => x +
-                    @" = {" + i.ToString() + "}"));
-            var pars = names.Where(x => parameters.Exists(p => p.name == x.Replace("@", ""))).Select((x, i) =>
+
+            if(names.Contains("@idUtente") && !parameters.Exists(p=>p.name=="idUtente"))
             {
-                BecaParameter par = parameters.Find(p => p.name == x.Replace("@", ""));
+                parameters.Add(new BecaParameter()
+                {
+                    name = "idUtente",
+                    value1 = _currentUser.idUtente,
+                    comparison = "="
+                });
+            }
+
+            string sql = $"Exec {spName} " +
+                string.Join(", ", names.Where(x => parameters.Exists(p => p.name.ToLower() == x.ToLower().Replace("@", ""))).Select((x, i) => x +
+                    @" = {" + i.ToString() + "}"));
+            var pars = names.Where(x => parameters.Exists(p => p.name.ToLower() == x.ToLower().Replace("@", ""))).Select((x, i) =>
+            {
+                BecaParameter par = parameters.Find(p => p.name.ToLower() == x.ToLower().Replace("@", ""));
                 return par == null ?
                     null
                     :

@@ -2,6 +2,7 @@
 using BecaWebService.ExtensionsLib;
 using Entities.DataTransferObjects;
 using Entities.Models;
+using NLog.Targets;
 
 namespace BecaWebService.Mappings
 {
@@ -378,6 +379,11 @@ namespace BecaWebService.Mappings
                 .ForMember(dest => dest.DataType,
                         opts => opts.MapFrom(
                             src => src.idDataType
+                            )
+                        )
+                .ForMember(dest => dest.FromValue,
+                        opts => opts.MapFrom(
+                            src => src.DropDownDisplayField == null ? null : src.DropDownDisplayField.ToString().Split(",", StringSplitOptions.RemoveEmptyEntries).FirstOrDefault().ToLowerToCamelCase()
                             )
                         )
                 .ForMember(dest => dest.Format,

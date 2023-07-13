@@ -52,6 +52,7 @@ namespace Entities.Models
         public short idDataType { get; set; }
         public short? FormulaFooter { get; set; }
         public string? Title { get; set; }
+        public string? DropDownDisplayField { get; set; }
         public string? Format { get; set; }
         public bool isGridOptional { get; set; }
         public bool isGridVisible { get; set; }
