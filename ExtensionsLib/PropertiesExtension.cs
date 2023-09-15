@@ -4,11 +4,15 @@ namespace ExtensionsLib
 {
     public static partial class PropertiesExtension
     {
-        public static bool HasPropertyValue<T>(this T @this, string propertyName) where T : class, new()
+        public static bool HasPropertyValue<T>(this T @this, string propertyNames) where T : class, new()
         {
             Type type = @this.GetType();
             PropertyInfo[] props = type.GetProperties();
-            return props.FirstOrDefault(p => p.Name == propertyName) == null ? false : true;
+
+            return propertyNames.Split(new[] { ',', '+' }, StringSplitOptions.RemoveEmptyEntries)
+                .All(propertyName => props.Any(p => p.Name.Equals(propertyName.Trim(), StringComparison.OrdinalIgnoreCase))
+            );
+            //return props.FirstOrDefault(p => p.Name.ToLower() == propertyName.ToLower()) == null ? false : true;
         }
 
         public static object GetPropertyValue<T>(this T @this, string propertyName) where T : class, new()

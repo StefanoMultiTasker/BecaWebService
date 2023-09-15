@@ -79,6 +79,11 @@ namespace Repository
             //        .ToList();
             view.BecaViewPanels = panels;
 
+            List<BecaViewAction> actions = dbBecaContext.BecaViewActions
+                 .Where(action => action.idBecaView == idView)
+                 .ToList();
+            view.Actions = actions;
+
             return view;
         }
 
@@ -156,7 +161,7 @@ namespace Repository
                 {
                     FieldConfig field = new FieldConfig();
                     field.label = BecaCfgFormField.Title;
-                    field.name = BecaCfgFormField.Name.ToCamelCase();
+                    field.name = BecaCfgFormField.Name.ToLower();//.ToCamelCase();
                     field.placeholder = BecaCfgFormField.HelpShort;
                     field.fieldType = BecaCfgFormField.FieldType;
                     field.inputType = BecaCfgFormField.FieldInput;
@@ -168,10 +173,10 @@ namespace Repository
                     {
                         field.options = opts.Replace("[", "").Replace("]", "").Replace("'", "").Replace(" ", "").Split(",").ToArray();
                     }
-                    field.optionDisplayed = BecaCfgFormField.DropDownDisplayField.ToCamelCase();
+                    field.optionDisplayed = BecaCfgFormField.DropDownDisplayField?.ToLower(); //.ToCamelCase();
                     if (field.optionDisplayed != null) field.optionDisplayed = field.optionDisplayed.ToLowerToCamelCase();
                     //field.DropDownList = BecaCfgFormField.DropDownList;
-                    field.DropDownKeyFields = BecaCfgFormField.DropDownKeyFields.ToCamelCase();
+                    field.DropDownKeyFields = BecaCfgFormField.DropDownKeyFields?.ToLower(); // ToCamelCase();
                     field.row = BecaCfgFormField.Row;
                     field.col = BecaCfgFormField.Col;
                     field.subRow = BecaCfgFormField.SubRow;

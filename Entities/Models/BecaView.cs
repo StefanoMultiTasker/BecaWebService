@@ -11,6 +11,7 @@ namespace Entities.Models
             BecaViewFilters = new List<BecaViewFilters>();
             BecaViewPanels = new List<BecaViewPanels>();
             BecaViewChildren = new List<BecaViewChild>();
+            Actions = new List<BecaViewAction>();
         }
 
         public int idBecaView { get; set; }
@@ -42,7 +43,8 @@ namespace Entities.Models
         public virtual ICollection<BecaViewPanels> BecaViewPanels { get; set; }
         [NotMapped]
         public ICollection<BecaViewChild> BecaViewChildren { get; set; }
-    }
+        public virtual ICollection<BecaViewAction> Actions { get; set; }   
+    } 
 
     public partial class BecaViewData
     {
@@ -72,6 +74,21 @@ namespace Entities.Models
         public int idUtente { get; set; }
         public bool isGridVisible { get; set; }
         public short GridOrder { get; set; }
+    }
+
+    public partial class BecaViewAction
+    {
+        public int idBecaView { get; set; }
+        public string ActionName { get; set; }
+        public short ActionType { get; set; }
+        public string? Caption { get; set; }
+        public string? HelpText { get; set; }
+        public string? icon { get; set; }
+        public string? Color { get; set; }
+        public string? QuestionText { get; set; }
+        public int? CommandConnection { get; set; }
+        public string? ConnectionName { get; set; }
+        public string? Command { get; set; }
     }
 
     public partial class BecaViewUI

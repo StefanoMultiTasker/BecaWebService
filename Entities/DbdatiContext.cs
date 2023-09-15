@@ -81,7 +81,7 @@ namespace Entities.Contexts
                     if (lstColumns.Count() == 0)
                     {
                         Type generatedType = db._formTool.GetFormCfg(formName, reader, false, hasChildren);
-                        PropertyInfo[] props = generatedType.GetProperties().Where(p => p.Name != "__children").ToArray();
+                        PropertyInfo[] props = generatedType.GetProperties().Where(p => p.Name != "children").ToArray();
                         while (reader.Read())
                         {
                             var generatedObject = Activator.CreateInstance(generatedType);

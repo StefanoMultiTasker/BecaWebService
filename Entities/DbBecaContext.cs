@@ -18,6 +18,7 @@ namespace Entities.Contexts
         public virtual DbSet<Company> Companies { get; set; }
 
         public virtual DbSet<BecaView> BecaView { get; set; }
+        public virtual DbSet<BecaViewAction> BecaViewActions { get; set; }
         public virtual DbSet<BecaViewData> BecaViewData { get; set; }
         public virtual DbSet<BecaViewDataUser> BecaViewDataUser { get; set; }
         public virtual DbSet<BecaViewFilterValues> BecaViewFilterValues { get; set; }
@@ -268,6 +269,12 @@ namespace Entities.Contexts
                     .WithMany(p => p.BecaPanelFilters)
                     .HasForeignKey(d => d.idBecaViewPanel)
                     .HasConstraintName("FK_BecaPanelFilters_BecaViewPanels");
+            });
+
+            modelBuilder.Entity<BecaViewAction>(entity =>
+            {
+                entity.ToView("vBecaViewActions");
+                entity.HasKey(e => new { e.idBecaView, e.ActionName });
             });
 
             modelBuilder.Entity<BecaView>(entity =>

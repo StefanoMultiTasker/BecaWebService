@@ -35,6 +35,8 @@ namespace BecaWebService.ExtensionsLib
                         });
         }
 
+        //public static string ToLower(this string str) => (str ?? "").ToLower();
+
         public static string coalesce(this string str) => str ?? "";
 
         public static bool isNullOrempty(this string str) => str == null || str == "";

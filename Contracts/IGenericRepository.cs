@@ -19,6 +19,8 @@ namespace Contracts
         Task<T> AddDataByForm<T>(string Form, object record) where T : class, new();
         Task<T> AddDataByFormChild<T>(string form, string formChild, object parent, List<object> childElements) where T : class, new();
         Task<int> DeleteDataByForm<T>(string Form, object record) where T : class, new();
+        Task<string> ActionByForm(int idview, string actionName, object record);
+        Task<string> ActionByForm(int idview, string actionName, List<BecaParameter> parameters);
 
         List<object> GetDataByFormField(string Form, string field, List<BecaParameter> parameters);
         List<object> GetDataByFormChildSelect(string Form, string childForm, short sqlNumber, object parent);

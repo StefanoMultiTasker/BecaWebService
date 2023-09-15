@@ -263,6 +263,58 @@ namespace BecaWebService.Controllers
             }
         }
 
+        [HttpPost("DataFormAction")]
+        public async Task<IActionResult> DataFormAction([FromBody] dataFormPostParameter data)
+        //[FromForm] string form, [FromForm] string Record)
+        {
+            try
+            {
+                int idView = (int)data.idView;
+                string form = data.idView == null ? data.Form : getFormByView(data.idView.Value);
+                if ((form ?? "") == "")
+                    return BadRequest("La View non ha form associate");
+                string actionName = data.FormField;
+
+                List<BecaParameter> parameters = data.Parameters.parameters;
+
+                GenericResponse result = await _genericService.ActionByForm(idView, form, actionName, parameters);
+                if (!result.Success)
+                    return BadRequest(result.Message);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("DataFormActionRow")]
+        public async Task<IActionResult> DataFormActionRow([FromBody] dataFormPostParameter data)
+        //[FromForm] string form, [FromForm] string Record)
+        {
+            try
+            {
+                int idView = (int)data.idView;
+                string form = data.idView == null ? data.Form : getFormByView(data.idView.Value);
+                if ((form ?? "") == "")
+                    return BadRequest("La View non ha form associate");
+                string actionName = data.FormField;
+
+                object record = _genericService.CreateObjectFromJObject<object>(form, data.newData, true);
+
+                GenericResponse result = await _genericService.ActionByForm(idView, form, actionName, record);
+                if (!result.Success)
+                    return BadRequest(result.Message);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         [HttpPost("ExecProcedure")]
         public async Task<IActionResult> ExecProcedure([FromBody] JObject data)
         {
@@ -281,7 +333,7 @@ namespace BecaWebService.Controllers
         {
             DefaultContractResolver contractResolver = new DefaultContractResolver
             {
-                NamingStrategy = new Extensions.ServiceExtensions.LowerCamelCaseNamingStrategy()
+                NamingStrategy = new Extensions.ServiceExtensions.LowerNamingStrategy()
                 {
                     OverrideSpecifiedNames = false
                 }

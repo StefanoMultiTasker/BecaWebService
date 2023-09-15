@@ -206,6 +206,43 @@ namespace BecaWebService.Services
             }
         }
 
+        public async Task<GenericResponse> ActionByForm(int idview, string form, string actionName, object record)
+        {
+            try {
+                string res =  await _genericRepository.ActionByForm(idview, actionName, record);
+                if (res!="") return res.toResponse();
+                //if (form != "")
+                //{
+                //    List<object> data = _genericRepository.GetDataByForm<object>(form, record);
+                //    if (data.Count() > 0)
+                //        return data[0].toResponse();
+                //    else
+                //        return "Non trovo più il record originale, qualcosa deve essere andato male".toResponse();
+                //}
+                else return true.toResponse();
+            }
+            catch (Exception ex) { return ex.Message.toResponse(); }
+        }
+
+        public async Task<GenericResponse> ActionByForm(int idview, string form, string actionName, List<BecaParameter> parameters)
+        {
+            try
+            {
+                string res = await _genericRepository.ActionByForm(idview, actionName, parameters);
+                if (res != "") return res.toResponse();
+                //if (form != "")
+                //{
+                //    List<object> data = _genericRepository.GetDataByForm<object>(form, record);
+                //    if (data.Count() > 0)
+                //        return data[0].toResponse();
+                //    else
+                //        return "Non trovo più il record originale, qualcosa deve essere andato male".toResponse();
+                //}
+                else return true.toResponse();
+            }
+            catch (Exception ex) { return ex.Message.toResponse(); }
+        }
+
         public GenericResponse GetDataByViewField(int idView, string field, List<BecaParameter> parameters)
         {
             return GetDataByFormField(GetFormByView(idView), field, parameters);

@@ -112,5 +112,13 @@ namespace BecaWebService.Extensions
             }
         }
 
+        public class LowerNamingStrategy : NamingStrategy
+        {
+            protected override string ResolvePropertyName(string name)
+            {
+                return name.ToLower();
+            }
+        }
+
     }
 }

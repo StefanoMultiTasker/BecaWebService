@@ -29,6 +29,9 @@ namespace Contracts
         Task<GenericResponse> DeleteDataByView(Int32 idView, object record);
         Task<GenericResponse> DeleteDataByForm(string Form, object record);
 
+        Task<GenericResponse> ActionByForm(int idview, string form, string actionName, object record);
+        Task<GenericResponse> ActionByForm(int idview, string form, string actionName, List<BecaParameter> parameters);
+
         GenericResponse GetDataByViewField(Int32 idView, string field, List<BecaParameter> parameters);
         GenericResponse GetDataByFormField(string Form, string field, List<BecaParameter> parameters);
 

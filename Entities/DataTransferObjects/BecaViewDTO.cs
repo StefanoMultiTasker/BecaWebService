@@ -9,6 +9,7 @@ namespace Entities.DataTransferObjects
             ViewDefinition = new dtoBecaViewDefinition();
             Filters = new List<dtoBecaFilter>();
             FilterValues = new List<dtoBecaFilterValue>();
+            Actions = new List<dtoBecaViewActions>();
         }
         public int idView { get; set; }
         public string Name { get; set; }
@@ -19,6 +20,7 @@ namespace Entities.DataTransferObjects
         public dtoBecaViewDefinition ViewDefinition { get; set; }
         public IList<dtoBecaFilter> Filters { get; set; }
         public IList<dtoBecaFilterValue> FilterValues { get; set; }
+        public IList<dtoBecaViewActions> Actions { get; set; }
         public UIform FilterUI { get; set; }
         public UIform DetailUI { get; set; }
     }
@@ -86,6 +88,17 @@ namespace Entities.DataTransferObjects
         public bool isGridOptional { get; set; }
         public bool isGridVisible { get; set; }
         public short GridOrder { get; set; }
+    }
+
+    public partial class dtoBecaViewActions
+    {
+        public string ActionName { get; set; }
+        public short ActionType { get; set; }
+        public string? Caption { get; set; }
+        public string? HelpText { get; set; }
+        public string? icon { get; set; }
+        public string? Color { get; set; }
+        public string? QuestionText { get; set; }
     }
     //public partial class dtoBecaViewUI
     //{

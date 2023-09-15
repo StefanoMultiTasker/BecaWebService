@@ -16,8 +16,7 @@ namespace BecaWebService.Mappings
             MapChild();
             MapView();
 
-            CreateMap<BecaViewUI, BecaViewFilterUI>().ReverseMap();
-            CreateMap<BecaViewUI, BecaViewDetailUI>().ReverseMap();
+            MapUI();
         }
 
         private void MapFilter()
@@ -42,14 +41,14 @@ namespace BecaWebService.Mappings
                             opts => opts.MapFrom((src, dest) =>
                             {
                                 string[] f = (src.FilterReference ?? "").Split(",");
-                                return f.Length > 0 ? f[0].ToLowerToCamelCase() : null;
+                                return f.Length > 0 ? f[0].ToLower() : null;
                             })
                             )
                     .ForMember(dest => dest.Field2,
                             opts => opts.MapFrom((src, dest) =>
                             {
                                 string[] f = (src.FilterReference ?? "").Split(",");
-                                return f.Length > 1 ? f[1].ToLowerToCamelCase() : null;
+                                return f.Length > 1 ? f[1].ToLower() : null;
                             })
                             );
 
@@ -152,7 +151,7 @@ namespace BecaWebService.Mappings
                         )
                     .ForMember(dest => dest.FieldName,
                             opts => opts.MapFrom(
-                                src => src.FieldName.ToLowerToCamelCase()
+                                src => src.FieldName.ToLower()
                                 )
                             )
                 .ForMember(dest => dest.Type,
@@ -181,7 +180,7 @@ namespace BecaWebService.Mappings
             CreateMap<BecaViewChildData, dtoBecaData>()
                 .ForMember(dest => dest.Name,
                         opts => opts.MapFrom(
-                            src => src.field.ToLowerToCamelCase()//.ToCamelCase()
+                            src => src.field.ToLower()//.ToCamelCase()
                             )
                         )
                 .ForMember(dest => dest.DataType,
@@ -204,7 +203,7 @@ namespace BecaWebService.Mappings
                         )
                 .ForPath(dest => dest.KeyFields,
                         opts => opts.MapFrom(
-                            src => src.PrimaryKey.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(k => k.ToLowerToCamelCase()).ToList()
+                            src => src.PrimaryKey.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(k => k.ToLower()).ToList()
                             )
                         )
                 .ForPath(dest => dest.ChildFields,
@@ -260,7 +259,7 @@ namespace BecaWebService.Mappings
                         )
                 .ForPath(dest => dest.ViewDefinition.KeyFields,
                         opts => opts.MapFrom(
-                            src => src.PrimaryKey.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(k => k.ToLowerToCamelCase()).ToList()
+                            src => src.PrimaryKey.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(k => k.ToLower()).ToList()
                             )
                         )
                 .ForMember(dest => dest.Filters,
@@ -373,7 +372,7 @@ namespace BecaWebService.Mappings
             CreateMap<BecaViewData, dtoBecaData>()
                 .ForMember(dest => dest.Name,
                         opts => opts.MapFrom(
-                            src => src.Field.ToLowerToCamelCase()//.ToCamelCase()
+                            src => src.Field.ToLower()//.ToCamelCase()
                             )
                         )
                 .ForMember(dest => dest.DataType,
@@ -383,7 +382,7 @@ namespace BecaWebService.Mappings
                         )
                 .ForMember(dest => dest.FromValue,
                         opts => opts.MapFrom(
-                            src => src.DropDownDisplayField == null ? null : src.DropDownDisplayField.ToString().Split(",", StringSplitOptions.RemoveEmptyEntries).FirstOrDefault().ToLowerToCamelCase()
+                            src => src.DropDownDisplayField == null ? null : src.DropDownDisplayField.ToString().Split(",", StringSplitOptions.RemoveEmptyEntries).FirstOrDefault().ToLower()
                             )
                         )
                 .ForMember(dest => dest.Format,
@@ -392,6 +391,23 @@ namespace BecaWebService.Mappings
                             )
                         );
 
+            CreateMap<BecaViewAction, dtoBecaViewActions>().ReverseMap();
+        }
+
+        private void MapUI()
+        {
+            CreateMap<BecaViewUI, BecaViewFilterUI>().ReverseMap()
+                    .ForMember(dest => dest.Name,
+                            opts => opts.MapFrom(
+                                src => src.Name.ToLower()
+                                )
+                            ); ;
+            CreateMap<BecaViewUI, BecaViewDetailUI>().ReverseMap()
+                    .ForMember(dest => dest.Name,
+                            opts => opts.MapFrom(
+                                src => src.Name.ToLower()
+                                )
+                            ); ; ;
         }
     }
 }

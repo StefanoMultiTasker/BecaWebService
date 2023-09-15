@@ -51,5 +51,12 @@ namespace BecaWebService.ExtensionsLib
                 return null;
             }
         }
+
+        //public static string ToLower<T>(this JObject source)
+        //{
+        //    if (source == null) return null;
+        //    if (source.GetType() == typeof(string)) return source.ToString().ToLower();
+        //    return null;
+        //}
     }
 }
