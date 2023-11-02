@@ -279,25 +279,28 @@ namespace Repository
                 }
                 if (parameters != null && parameters.Count() > 0)
                 {
-                    //pars = new object[] { };
-                    foreach (BecaParameter par in parameters.Where(p => p.used == false))
+                    foreach (BecaParameter par in parameters.Where(p => p.used == false && colCheck != null && colCheck.HasPropertyValue(p.name)))
                     {
                         if (par.value1 != null && par.value1.ToString().IsValidDateTimeJson()) par.value1 = par.value1.ToDateTimeFromJson();
                         if (par.value2 != null && par.value2.ToString().IsValidDateTimeJson()) par.value2 = par.value2.ToDateTimeFromJson();
-                        sql += (numP - parameters.Count(p => p.used == true)) == 0 ? " Where " : " And ";
-                        sql += par.name + " " + par.comparison;
-                        switch (par.comparison.ToLower())
+                        sql += (numP - parameters.Count(p => p.used == true) - pars.Count(p => p == null)) == 0 && sql.ToUpper().IndexOf("WHERE") < 0 ? " Where " : " And ";
+                        //sql += par.name + " " + par.comparison;
+                        switch (par.comparison)
                         {
                             case "between":
+                                sql += par.name + " " + par.comparison;
                                 sql += " {" + numP + "} and {" + (numP + 1).ToString() + "}";
-                                numP++;
                                 pars.Add(par.value1);
                                 pars.Add(par.value2);
+                                numP++;
+                                numP++;
                                 break;
 
                             case "like":
+                                sql += par.name + " " + par.comparison;
                                 sql += " '%' + {" + numP + "} + '%'";
                                 pars.Add(par.value1);
+                                numP++;
                                 break;
 
                             case "is null":
@@ -305,6 +308,7 @@ namespace Repository
                                 break;
 
                             case "in":
+                                sql += par.name + " " + par.comparison;
                                 string[] vals = par.value1.ToString().Replace("(", "").Replace(")", "").Replace(" ", "").Split(",");
                                 foreach (string val in vals)
                                 {
@@ -314,11 +318,20 @@ namespace Repository
                                 break;
 
                             default:
-                                sql += " {" + numP + "}";
-                                pars.Add(par.value1);
+                                if (par.value1 == null)
+                                {
+                                    sql += par.name + " Is Null ";
+                                }
+                                else
+                                {
+                                    sql += par.name + " " + par.comparison;
+                                    sql += " {" + numP + "}";
+                                    pars.Add(par.value1);
+                                    numP++;
+                                }
                                 break;
                         }
-                        numP++;
+                        //numP++;
                     }
                 }
 
@@ -575,11 +588,13 @@ namespace Repository
                 }
 
                 object tblform = getFormObject<object>(Form, false, true);
+                MethodInfo method = tblform.GetType().GetMethod("identityName");
+                string idName = method.Invoke(tblform, null).ToString();
 
                 int numP = 0;
                 string sql = "Update " + form.TableName + " Set ";
-                PropertyInfo[] colsOld = recordOld.GetType().GetProperties();
-                PropertyInfo[] colsNew = recordNew.GetType().GetProperties();
+                PropertyInfo[] colsOld = recordOld.GetType().GetProperties().Where(p => p.Name != idName).ToArray();
+                PropertyInfo[] colsNew = recordNew.GetType().GetProperties().Where(p => p.Name != idName).ToArray();
                 if (colsNew.Count() > 0)
                 {
                     for (int i = 0; i < colsNew.Count(); i++)
@@ -1127,7 +1142,7 @@ namespace Repository
             List<BecaFormField> upl = _context.BecaFormField
                 .Where(f => f.Form == form.Form && f.FieldType == "upload")
                 .ToList();
-            foreach (BecaFormField field in upl.Where(f => record.GetPropertyValue(f.Name + "upl").ToString() != ""))
+            foreach (BecaFormField field in upl.Where(f => record.GetPropertyString(f.Name + "upl").ToString() != ""))
             {
                 string res = await SaveFileByField(form, field, record);
                 if (res.Contains("ERR: ")) return res.Replace("ERR: ", "");
@@ -1150,28 +1165,38 @@ namespace Repository
                 // il settimo il codice documento da usare o il nome del campo da cui prendere il nome
                 string[] pars = field.Parameters.Split("|");
 
-                string cod = pars[6];
-                if (cod.Contains("'"))
-                {
-                    //se è fra apici allora mi viene fornito il valore da cercare
-                    cod = cod.Replace("'", "");
-                }
-                else
-                {
-                    //altrimento mi viene fornito il nome del campo in cui cercare il tipo documento che sto caricando
-                    if (record.HasPropertyValue(cod)) cod = record.GetPropertyValue(cod).ToString(); else cod = "";
-                }
+                //se il 6° parametro è fra apici allora mi viene fornito il valore da cercare
+                //altrimento mi viene fornito il nome del campo in cui cercare il tipo documento che sto caricando
+                string cod = pars[6].Contains("'") 
+                    ? pars[6].Replace("'", "") 
+                    : record.HasPropertyValue(pars[6]) ? record.GetPropertyValue(pars[6]).ToString() : "";
+                //if (cod.Contains("'"))
+                //{
+                //    //se è fra apici allora mi viene fornito il valore da cercare
+                //    cod = cod.Replace("'", "");
+                //}
+                //else
+                //{
+                //    //altrimento mi viene fornito il nome del campo in cui cercare il tipo documento che sto caricando
+                //    if (record.HasPropertyValue(cod)) cod = record.GetPropertyValue(cod).ToString(); else cod = "";
+                //}
 
-                string sql = "Select " + pars[1] + " as Cod, " + pars[2] + " As Fld, " + pars[3] + " As Name, " + pars[4] + " As ext, " + pars[5] + " As MB From " + pars[0];
-                List<object> parameters = new List<object>();
-                parameters.Add(record.GetPropertyValue(pars[1]));
+                string sql = "Select " + pars[1] + " as Cod, " + pars[2] + " As Fld, " + pars[3] + " As Name, " + pars[4] + " As ext, " + pars[5] + " As MB " +
+                    "From " + pars[0] + " Where " + pars[1] + " = {0}";
+                List<object> parameters = new List<object>
+                {
+                    //parameters.Add(record.GetPropertyValue(pars[1]));
+                    cod
+                };
                 List<object> data = this.GetDataBySQL(form.TableNameDB, sql, parameters.ToArray());
                 if (data.Count < 1)
-                    return "ERR: C'è stato un problema nella reperimento del tipo documento (" + field.Name + "). Contattare il fornitore";
+                    return "ERR: C'è stato un problema nel reperimento del tipo documento (" + field.Name + "). Contattare il fornitore";
 
                 object tipoDoc = data[0];
-                string folderNameSub = GetSaveName(tipoDoc.GetPropertyValue("Fld").ToString(), record);
-                string folderName = folderNameSub.Contains(@"\\") || folderNameSub.Contains(@":\") ? folderNameSub : @"E:\BecaWeb\Web\Upload\" + _activeCompany.MainFolder + @"\" + folderNameSub;
+                string folderNameSub = GetSaveName(tipoDoc.GetPropertyValue("Fld").ToString(), record).Replace("/", @"\");
+                string folderName = folderNameSub.Contains(@"\\") || folderNameSub.Contains(@":\") 
+                    ? @"\\192.168.0.207\BecaWeb\Web\Upload\" + _activeCompany.MainFolder + @"\" + folderNameSub
+                    : @"E:\BecaWeb\Web\Upload\" + _activeCompany.MainFolder + @"\" + folderNameSub;
                 string fileName = GetSaveName(tipoDoc.GetPropertyValue("Name").ToString(), record);
 
                 if (folderName == "")
@@ -1192,12 +1217,12 @@ namespace Repository
                 if (fileName == "") fileName = fileUploadedName;
                 if (fileUploaded.Length > 0)
                 {
-                    string sFileExtension = fileUploadedName.Remove(0, fileUploadedName.LastIndexOf(".") + 1);
+                    string sFileExtension = fileUploadedName.Remove(0, fileUploadedName.LastIndexOf(".") + 1).ToLower();
                     if (tipoDoc.GetPropertyValue("MB").ToString() != "" && tipoDoc.GetPropertyString("MB") != "0" && getBase64Dimension(fileUploaded) > int.Parse(tipoDoc.GetPropertyString("MB")))
                     {
                         return "ERR: Il file " + fileUploadedName + " eccede la dimensione permessa (" + Math.Round((decimal)(int.Parse(tipoDoc.GetPropertyString("MB")) / 1024 / 1024), 2).ToString() + "MB)";
                     }
-                    if (tipoDoc.GetPropertyString("ext").Contains(sFileExtension) && tipoDoc.GetPropertyString("ext") != "")
+                    if (tipoDoc.GetPropertyString("ext").ToLower().Contains(sFileExtension) && tipoDoc.GetPropertyString("ext") != "")
                     {
                         return "ERR: Il tipo di file (" + sFileExtension + ") non è ammesso. Seleziona uno tra questi tipi: " + tipoDoc.GetPropertyString("ext");
                     }

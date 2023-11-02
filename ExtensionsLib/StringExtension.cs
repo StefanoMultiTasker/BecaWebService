@@ -52,7 +52,7 @@ namespace BecaWebService.ExtensionsLib
 
         public static bool IsValidDateTimeJson(this string dateString)
         {
-            string format = "ddd, dd MMM yyyy hh:mm:ss GMT";
+            string format = "ddd, dd MMM yyyy HH:mm:ss GMT";
             DateTime dateTime;
             if (DateTime.TryParseExact(dateString, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out dateTime))
             {

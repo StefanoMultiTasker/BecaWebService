@@ -39,7 +39,7 @@ namespace BecaWebService.ExtensionsLib
 
         public static DateTime? ToDateTimeFromJson(this object source)
         {
-            string format = "ddd, dd MMM yyyy hh:mm:ss GMT";
+            string format = "ddd, dd MMM yyyy HH:mm:ss GMT";
             string dateString = source.ToString();
             DateTime dateTime;
             if (DateTime.TryParseExact(dateString, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out dateTime))
