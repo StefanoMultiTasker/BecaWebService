@@ -10,7 +10,7 @@ namespace Repository
     {
         private IDependencies _deps;
         private DbBecaContext _repoContext;
-        private IBecaViewRepository _BecaView;
+        //private IBecaViewRepository _BecaView;
         private readonly IMapper _mapper;
         private HttpContext _httpContext;
 

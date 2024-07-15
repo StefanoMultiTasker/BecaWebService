@@ -178,7 +178,11 @@ namespace Repository
                         object v = (object)json[pi.Name.ToLowerToCamelCase()].Value;
                         isFieldPresent = true;
                     }
-                    catch (Exception ex) { isFieldPresent = false; }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message); 
+                        isFieldPresent = false;
+                    }
                     if (isFieldPresent)
                     {
                         def.SetPropertyValue(pi.Name, (object)json[pi.Name.ToLowerToCamelCase()].Value);

@@ -4,6 +4,7 @@ using BecaWebService.Helpers;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.HttpOverrides;
 using NLog;
+using System.Reflection;
 
 namespace BecaWebService
 {
@@ -11,7 +12,7 @@ namespace BecaWebService
     {
         public Startup(IConfiguration configuration)
         {
-            LogManager.LoadConfiguration(String.Concat(Directory.GetCurrentDirectory(), "/nlog.config"));
+            LogManager.Setup().LoadConfigurationFromFile(String.Concat(Directory.GetCurrentDirectory(), "/nlog.config"));
             Configuration = configuration;
         }
 

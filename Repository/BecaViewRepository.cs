@@ -6,6 +6,7 @@ using Entities.DataTransferObjects;
 using Entities.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
 
 namespace Repository
 {
@@ -254,6 +255,7 @@ namespace Repository
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
             }
             try
             {
@@ -262,6 +264,7 @@ namespace Repository
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
             }
             return true;
         }

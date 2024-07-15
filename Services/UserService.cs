@@ -247,7 +247,7 @@ namespace BecaWebService.Services
 
         private void addParentMenu(ref IList<UserMenu> rawUserMenu, int? parentItem, int idCompany, string CompanyName)
         {
-            if (!rawUserMenu.Any(m => m.idItem == parentItem))
+            if (!rawUserMenu.Any(m => m.idItem == parentItem && m.idCompany == idCompany))
             {
                 BasicMenu rawMenu = _context.RawMenu.FirstOrDefault(m => m.idItem == parentItem);
                 UserMenu newMenu = new UserMenu(rawMenu);
