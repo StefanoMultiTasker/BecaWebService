@@ -1,7 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Entities.Contexts;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Reflection.Metadata.Ecma335;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Entities.Models
 {
@@ -86,5 +89,13 @@ namespace Entities.Models
         public string MainFolder { get; set; }
 
         public List<UserProfile> Profiles { get; set; }
+        [NotMapped] public List<UserBusinessUnit> BusinessUnits1 { get; set; }
+        [NotMapped] public List<UserBusinessUnit> BusinessUnits2 { get; set; }
+    }
+
+    public class UserBusinessUnit
+    {
+        public string code { get; set; }
+        public string value { get; set; }
     }
 }

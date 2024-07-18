@@ -1,4 +1,5 @@
-﻿using BecaWebService.Authorization;
+﻿using AutoMapper;
+using BecaWebService.Authorization;
 using BecaWebService.ExtensionsLib;
 using BecaWebService.Helpers;
 using BecaWebService.Models.Users;
@@ -51,6 +52,7 @@ namespace BecaWebService.Services
             var jwtToken = _jwtUtils.GenerateJwtToken(user);
             var refreshToken = _jwtUtils.GenerateRefreshToken(ipAddress);
             user.RefreshTokens.Add(refreshToken);
+            getFilialiByUser(ref user);
 
             // remove old refresh tokens from user
             removeOldRefreshTokens(user);
@@ -303,6 +305,50 @@ namespace BecaWebService.Services
             return i;
         }
 
+        public void getFilialiByUser(ref BecaUser user )
+        {
+            foreach (UserCompany company in user.Companies)
+            {
+                Company? _company = _context.Companies.FirstOrDefault(c => c.idCompany == company.idCompany);
+                if (_company == null) return;
+
+                Connection? cnn = _context.Companies
+                    .Where(c => c.idCompany == _company.idCompany)
+                    .SelectMany(c => c.Connections)
+                    .OrderByDescending(c => c.Default)
+                    .FirstOrDefault();
+                if (cnn == null) return;
+                string dbName = cnn.ConnectionString;
+                DbDatiContext db = new DbDatiContext(null, dbName);
+
+                UserProfile? profile = company.Profiles
+                    .Where(c => c.isDefault == true)
+                    .FirstOrDefault() ?? company.Profiles.FirstOrDefault();
+                if(profile == null) return;
+
+                string sql = "";
+                List<object> pars = new List<object>();
+                switch (profile.Flags)
+                {
+                    case "C":
+                        sql = "Select * From v4Beca_FilialiClienti Where idUtente = {0}";
+                        pars.Add(  user.idUtente);
+                        break;
+                    case "I":
+                        sql = "Select * From v4Beca_FilialiLavoratori Where idUtente = {0}";
+                        pars.Add(user.idUtente);
+                        break;
+                    case "F":
+                        sql = "Select * From v4Beca_FilialiUtenti Where idUtente = {0}";
+                        pars.Add(user.idUtente);
+                        break;
+                    default:
+                        sql = "Select * From v4Beca_FilialiSede";
+                        break;
+                }
+                company.BusinessUnits1 = db.ExecuteQuery<UserBusinessUnit>("_UserBusinessUnit", sql, false, pars.ToArray());
+            }
+        }
         // helper methods
 
         private BecaUser getUserByRefreshToken(string token)
