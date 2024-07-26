@@ -3,9 +3,11 @@ using BecaWebService.Authorization;
 using BecaWebService.ExtensionsLib;
 using BecaWebService.Helpers;
 using BecaWebService.Models.Users;
+using Entities;
 using Entities.Contexts;
 using Entities.Models;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Text;
 
@@ -14,6 +16,7 @@ namespace BecaWebService.Services
     public interface IUserService
     {
         AuthenticateResponse Authenticate(AuthenticateRequest model, string ipAddress);
+        AuthenticateResponse LoginById(int id, string ipAddress);
         AuthenticateResponse RefreshToken(string token, string ipAddress);
         void RevokeToken(string token, string ipAddress);
         IEnumerable<BecaUser> GetAll();
@@ -24,18 +27,21 @@ namespace BecaWebService.Services
     public class UserService : IUserService
     {
         private DbBecaContext _context;
-        private DbMemoryContext _memoryContext;
+        //private DbMemoryContext _memoryContext;
+        private IMyMemoryCache _memoryCache;
         private IJwtUtils _jwtUtils;
         private readonly AppSettings _appSettings;
 
         public UserService(
+            IDependencies deps,
             DbBecaContext context,
-            DbMemoryContext memoryContext,
+            //DbMemoryContext memoryContext,
             IJwtUtils jwtUtils,
             IOptions<AppSettings> appSettings)
         {
             _context = context;
-            _memoryContext = memoryContext;
+            _memoryCache = deps.memoryCache;
+            //_memoryContext = memoryContext;
             _jwtUtils = jwtUtils;
             _appSettings = appSettings.Value;
         }
@@ -60,11 +66,93 @@ namespace BecaWebService.Services
             // save changes to db
             //_context.Update(user);
             _context.SaveChanges();
-            if (_memoryContext.Users.SingleOrDefault(u => u.idUtente == user.idUtente) != null)
-                _memoryContext.Users.Update(_memoryContext.Users.Find(user.idUtente));
-            else
-                _memoryContext.Users.Add(user.deepCopy());
-            _memoryContext.SaveChanges();
+            //_context.Entry(user).State = EntityState.Detached;
+
+            // Store the user in the cache
+            var userCopy = GetById(user.idUtente);
+            //_memoryCache.Cache.Set($"User_{user.idUtente}", user.deepCopy(), TimeSpan.FromMinutes(30)); // Configura il tempo di scadenza come desiderato
+
+            //var userCopy = GetById(user.idUtente); // user.deepCopy();
+            //var existingUser = _memoryContext.Users.SingleOrDefault(u => u.idUtente == user.idUtente);
+            //if (existingUser != null)
+            //{
+            //    _memoryContext.Entry(existingUser).CurrentValues.SetValues(user);
+            //}
+            //else
+            //{
+            //    _memoryContext.Users.Add(userCopy);
+            //}
+            ////if (_memoryContext.Users.SingleOrDefault(u => u.idUtente == user.idUtente) != null)
+            ////    _memoryContext.Users.Update(_memoryContext.Users.Find(user.idUtente));
+            ////else
+            ////    _memoryContext.Users.Add(user.deepCopy());
+
+            //// Explicitly set the state to Added or Modified
+            //_memoryContext.Entry(userCopy).State = existingUser != null ? EntityState.Modified : EntityState.Added;
+
+            //try
+            //{
+            //    _memoryContext.SaveChanges();
+            //}
+            //catch (Exception ex)
+            //{
+            //    Console.WriteLine($"Error: {ex.Message}");
+            //    Console.WriteLine($"Inner Exception: {ex.InnerException?.Message}");
+            //    throw;
+            //}
+
+            return new AuthenticateResponse(user, jwtToken, refreshToken.Token);
+        }
+
+        public AuthenticateResponse LoginById(int id, string ipAddress)
+        {
+            var user = _context.BecaUsers.SingleOrDefault(x => x.Companies.Any(c => c.idUtenteLoc == id) );
+
+            // validate
+            if (user == null)
+                throw new AppException("Username or password is incorrect");
+
+            // authentication successful so generate jwt and refresh tokens
+            var jwtToken = _jwtUtils.GenerateJwtToken(user);
+            var refreshToken = _jwtUtils.GenerateRefreshToken(ipAddress);
+            user.RefreshTokens.Add(refreshToken);
+            getFilialiByUser(ref user);
+
+            // remove old refresh tokens from user
+            removeOldRefreshTokens(user);
+
+            // save changes to db
+            //_context.Update(user);
+            _context.SaveChanges();
+
+            // Store the user in the cache
+            var userCopy = GetById(user.idUtente);
+            //_memoryCache.Cache.Set($"User_{user.idUtente}", user.deepCopy(), TimeSpan.FromMinutes(30)); // Configura il tempo di scadenza come desiderato
+
+            //var userCopy = GetById(user.idUtente); // user.deepCopy();
+            //var existingUser = _memoryContext.Users.SingleOrDefault(u => u.idUtente == user.idUtente);
+            //if (existingUser != null)
+            //{
+            //    _memoryContext.Entry(existingUser).CurrentValues.SetValues(user);
+            //}
+            //else
+            //{
+            //    _memoryContext.Users.Add(userCopy);
+            //}
+
+            //// Explicitly set the state to Added or Modified
+            //_memoryContext.Entry(userCopy).State = existingUser != null ? EntityState.Modified : EntityState.Added;
+
+            //try
+            //{
+            //    _memoryContext.SaveChanges();
+            //}
+            //catch (Exception ex)
+            //{
+            //    Console.WriteLine($"Error: {ex.Message}");
+            //    Console.WriteLine($"Inner Exception: {ex.InnerException?.Message}");
+            //    throw;
+            //}
 
             return new AuthenticateResponse(user, jwtToken, refreshToken.Token);
         }
@@ -124,13 +212,18 @@ namespace BecaWebService.Services
 
         public BecaUser GetById(int id)
         {
-            var user = _memoryContext.Users.Find(id);
-            if (user == null)
+            var user = _memoryCache.GetOrSetCache($"UserById_{id}", () =>
             {
-                user = _context.BecaUsers.Find(id);
-                _memoryContext.Users.Add(user);
-                _memoryContext.SaveChanges();
-            }
+                return _context.BecaUsers.Find(id); 
+            });
+
+            //var user = _memoryContext.Users.Find(id);
+            //if (user == null)
+            //{
+            //    user = _context.BecaUsers.Find(id);
+            //    _memoryContext.Users.Add(user);
+            //    _memoryContext.SaveChanges();
+            //}
             if (user == null) throw new KeyNotFoundException("User not found");
             return user;
         }
@@ -332,15 +425,15 @@ namespace BecaWebService.Services
                 {
                     case "C":
                         sql = "Select * From v4Beca_FilialiClienti Where idUtente = {0}";
-                        pars.Add(  user.idUtente);
+                        pars.Add(user.idUtenteLoc(_company.idCompany));
                         break;
                     case "I":
                         sql = "Select * From v4Beca_FilialiLavoratori Where idUtente = {0}";
-                        pars.Add(user.idUtente);
+                        pars.Add(user.idUtenteLoc(_company.idCompany));
                         break;
                     case "F":
                         sql = "Select * From v4Beca_FilialiUtenti Where idUtente = {0}";
-                        pars.Add(user.idUtente);
+                        pars.Add(user.idUtenteLoc(_company.idCompany));
                         break;
                     default:
                         sql = "Select * From v4Beca_FilialiSede";

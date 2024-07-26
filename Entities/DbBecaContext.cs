@@ -144,6 +144,9 @@ namespace Entities.Contexts
                     a.Property<int>("idCompany")
                         .HasColumnType("int");
 
+                    a.Property<int>("idUtenteLoc")
+                        .HasColumnType("int");
+
                     a.Property<string>("CompanyName")
                         .HasColumnType("nvarchar(max)");
 

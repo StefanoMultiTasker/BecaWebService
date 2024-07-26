@@ -45,6 +45,8 @@ namespace Entities.Models
 
         [JsonIgnore]
         public List<RefreshToken> RefreshTokens { get; set; }
+
+        public int idUtenteLoc(int? idCompany) => idCompany == null ? idUtente : Companies.FirstOrDefault(C => C.idCompany == idCompany).idUtenteLoc;
     }
 
     //[Owned]
@@ -70,6 +72,8 @@ namespace Entities.Models
     {
         [JsonIgnore]
         public int idUtente { get; set; }
+        [JsonIgnore]
+        public int idUtenteLoc { get; set; }
         private int isDefault { get; set; }
         [NotMapped]
         public bool IsDefault { get => isDefault != 0; set => isDefault = value ? 1 : 0; }

@@ -27,6 +27,7 @@ namespace BecaWebService
             services.ConfigureCors();
             services.ConfigureIISIntegration();
             services.ConfigureDB(Configuration);
+            services.AddMemoryCache();
             //services.ConfigureAuth(Configuration);
             services.ConfigureLoggerService();
 

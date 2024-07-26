@@ -41,7 +41,7 @@ namespace BecaWebService.Controllers
                 if (!res.Success) return BadRequest(res.Message);
 
                 //return Ok(res);
-                return await getContent(res._extraLoads, cancel);
+                return await getContent(res._extraLoads, data.lowerCase, cancel);
             }
             catch (Exception ex)
             {
@@ -94,7 +94,7 @@ namespace BecaWebService.Controllers
                 //List<BecaParameter> parameters = data["Parameters"].ToObject<BecaParameters>().parameters.ToList<BecaParameter>();
                 //IEnumerable<object> res = _genericService.GetDataByFormField(Form, FormField, parameters);
                 //return Ok(res);
-                return await getContent(res._extraLoads, cancel);
+                return await getContent(res._extraLoads, true, cancel);
             }
             catch (Exception ex)
             {
@@ -116,7 +116,7 @@ namespace BecaWebService.Controllers
 
                 GenericResponse res = _genericService.GetDataByFormChildSelect(form, formChild, sqlNumber, record);
                 if (!res.Success) return BadRequest(res.Message);
-                return await getContent(res._extraLoads, cancel);
+                return await getContent(res._extraLoads, true, cancel);
             }
             catch (Exception ex)
             {
@@ -329,14 +329,13 @@ namespace BecaWebService.Controllers
             return Ok();
         }
 
-        private async Task<IActionResult> getContent(IEnumerable<object> res, System.Threading.CancellationToken cancel)
+        private async Task<IActionResult> getContent(IEnumerable<object> res, bool lowerCase, System.Threading.CancellationToken cancel)
         {
             DefaultContractResolver contractResolver = new DefaultContractResolver
             {
-                NamingStrategy = new Extensions.ServiceExtensions.LowerNamingStrategy()
-                {
-                    OverrideSpecifiedNames = false
-                }
+                NamingStrategy = lowerCase 
+                    ? new Extensions.ServiceExtensions.LowerNamingStrategy() { OverrideSpecifiedNames = false }
+                    : new Extensions.ServiceExtensions.LowerCamelCaseNamingStrategy() { OverrideSpecifiedNames = false }
             };
 
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(res, new Newtonsoft.Json.JsonSerializerSettings
@@ -378,6 +377,7 @@ namespace BecaWebService.Controllers
         public bool? force { get; set; }
         public JObject? newData { get; set; }
         public JObject? originalData { get; set; }
+        public bool lowerCase { get; set; }
     }
 
     public class dataFormChildElem

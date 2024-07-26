@@ -26,6 +26,15 @@ namespace BecaWebService.Controllers
             return Ok(response);
         }
 
+        //[AllowAnonymous]
+        [HttpGet("LoginById/{id}")]
+        public IActionResult LoginById(int id)
+        {
+            var response = _userService.LoginById(id, ipAddress());
+            setTokenCookie(response.RefreshToken);
+            return Ok(response);
+        }
+
         [AllowAnonymous]
         [HttpPost("refresh-token")]
         public IActionResult RefreshToken()
@@ -49,19 +58,19 @@ namespace BecaWebService.Controllers
             return Ok(new { message = "Token revoked" });
         }
 
-        [HttpGet]
-        public IActionResult GetAll()
-        {
-            var users = _userService.GetAll();
-            return Ok(users);
-        }
+        //[HttpGet]
+        //public IActionResult GetAll()
+        //{
+        //    var users = _userService.GetAll();
+        //    return Ok(users);
+        //}
 
-        [HttpGet("{id}")]
-        public IActionResult GetById(int id)
-        {
-            var user = _userService.GetById(id);
-            return Ok(user);
-        }
+        //[HttpGet("{id}")]
+        //public IActionResult GetById(int id)
+        //{
+        //    var user = _userService.GetById(id);
+        //    return Ok(user);
+        //}
 
         [HttpGet("{id}/refresh-tokens")]
         public IActionResult GetRefreshTokens(int id)

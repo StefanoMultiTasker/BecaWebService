@@ -276,7 +276,7 @@ namespace Repository
                         parameters.Add(new BecaParameter()
                         {
                             name = "idUtente",
-                            value1 = _currentUser.idUtente,
+                            value1 = _currentUser.idUtenteLoc(_activeCompany == null ? null :_activeCompany.idCompany),
                             comparison = "="
                         });
                     }
@@ -504,7 +504,7 @@ namespace Repository
                 parameters.Add(new BecaParameter()
                 {
                     name = "idUtente",
-                    value1 = _currentUser.idUtente,
+                    value1 = _currentUser.idUtenteLoc(_activeCompany == null ? null :_activeCompany.idCompany),
                     comparison = "="
                 });
             }
@@ -776,7 +776,7 @@ namespace Repository
                             }
                             else
                             {
-                                pars.Add(par == "idUtente" ? _currentUser.idUtente : null);
+                                pars.Add(par == "idUtente" ? _currentUser.idUtenteLoc(_activeCompany == null ? null :_activeCompany.idCompany) : null);
                             }
                         }
                         //foreach (BecaParameter par in parameters.Where(p => funcPars.Contains(p.name)))
@@ -807,7 +807,7 @@ namespace Repository
                             parameters.Add(new BecaParameter()
                             {
                                 name = "idUtente",
-                                value1 = _currentUser.idUtente,
+                                value1 = _currentUser.idUtenteLoc(_activeCompany == null ? null :_activeCompany.idCompany),
                                 comparison = "="
                             });
                         }
@@ -915,7 +915,7 @@ namespace Repository
                 if (colCheck.GetType().GetProperty("idUtente") != null)
                 {
                     ddlKeys += ",idUtente";
-                    pars.Add(_currentUser.idUtente);
+                    pars.Add(_currentUser.idUtenteLoc(_activeCompany == null ? null :_activeCompany.idCompany));
                 }
 
                 string sql = ddl + " Where " + key +
@@ -971,7 +971,7 @@ namespace Repository
                     parameters.Add(new BecaParameter()
                     {
                         name = "idUtente",
-                        value1 = _currentUser.idUtente,
+                        value1 = _currentUser.idUtenteLoc(_activeCompany == null ? null :_activeCompany.idCompany),
                         comparison = "="
                     });
                 }
