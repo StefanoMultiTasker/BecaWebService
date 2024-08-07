@@ -20,7 +20,8 @@ namespace BecaWebService.ExtensionsLib
                 .Select(word => char.ToUpper(word[0]) + word.Substring(1))
                 .ToArray();
 
-            return $"{leadWord}{string.Join(string.Empty, tailWords)}";
+            string prefix = str.Substring(0, 1) == "_" ? "_" : "";
+            return $"{prefix}{leadWord}{string.Join(string.Empty, tailWords)}";
         }
 
         public static string ToCamelCase(this string str)

@@ -94,12 +94,37 @@ namespace BecaWebService.Controllers
                 //List<BecaParameter> parameters = data["Parameters"].ToObject<BecaParameters>().parameters.ToList<BecaParameter>();
                 //IEnumerable<object> res = _genericService.GetDataByFormField(Form, FormField, parameters);
                 //return Ok(res);
-                return await getContent(res._extraLoads, true, cancel);
+                return await getContent(res._extraLoads, data.lowerCase, cancel);
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
+        }
+
+        [HttpPost("DataFields")]
+        public async Task<IActionResult> DataFields([FromBody] dataFormFieldsPostParameter req, System.Threading.CancellationToken cancel)
+        {
+            List<List<object>> res = new List<List<object>>();
+            foreach (dataFormPostParameter data in req.RequestList)
+            {
+                try
+                {
+                    string form = data.idView == null ? data.Form : getFormByView(data.idView.Value);
+                    if ((form ?? "") == "")
+                        return BadRequest("La View non ha form associate");
+                    string FormField = data.FormField;
+
+                    List<BecaParameter> parameters = data.Parameters.parameters;
+                    GenericResponse _res = _genericService.GetDataByFormField(form, FormField, parameters);
+                    res.Add(_res.Success ? _res._extraLoads: []);
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest(ex.Message);
+                }
+            }
+            return await getContent(res, req.RequestList[0].lowerCase, cancel);
         }
 
         [HttpPost("DataFormChildSelect")]
@@ -161,7 +186,8 @@ namespace BecaWebService.Controllers
                 if (!result.Success)
                     return BadRequest(result.Message);
 
-                return Ok(result._extraLoad);
+                return Ok(result);
+                //return Ok(result._extraLoad);
             }
             catch (Exception ex)
             {
@@ -378,6 +404,11 @@ namespace BecaWebService.Controllers
         public JObject? newData { get; set; }
         public JObject? originalData { get; set; }
         public bool lowerCase { get; set; }
+    }
+
+    public class dataFormFieldsPostParameter
+    {
+        public required List<dataFormPostParameter> RequestList { get; set; }
     }
 
     public class dataFormChildElem

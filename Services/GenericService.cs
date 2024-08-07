@@ -133,10 +133,10 @@ namespace BecaWebService.Services
                 List<object> data = _genericRepository.GetDataByForm<object>(Form, recordOld);
                 if (data.Count == 0) return new GenericResponse("Il record non esiste più");
 
-                object res = await _genericRepository.UpdateDataByForm<object>(Form, recordOld, recordNew);
-                if (res == null) return new GenericResponse("Il record non è stato aggiornato");
+                var res = await _genericRepository.UpdateDataByForm<object>(Form, recordOld, recordNew);
+                if (res.data == null) return new GenericResponse(res.message ?? "Il record non è stato aggiornato");
 
-                return res.toResponse();    
+                return new GenericResponse(res.data, res.message); // res.toResponse();    
                 //return _genericRepository.GetDataByForm<object>(Form, recordNew).toResponse();
             }
             catch (Exception ex)

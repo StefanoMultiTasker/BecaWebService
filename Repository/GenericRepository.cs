@@ -1,4 +1,5 @@
 ﻿using BecaWebService.ExtensionsLib;
+using BecaWebService.Models.Communications;
 using Contracts;
 using Entities;
 using Entities.Contexts;
@@ -10,6 +11,7 @@ using Microsoft.AspNetCore.Server.IIS.Core;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System;
 using System.Reflection;
 
 namespace Repository
@@ -49,7 +51,7 @@ namespace Repository
             if (data.Count == 0)
                 return await AddDataByForm<T>(Form, record);
             else
-                return await UpdateDataByForm<T>(Form, data[0], record);
+                return (await UpdateDataByForm<T>(Form, data[0], record)).data;
         }
 
         public async Task<T> AddDataByForm<T>(string Form, object record) where T : class, new()
@@ -101,6 +103,7 @@ namespace Repository
 
                 sql += sqlF + ") Values (" + sqlV + ")";
 
+                int ires = 0;
                 if (idName != "")
                 {
                     int key = await getContext(form.TableNameDB).InsertSqlCommandWithIdentity(sql, pars.ToArray());
@@ -109,20 +112,24 @@ namespace Repository
                         return null;
                     }
                     record.SetPropertyValue(idName, key);
+                    ires = 1;
                 }
                 else
                 {
-                    int ires = await getContext(form.TableNameDB).ExecuteSqlCommandAsync(sql, pars.ToArray());
+                    ires = await getContext(form.TableNameDB).ExecuteSqlCommandAsync(sql, pars.ToArray());
                 }
 
-                List<T> inserted = this.GetDataByForm<T>(Form, record);
-                if (inserted.Count == 0) return null;
+                if (ires == 0) return null;
 
                 if ((form.AddProcedureName ?? "") != "" && form.AddProcedureName.Contains("#After"))
                 {
                     await _context.SaveChangesAsync();
                     await UpdateDataByProcedure<T>(form.TableNameDB, form.AddProcedureName, record);
                 }
+
+                await _context.SaveChangesAsync();
+                List<T> inserted = this.GetDataByForm<T>(Form, record);
+                if (inserted.Count == 0) return null;
                 return inserted[0];
             }
             else
@@ -180,7 +187,7 @@ namespace Repository
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(ex.Message); 
+                        Console.WriteLine(ex.Message);
                         isFieldPresent = false;
                     }
                     if (isFieldPresent)
@@ -254,88 +261,107 @@ namespace Repository
                 int numP = 0;
                 if (sql.Contains("("))
                 {
-                    string[] funcPars = sql.inside("(", ")").Replace(" ", "").Split(",");
-                    string funcPar = "";
-                    foreach (BecaParameter par in parameters.Where(p => funcPars.Contains(p.name)))
+                    string inside = sql.inside("(", ")");
+                    if (inside != "")
                     {
-                        funcPar += "{" + numP + "}";
-                        pars.Add(par.value1);
-                        numP++;
-                        par.used = true;
+                        string[] funcPars = inside.Replace(" ", "").Split(",");
+                        string funcPar = "";
+                        string funcParChk = "";
+                        foreach (string par in funcPars)
+                        {
+                            funcPar += "{" + numP + "}";
+                            funcParChk += "Null, ";
+                            numP++;
+                            BecaParameter bPar = parameters.FirstOrDefault(p => p.name.ToLower().Replace("+", "") == par.ToLower());
+                            if (bPar != null)
+                            {
+                                if (bPar.value1 != null && bPar.value1.ToString().IsValidDateTimeJson()) bPar.value1 = bPar.value1.ToDateTimeFromJson();
+                                if (bPar.value2 != null && bPar.value2.ToString().IsValidDateTimeJson()) bPar.value2 = bPar.value2.ToDateTimeFromJson();
+
+                                pars.Add(bPar.used == true ? bPar.value2 : bPar.value1);
+                                bPar.used = true;
+                            }
+                            else
+                            {
+                                pars.Add(par == "idUtente" ? _currentUser.idUtenteLoc(_activeCompany == null ? null : _activeCompany.idCompany) : null);
+                            }
+                        }
+                        funcPar = funcPar.Replace("}{", "},{");
+                        sql = sql.Replace(sql.inside("(", ")"), funcParChk).Replace(",)", ")");
+                        sql = sql.Replace(sql.inside("(", ")"), funcPar);
                     }
-                    funcPar = funcPar.Replace("}{", "},{");
-                    sql = sql.Replace(sql.inside("(", ")"), funcPar);
                 }
 
-                object colCheck = getContext(db).GetQueryDef<object>(Form, sql + " Where 0 = 1", pars.ToArray());
-                if (form.UseDefaultParam)
+                if (!sql.Contains("("))
                 {
-                    if (colCheck.GetType().GetProperty("idUtente") != null)
+                    object colCheck = getContext(db).GetQueryDef<object>(Form, sql + " Where 0 = 1", pars.ToArray());
+                    if (colCheck.GetType().GetProperty("idUtente") != null && form.UseDefaultParam)
                     {
                         if (parameters == null) parameters = new List<BecaParameter>();
                         parameters.Add(new BecaParameter()
                         {
                             name = "idUtente",
-                            value1 = _currentUser.idUtenteLoc(_activeCompany == null ? null :_activeCompany.idCompany),
+                            value1 = _currentUser.idUtenteLoc(_activeCompany == null ? null : _activeCompany.idCompany),
                             comparison = "="
                         });
                     }
-                }
-                if (parameters != null && parameters.Count() > 0)
-                {
-                    foreach (BecaParameter par in parameters.Where(p => p.used == false && colCheck != null && colCheck.HasPropertyValue(p.name)))
+                    if (parameters != null && parameters.Count() > 0)
                     {
-                        if (par.value1 != null && par.value1.ToString().IsValidDateTimeJson()) par.value1 = par.value1.ToDateTimeFromJson();
-                        if (par.value2 != null && par.value2.ToString().IsValidDateTimeJson()) par.value2 = par.value2.ToDateTimeFromJson();
-                        sql += (numP - parameters.Count(p => p.used == true) - pars.Count(p => p == null)) == 0 && sql.ToUpper().IndexOf("WHERE") < 0 ? " Where " : " And ";
-                        //sql += par.name + " " + par.comparison;
-                        switch (par.comparison)
+                        foreach (BecaParameter par in parameters.Where(p => p.used == false && colCheck != null && colCheck.HasPropertyValue(p.name)))
                         {
-                            case "between":
-                                sql += par.name + " " + par.comparison;
-                                sql += " {" + numP + "} and {" + (numP + 1).ToString() + "}";
-                                pars.Add(par.value1);
-                                pars.Add(par.value2);
-                                numP++;
-                                numP++;
-                                break;
-
-                            case "like":
-                                sql += par.name + " " + par.comparison;
-                                sql += " '%' + {" + numP + "} + '%'";
-                                pars.Add(par.value1);
-                                numP++;
-                                break;
-
-                            case "is null":
-                                pars.Add(null);
-                                break;
-
-                            case "in":
-                                sql += par.name + " " + par.comparison;
-                                string[] vals = par.value1.ToString().Replace("(", "").Replace(")", "").Replace(" ", "").Split(",");
-                                foreach (string val in vals)
-                                {
-                                    pars.Add(val);
-                                    numP++;
-                                }
-                                break;
-
-                            default:
-                                if (par.value1 == null)
-                                {
-                                    sql += par.name + " Is Null ";
-                                }
-                                else
-                                {
+                            if (par.value1 != null && par.value1.ToString().IsValidDateTimeJson()) par.value1 = par.value1.ToDateTimeFromJson();
+                            if (par.value2 != null && par.value2.ToString().IsValidDateTimeJson()) par.value2 = par.value2.ToDateTimeFromJson();
+                            sql += (numP - parameters.Count(p => p.used == true) - pars.Count(p => p == null)) == 0 && sql.ToUpper().IndexOf("WHERE") < 0 ? " Where " : " And ";
+                            //sql += par.name + " " + par.comparison;
+                            switch (par.comparison)
+                            {
+                                case "between":
                                     sql += par.name + " " + par.comparison;
-                                    sql += " {" + numP + "}";
+                                    sql += " {" + numP + "} and {" + (numP + 1).ToString() + "}";
+                                    pars.Add(par.value1);
+                                    pars.Add(par.value2);
+                                    numP++;
+                                    numP++;
+                                    break;
+
+                                case "like":
+                                    sql += par.name + " " + par.comparison;
+                                    sql += " '%' + {" + numP + "} + '%'";
                                     pars.Add(par.value1);
                                     numP++;
-                                }
-                                break;
+                                    break;
+
+                                case "is null":
+                                    sql += par.name + " " + par.comparison;
+                                    //  pars.Add(null);
+                                    break;
+
+                                case "in":
+                                    sql += par.name + " " + par.comparison;
+                                    string[] vals = par.value1.ToString().Replace("(", "").Replace(")", "").Replace(" ", "").Split(",");
+                                    foreach (string val in vals)
+                                    {
+                                        pars.Add(val);
+                                        numP++;
+                                    }
+                                    break;
+
+                                default:
+                                    if (par.value1 == null)
+                                    {
+                                        sql += par.name + " Is Null ";
+                                    }
+                                    else
+                                    {
+                                        sql += par.name + " " + par.comparison;
+                                        sql += " {" + numP + "}";
+                                        pars.Add(par.value1);
+                                        numP++;
+                                    }
+                                    break;
+                            }
+                            //numP++;
                         }
-                        //numP++;
                     }
                 }
 
@@ -504,7 +530,7 @@ namespace Repository
                 parameters.Add(new BecaParameter()
                 {
                     name = "idUtente",
-                    value1 = _currentUser.idUtenteLoc(_activeCompany == null ? null :_activeCompany.idCompany),
+                    value1 = _currentUser.idUtenteLoc(_activeCompany == null ? null : _activeCompany.idCompany),
                     comparison = "="
                 });
             }
@@ -560,7 +586,7 @@ namespace Repository
             return await getContext(dbName).ExecuteSqlCommandAsync(sql, pars);
         }
 
-        public async Task<T> UpdateDataByForm<T>(string Form, object recordOld, object recordNew) where T : class, new()
+        public async Task<(T data, string message)> UpdateDataByForm<T>(string Form, object recordOld, object recordNew) where T : class, new()
         {
             BecaForm form = _context.BecaForm
                 .FirstOrDefault(f => f.Form == Form);
@@ -570,7 +596,7 @@ namespace Repository
                 List<T> data = this.GetDataByForm<T>(Form, recordNew, false, false);
                 if (data.Count == 0)
                 {
-                    return await this.AddDataByForm<T>(Form, recordNew);
+                    return (await this.AddDataByForm<T>(Form, recordNew), "");
                 }
             }
 
@@ -586,14 +612,15 @@ namespace Repository
                     if (!form.UpdateProcedureName.Contains("#Before"))
                     {
                         List<T> inserted1 = this.GetDataByForm<T>(Form, recordNew);
-                        if (inserted1.Count == 0) return null;
-                        return inserted1[0];
+                        if (inserted1.Count == 0) return (null, "Nessun record inserito dalla procedura");
+                        return (inserted1[0], "");
                     }
                 }
 
                 object tblform = getFormObject<object>(Form, false, true);
                 MethodInfo method = tblform.GetType().GetMethod("identityName");
-                string idName = method.Invoke(tblform, null).ToString();
+                string idName = method == null ? "" : method.Invoke(tblform, null).ToString();
+
 
                 int numP = 0;
                 string sql = "Update " + form.TableName + " Set ";
@@ -628,15 +655,20 @@ namespace Repository
                             }
                             if (update)
                             {
-                                pars.Add(p2.GetValue(recordNew));
+                                object pVal = p2.GetValue(recordNew);
+                                pars.Add(object.Equals(p2.GetValue(recordNew), null) ? null : (pVal.ToString().IsValidDateTimeJson() ? pVal.ToDateTimeFromJson() : pVal));
                                 sql += (numP > 0 ? ", " : "") + p1.Name + " = {" + numP.ToString() + "}";
                                 numP++;
                             }
                         }
                     }
                 }
-                else return null;
-                if (numP == 0) return null;
+                else return (null, "Nessun record modificato");
+                if (numP == 0)
+                {
+                    List<object> data = this.GetDataByForm<object>(Form, recordOld);
+                    return ((T data, string message))(data != null && data.Count != 0 ? (data[0], "Nessun dato modificato") : (null, "Nessun record modificato"));
+                }
 
                 string sqlW = "";
                 int numPW = 0;
@@ -654,15 +686,17 @@ namespace Repository
                 if ((form.UpdateProcedureName ?? "") != "" && form.UpdateProcedureName.Contains("#After"))
                 {
                     await _context.SaveChangesAsync();
-                    await UpdateDataByProcedure<T>(form.TableNameDB, form.UpdateProcedureName, recordNew);
+                    int? resSPAfter = await UpdateDataByProcedure<T>(form.TableNameDB, form.UpdateProcedureName, recordNew);
                 }
+                if (!(resSave.GetValueOrDefault() > 0 & resSave.HasValue))
+                    return ((T)recordOld, "Non è stato possibile aggiornare il record");
                 List<T> inserted2 = this.GetDataByForm<T>(Form, recordNew);
-                if (inserted2.Count == 0) return null;
-                return inserted2[0];
+                if (inserted2.Count == 0) return (null, "Problemi nel trovare il nuovo record");
+                return (inserted2[0], "");
             }
             else
             {
-                return null;
+                return (null, $"L'aggiornamento è fallito: becaForm non trovata");
             }
         }
 
@@ -765,7 +799,7 @@ namespace Repository
                             funcPar += "{" + numP + "}";
                             funcParChk += "Null, ";
                             numP++;
-                            BecaParameter bPar = parameters.FirstOrDefault(p => p.name.ToLower().Replace("+","") == par.ToLower());
+                            BecaParameter bPar = parameters.FirstOrDefault(p => p.name.ToLower().Replace("+", "") == par.ToLower());
                             if (bPar != null)
                             {
                                 if (bPar.value1 != null && bPar.value1.ToString().IsValidDateTimeJson()) bPar.value1 = bPar.value1.ToDateTimeFromJson();
@@ -776,7 +810,7 @@ namespace Repository
                             }
                             else
                             {
-                                pars.Add(par == "idUtente" ? _currentUser.idUtenteLoc(_activeCompany == null ? null :_activeCompany.idCompany) : null);
+                                pars.Add(par == "idUtente" ? _currentUser.idUtenteLoc(_activeCompany == null ? null : _activeCompany.idCompany) : null);
                             }
                         }
                         //foreach (BecaParameter par in parameters.Where(p => funcPars.Contains(p.name)))
@@ -807,7 +841,7 @@ namespace Repository
                             parameters.Add(new BecaParameter()
                             {
                                 name = "idUtente",
-                                value1 = _currentUser.idUtenteLoc(_activeCompany == null ? null :_activeCompany.idCompany),
+                                value1 = _currentUser.idUtenteLoc(_activeCompany == null ? null : _activeCompany.idCompany),
                                 comparison = "="
                             });
                         }
@@ -915,7 +949,7 @@ namespace Repository
                 if (colCheck.GetType().GetProperty("idUtente") != null)
                 {
                     ddlKeys += ",idUtente";
-                    pars.Add(_currentUser.idUtenteLoc(_activeCompany == null ? null :_activeCompany.idCompany));
+                    pars.Add(_currentUser.idUtenteLoc(_activeCompany == null ? null : _activeCompany.idCompany));
                 }
 
                 string sql = ddl + " Where " + key +
@@ -971,7 +1005,7 @@ namespace Repository
                     parameters.Add(new BecaParameter()
                     {
                         name = "idUtente",
-                        value1 = _currentUser.idUtenteLoc(_activeCompany == null ? null :_activeCompany.idCompany),
+                        value1 = _currentUser.idUtenteLoc(_activeCompany == null ? null : _activeCompany.idCompany),
                         comparison = "="
                     });
                 }
@@ -998,6 +1032,16 @@ namespace Repository
                             case "like":
                                 sql += " '%' + {" + numP + "} + '%'";
                                 pars.Add(par.value1);
+                                break;
+
+                            case "in":
+                                sql += par.name + " " + par.comparison;
+                                string[] vals = par.value1.ToString().Replace("(", "").Replace(")", "").Replace(" ", "").Split(",");
+                                foreach (string val in vals)
+                                {
+                                    pars.Add(val);
+                                    numP++;
+                                }
                                 break;
 
                             default:
@@ -1146,7 +1190,7 @@ namespace Repository
             List<BecaFormField> upl = _context.BecaFormField
                 .Where(f => f.Form == form.Form && f.FieldType == "upload")
                 .ToList();
-            foreach (BecaFormField field in upl.Where(f => record.GetPropertyString(f.Name + "upl").ToString() != ""))
+            foreach (BecaFormField field in upl.Where(f => record.HasPropertyValue(f.Name + "upl") && record.GetPropertyString(f.Name + "upl").ToString() != ""))
             {
                 string res = await SaveFileByField(form, field, record);
                 if (res.Contains("ERR: ")) return res.Replace("ERR: ", "");
@@ -1171,8 +1215,8 @@ namespace Repository
 
                 //se il 6° parametro è fra apici allora mi viene fornito il valore da cercare
                 //altrimento mi viene fornito il nome del campo in cui cercare il tipo documento che sto caricando
-                string cod = pars[6].Contains("'") 
-                    ? pars[6].Replace("'", "") 
+                string cod = pars[6].Contains("'")
+                    ? pars[6].Replace("'", "")
                     : record.HasPropertyValue(pars[6]) ? record.GetPropertyValue(pars[6]).ToString() : "";
                 //if (cod.Contains("'"))
                 //{
@@ -1187,10 +1231,12 @@ namespace Repository
 
                 string sql = "Select " + pars[1] + " as Cod, " + pars[2] + " As Fld, " + pars[3] + " As Name, " + pars[4] + " As ext, " + pars[5] + " As MB " +
                     "From " + pars[0] + " Where " + pars[1] + " = {0}";
-                List<object> parameters = new List<object>
-                {
-                    //parameters.Add(record.GetPropertyValue(pars[1]));
-                    cod
+                List<BecaParameter> parameters = new List<BecaParameter>() { new BecaParameter() 
+                    {
+                        name = pars[1],
+                        value1 = (object)cod,
+                        comparison = "="
+                    }
                 };
                 List<object> data = this.GetDataBySQL(form.TableNameDB, sql, parameters.ToArray());
                 if (data.Count < 1)
@@ -1198,7 +1244,7 @@ namespace Repository
 
                 object tipoDoc = data[0];
                 string folderNameSub = GetSaveName(tipoDoc.GetPropertyValue("Fld").ToString(), record).Replace("/", @"\");
-                string folderName = folderNameSub.Contains(@"\\") || folderNameSub.Contains(@":\") 
+                string folderName = folderNameSub.Contains(@"\\") || folderNameSub.Contains(@":\")
                     ? @"\\192.168.0.207\BecaWeb\Web\Upload\" + _activeCompany.MainFolder + @"\" + folderNameSub
                     : @"E:\BecaWeb\Web\Upload\" + _activeCompany.MainFolder + @"\" + folderNameSub;
                 string fileName = GetSaveName(tipoDoc.GetPropertyValue("Name").ToString(), record);

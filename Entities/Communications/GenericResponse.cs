@@ -25,6 +25,9 @@
         public GenericResponse(List<object> ExtraLoads) : this(true, string.Empty, true)
         { _extraLoads = ExtraLoads; }
 
+        public GenericResponse(object ExtraLoad, string message) : this(true, message, true)
+        { _extraLoad = ExtraLoad; }
+
         /// <summary>
         /// Creates am error response.
         /// </summary>

@@ -15,7 +15,7 @@ namespace Contracts
         List<T> GetDataBySP<T>(string dbName, string spName, List<BecaParameter> parameters) where T : class, new();
 
         Task<T> AddOrUpdateDataByForm<T>(string Form, object record) where T : class, new();
-        Task<T> UpdateDataByForm<T>(string Form, object recordOld, object recordNewd) where T : class, new();
+        Task<(T data, string message)> UpdateDataByForm<T>(string Form, object recordOld, object recordNewd) where T : class, new();
         Task<T> AddDataByForm<T>(string Form, object record) where T : class, new();
         Task<T> AddDataByFormChild<T>(string form, string formChild, object parent, List<object> childElements) where T : class, new();
         Task<int> DeleteDataByForm<T>(string Form, object record) where T : class, new();
