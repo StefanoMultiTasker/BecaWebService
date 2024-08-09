@@ -37,7 +37,7 @@
     public class BecaParameter
     {
         public string name { get; set; }
-        public object value1 { get; set; }
+        public object? value1 { get; set; }
         public object? value2 { get; set; }
         public string comparison { get; set; }
         public string? dataType { get; set; }
@@ -163,15 +163,17 @@
 
     public class BecaFormFieldLevel
     {
+
         public string Form { get; set; }
-        public string objName { get; set; }
-        public int idLivello { get; set; }
-        public bool flgVisible { get; set; }
-        public bool flgEditable { get; set; }
+        public string Name { get; set; }
+        public int idProfile { get; set; }
+        public string? Title { get; set; }
+        public string? FieldType { get; set; }
+        public string? DropDownListDB { get; set; }
         public string? DropDownList { get; set; }
-        public string? Parametri { get; set; }
-        public bool DropDownListAll { get; set; }
-        public bool DropDownListNull { get; set; }
-        public bool PostBack { get; set; }
+        public string? Parameters { get; set; }
+        public bool ParametersReq { get; set; }
+        public short OrderSequence { get; set; }
+        public string? OrderOnField { get; set; }
     }
 }

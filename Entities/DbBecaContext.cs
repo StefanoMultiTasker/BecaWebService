@@ -203,6 +203,9 @@ namespace Entities.Contexts
                         a.Property<bool>("isDefault")
                             .HasColumnType("bit");
 
+                        a.Property<string>("Flags")
+                            .HasColumnType("nvarchar(10)");
+
                         a.HasKey("idUtente", "idProfile", "idCompany");
                         a.WithOwner()
                             .HasForeignKey("idUtente", "idCompany");
@@ -403,8 +406,8 @@ namespace Entities.Contexts
             modelBuilder.Entity<BecaFormField>().ToTable("vBecaFormFields");
             modelBuilder.Entity<BecaFormField>().HasKey(p => new { p.Form, p.Name });
 
-            modelBuilder.Entity<BecaFormFieldLevel>().ToTable("_dbaFormsObjAccess");
-            modelBuilder.Entity<BecaFormFieldLevel>().HasKey(p => new { p.Form, p.objName, p.idLivello });
+            modelBuilder.Entity<BecaFormFieldLevel>().ToTable("vBecaFormFields_Profile");
+            modelBuilder.Entity<BecaFormFieldLevel>().HasKey(p => new { p.idProfile, p.Form, p.Name });
 
             #endregion
 

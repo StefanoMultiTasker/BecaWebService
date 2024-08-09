@@ -182,6 +182,8 @@ namespace BecaWebService.Controllers
                 object recordNew = _genericService.CreateObjectFromJObject<object>(form, data.newData, true);
                 object recordOld = _genericService.CreateObjectFromJObject<object>(form, data.originalData, true);
 
+                _logger.LogDebug($"DataFormUpdate: {form}");
+
                 GenericResponse result = await _genericService.UpdateDataByForm(form, recordOld, recordNew);
                 if (!result.Success)
                     return BadRequest(result.Message);
@@ -210,7 +212,7 @@ namespace BecaWebService.Controllers
                 if (!result.Success)
                     return BadRequest(result.Message);
 
-                return Ok(result._extraLoad);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -344,7 +346,9 @@ namespace BecaWebService.Controllers
         [HttpPost("ExecProcedure")]
         public async Task<IActionResult> ExecProcedure([FromBody] JObject data)
         {
-            string dbName = data["DbName"].ToString();
+            if (data == null) return BadRequest("Nessuna informazione fornita");
+
+            string dbName = data["DbName"] == null ? "" : data["DbName"].ToString();
             string procName = data["ProcedureName"].ToString();
             List<BecaParameter> parameters = data["Parameters"].ToObject<BecaParameters>().parameters.ToList<BecaParameter>();                                                                                                                //var recordNew = _genericService.CreateObjectFromJSON<object>(form, Record);
 

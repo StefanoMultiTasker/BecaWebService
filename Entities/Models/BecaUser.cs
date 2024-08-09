@@ -47,6 +47,13 @@ namespace Entities.Models
         public List<RefreshToken> RefreshTokens { get; set; }
 
         public int idUtenteLoc(int? idCompany) => idCompany == null ? idUtente : Companies.FirstOrDefault(C => C.idCompany == idCompany).idUtenteLoc;
+        public int? idProfileDef(int idCompany) {
+            UserCompany? comp = Companies.First(C => C.idCompany == idCompany);
+            if (comp == null) return null;
+            UserProfile? p = comp.Profiles.Find(p => p.isDefault == true) ?? comp.Profiles.Take(1).FirstOrDefault();
+            if (p == null) return null;
+            return p.idProfile;
+        }
     }
 
     //[Owned]
@@ -62,7 +69,6 @@ namespace Entities.Models
         public int idCompany { get; set; }
         public string Profile { get; set; }
         public bool PasswordChange { get; set; }
-        [JsonIgnore]
         public string? Flags { get; set; }
         public bool isDefault { get; set; }
     }

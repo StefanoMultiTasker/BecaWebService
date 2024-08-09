@@ -1,4 +1,5 @@
-﻿using BecaWebService.Helpers;
+﻿using BecaWebService.Controllers;
+using BecaWebService.Helpers;
 using BecaWebService.Models.Communications;
 using Contracts;
 using Entities.Models;
@@ -11,10 +12,12 @@ namespace BecaWebService.Services
     public class GenericService : IGenericService
     {
         private readonly IGenericRepository _genericRepository;
+        private readonly ILogger<GenericService> _logger;
 
-        public GenericService(IGenericRepository genericRepository)
+        public GenericService(IGenericRepository genericRepository, ILogger<GenericService> logger)
         {
             this._genericRepository = genericRepository;
+            _logger = logger;
         }
 
         public string GetFormByView(int idView)

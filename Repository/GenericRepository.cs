@@ -9,6 +9,7 @@ using ExtensionsLib;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Server.IIS.Core;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -22,15 +23,17 @@ namespace Repository
         private BecaUser _currentUser;
         private Company _activeCompany;
         private readonly FormTool _formTool;
+        private readonly ILogger<GenericRepository> _logger;
 
         private Dictionary<string, DbDatiContext> _databases = new Dictionary<string, DbDatiContext>();
 
-        public GenericRepository(IDependencies deps, IHttpContextAccessor httpContextAccessor)
+        public GenericRepository(IDependencies deps, IHttpContextAccessor httpContextAccessor, ILogger<GenericRepository> logger)
         {
             _context = deps.context;
             _currentUser = (BecaUser)httpContextAccessor.HttpContext.Items["User"];
             _activeCompany = (Company)httpContextAccessor.HttpContext.Items["Company"];
             _formTool = deps.formTool;
+            _logger = logger;
         }
 
         public BecaUser GetLoggedUser() => _currentUser;
@@ -767,12 +770,12 @@ namespace Repository
         {
             BecaFormField formField = _context.BecaFormField
                 .Find(Form, field);
-            //BecaFormFieldLevel formFieldCust = _context.BecaFormFieldLevel
-            //    .Find(Form, field, null);
-            string ddl = formField.DropDownList;
-            string ddlPar = formField.Parameters;
-            //string ddl = formFieldCust == null ? formField.DropDownList : formFieldCust.DropDownList;
-            //string ddlPar = formFieldCust == null ? formField.Parametri : formFieldCust.Parametri;
+            BecaFormFieldLevel formFieldCust = _context.BecaFormFieldLevel
+                .Find(_currentUser.idProfileDef(_activeCompany.idCompany), Form, field);
+            //string ddl = formField.DropDownList;
+            //string ddlPar = formField.Parameters;
+            string ddl = formFieldCust == null ? formField.DropDownList : formFieldCust.DropDownList;
+            string ddlPar = formFieldCust == null ? formField.Parameters : formFieldCust.Parameters;
 
             object colCheck = null;
 
@@ -783,6 +786,7 @@ namespace Repository
                 string sqlChk = "Select * From " + ddl.Substring(ddl.ToUpper().IndexOf("FROM") + 5);
                 if (sqlChk.ToUpper().Contains("WHERE")) sqlChk = sqlChk.Substring(0, sqlChk.ToUpper().IndexOf("WHERE") - 1);
                 if (sqlChk.ToUpper().Contains("ORDER")) sqlChk = sqlChk.Substring(0, sqlChk.ToUpper().IndexOf("ORDER") - 1);
+                if (sqlChk.ToUpper().Contains("GROUP")) sqlChk = sqlChk.Substring(0, sqlChk.ToUpper().IndexOf("GROUP") - 1);
 
                 List<object> pars = new List<object>();
                 int numP = 0;
@@ -830,8 +834,7 @@ namespace Repository
                         }
                     }
                 }
-
-                if (!sqlChk.Contains("("))
+                else
                 {
                     colCheck = getContext(formField.DropDownListDB).GetQueryDef<object>(Form + '_' + field + "_chk", sqlChk + " Where 0 = 1", pars.ToArray());
                     if (ddlPar != null && ddlPar.Contains("idUtente"))
@@ -1151,6 +1154,10 @@ namespace Repository
         public async Task<int> ExecuteProcedure(string dbName, string spName, List<BecaParameter> parameters)
         {
             List<string> names = getContext(dbName).GetProcedureParams(spName);
+            if (names.Contains("@idUtente") && parameters.Count(p => p.name == "idUtente") == 0)
+            {
+                parameters.Add(new BecaParameter("idUtente", _currentUser.idUtenteLoc(_activeCompany == null ? null : _activeCompany.idCompany)));
+            }
             string sql = $"Exec {spName} " +
                 string.Join(", ", names.Where(x => parameters.Exists(p => p.name.ToLower() == x.ToLower().Replace("@", ""))).Select((x, i) => x +
                     @" = {" + i.ToString() + "}"));
@@ -1187,14 +1194,21 @@ namespace Repository
 
         private async Task<string> UploadByForm(BecaForm form, object record)
         {
-            List<BecaFormField> upl = _context.BecaFormField
+            try
+            {
+                List<BecaFormField> upl = _context.BecaFormField
                 .Where(f => f.Form == form.Form && f.FieldType == "upload")
                 .ToList();
-            foreach (BecaFormField field in upl.Where(f => record.HasPropertyValue(f.Name + "upl") && record.GetPropertyString(f.Name + "upl").ToString() != ""))
+                foreach (BecaFormField field in upl.Where(f => record.HasPropertyValue(f.Name + "upl") && record.GetPropertyString(f.Name + "upl").ToString() != ""))
+                {
+                    string res = await SaveFileByField(form, field, record);
+                    if (res.Contains("ERR: ")) return res.Replace("ERR: ", "");
+                    record.SetPropertyValue(field.Name, res); //field.Parameters.Split("|").Last()
+                }
+            }
+            catch (Exception ex)
             {
-                string res = await SaveFileByField(form, field, record);
-                if (res.Contains("ERR: ")) return res.Replace("ERR: ", "");
-                record.SetPropertyValue(field.Parameters.Split("|").Last(), res);
+                _logger.LogCritical($"UploadByForm: {ex.Message}");
             }
             return "";
         }
@@ -1231,14 +1245,14 @@ namespace Repository
 
                 string sql = "Select " + pars[1] + " as Cod, " + pars[2] + " As Fld, " + pars[3] + " As Name, " + pars[4] + " As ext, " + pars[5] + " As MB " +
                     "From " + pars[0] + " Where " + pars[1] + " = {0}";
-                List<BecaParameter> parameters = new List<BecaParameter>() { new BecaParameter() 
+                List<BecaParameter> parameters = new List<BecaParameter>() { new BecaParameter()
                     {
                         name = pars[1],
                         value1 = (object)cod,
                         comparison = "="
                     }
                 };
-                List<object> data = this.GetDataBySQL(form.TableNameDB, sql, parameters.ToArray());
+                List<object> data = this.GetDataBySQL(form.TableNameDB, sql, parameters);
                 if (data.Count < 1)
                     return "ERR: C'è stato un problema nel reperimento del tipo documento (" + field.Name + "). Contattare il fornitore";
 
@@ -1247,7 +1261,10 @@ namespace Repository
                 string folderName = folderNameSub.Contains(@"\\") || folderNameSub.Contains(@":\")
                     ? @"\\192.168.0.207\BecaWeb\Web\Upload\" + _activeCompany.MainFolder + @"\" + folderNameSub
                     : @"E:\BecaWeb\Web\Upload\" + _activeCompany.MainFolder + @"\" + folderNameSub;
+                folderName = @"\\192.168.0.207\BecaWeb\Web\Upload\" + _activeCompany.MainFolder + @"\" + folderNameSub;
                 string fileName = GetSaveName(tipoDoc.GetPropertyValue("Name").ToString(), record);
+
+                _logger.LogDebug($"Salvo il file {fileName} in {folderName}");
 
                 if (folderName == "")
                 {
@@ -1272,7 +1289,7 @@ namespace Repository
                     {
                         return "ERR: Il file " + fileUploadedName + " eccede la dimensione permessa (" + Math.Round((decimal)(int.Parse(tipoDoc.GetPropertyString("MB")) / 1024 / 1024), 2).ToString() + "MB)";
                     }
-                    if (tipoDoc.GetPropertyString("ext").ToLower().Contains(sFileExtension) && tipoDoc.GetPropertyString("ext") != "")
+                    if (!tipoDoc.GetPropertyString("ext").ToLower().Contains(sFileExtension) && tipoDoc.GetPropertyString("ext") != "")
                     {
                         return "ERR: Il tipo di file (" + sFileExtension + ") non è ammesso. Seleziona uno tra questi tipi: " + tipoDoc.GetPropertyString("ext");
                     }
@@ -1287,7 +1304,11 @@ namespace Repository
                 }
                 else { return ""; }
             }
-            catch (Exception ex) { return "ERR: " + ex.Message; }
+            catch (Exception ex)
+            {
+                _logger.LogCritical($"Errore nel salvataggio del file: {ex.Message}");
+                return "ERR: " + ex.Message;
+            }
         }
 
         private string GetSaveName(string Name, object record)

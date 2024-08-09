@@ -10,7 +10,7 @@ namespace ExtensionsLib
             PropertyInfo[] props = type.GetProperties();
 
             return propertyNames.Split(new[] { ',', '+' }, StringSplitOptions.RemoveEmptyEntries)
-                .All(propertyName => props.Any(p => p.Name.Equals(propertyName.Trim(), StringComparison.OrdinalIgnoreCase))
+                .All(propertyName => props.Any(p => p.Name.ToLower().Equals(propertyName.ToLower().Trim(), StringComparison.OrdinalIgnoreCase))
             );
             //return props.FirstOrDefault(p => p.Name.ToLower() == propertyName.ToLower()) == null ? false : true;
         }

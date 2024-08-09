@@ -7,8 +7,9 @@ namespace BecaWebService.ExtensionsLib
     {
         public static string ToLowerToCamelCase(this string str)
         {
-            str = str.Substring(0, 1).ToUpper() + str.Substring(1);
-            var words = str.Split(new[] { "_", " " }, StringSplitOptions.RemoveEmptyEntries);
+            string _str = str.Substring(0, 1) == "_" ? str.Substring(1) : str;
+            _str = _str.Substring(0, 1).ToUpper() + _str.Substring(1);
+            var words = _str.Split(new[] { "_", " " }, StringSplitOptions.RemoveEmptyEntries);
 
             var leadWord = Regex.Replace(words[0], @"([A-Z])([A-Z]+|[a-z0-9]+)($|[A-Z]\w*)",
                 m =>
