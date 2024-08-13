@@ -228,7 +228,7 @@ namespace BecaWebService.Controllers
                 return BadRequest("La View non ha form associate");
             //Log.Information($"FormAddOrUpdate {form}");
 
-            object recordNew = _genericService.CreateObjectFromJObject<object>(form, data.newData, false);
+            object recordNew = _genericService.CreateObjectFromJObject<object>(form, data.newData, false, true);
             //Log.Information($"FormAddOrUpdate {form} object generated");
 
             GenericResponse result = await _genericService.AddOrUpdateDataByForm(form, recordNew);
@@ -236,7 +236,7 @@ namespace BecaWebService.Controllers
             if (!result.Success)
                 return BadRequest(result.Message);
 
-            return Ok(result._extraLoad);
+            return Ok(result);
         }
 
         [HttpPost("DataFormDelete")]
@@ -356,7 +356,7 @@ namespace BecaWebService.Controllers
             if (!result.Success)
                 return BadRequest(result.Message);
 
-            return Ok();
+            return Ok(result);
         }
 
         private async Task<IActionResult> getContent(IEnumerable<object> res, bool lowerCase, System.Threading.CancellationToken cancel)

@@ -660,7 +660,7 @@ namespace Repository
                             {
                                 object pVal = p2.GetValue(recordNew);
                                 pars.Add(object.Equals(p2.GetValue(recordNew), null) ? null : (pVal.ToString().IsValidDateTimeJson() ? pVal.ToDateTimeFromJson() : pVal));
-                                sql += (numP > 0 ? ", " : "") + p1.Name + " = {" + numP.ToString() + "}";
+                                sql += (numP > 0 ? ", " : "") + p2.Name + " = {" + numP.ToString() + "}";
                                 numP++;
                             }
                         }
