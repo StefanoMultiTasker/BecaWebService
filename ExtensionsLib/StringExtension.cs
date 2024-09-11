@@ -5,7 +5,7 @@ namespace BecaWebService.ExtensionsLib
 {
     public static class StringExtension
     {
-        public static string ToLowerToCamelCase(this string str)
+        public static string ToLowerToCamelCaseOld(this string str)
         {
             string _str = str.Substring(0, 1) == "_" ? str.Substring(1) : str;
             _str = _str.Substring(0, 1).ToUpper() + _str.Substring(1);
@@ -23,6 +23,39 @@ namespace BecaWebService.ExtensionsLib
 
             string prefix = str.Substring(0, 1) == "_" ? "_" : "";
             return $"{prefix}{leadWord}{string.Join(string.Empty, tailWords)}";
+        }
+        public static string ToLowerToCamelCase(this string str)
+        {
+            string _str = str;
+            _str = _str.Replace("_", "").Substring(0, 1).ToUpper() + _str.Replace("_", "").Substring(1);
+            var words = _str.Split(new[] { "_", " " }, StringSplitOptions.RemoveEmptyEntries);
+
+            var leadWord = Regex.Replace(words[0], @"([A-Z])([A-Z]+|[a-z0-9]+)($|[A-Z]\w*)",
+                m =>
+                {
+                    return m.Groups[1].Value.ToLower() + m.Groups[2].Value.ToLower() + m.Groups[3].Value;
+                });
+
+            var tailWords = words.Skip(1)
+                .Select(word => Regex.Replace(word, @"([A-Z])([A-Z]+|[a-z0-9]+)($|[A-Z]\w*)",
+                m =>
+                {
+                    return m.Groups[1].Value + m.Groups[2].Value.ToLower() + m.Groups[3].Value;
+                }))
+                .ToArray();
+
+            int pos = str.IndexOf("_");
+            string res = $"{leadWord}{string.Join(string.Empty, tailWords)}";
+            List<char> a = res.ToCharArray().ToList();
+            while (pos >= 0)
+            {
+                a.Insert(pos, '_');
+                //str = string.Concat(pos > 0 ? str.Substring(0, pos) : "", "_", str.Substring(pos));
+                pos = str.IndexOf("_", pos + 1);
+                //Console.WriteLine(pos);
+            }
+
+            return new string(a.ToArray());
         }
 
         public static string ToCamelCase(this string str)

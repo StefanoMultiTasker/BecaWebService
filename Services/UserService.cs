@@ -63,6 +63,11 @@ namespace BecaWebService.Services
             // remove old refresh tokens from user
             removeOldRefreshTokens(user);
 
+            foreach(UserCompany company in user.Companies)
+            {
+                company.LegacyToken=_jwtUtils.GenerateLegacyToken(user,company.idCompany);
+            }
+
             // save changes to db
             //_context.Update(user);
             _context.SaveChanges();
@@ -120,6 +125,11 @@ namespace BecaWebService.Services
 
             // remove old refresh tokens from user
             removeOldRefreshTokens(user);
+
+            foreach (UserCompany company in user.Companies)
+            {
+                company.LegacyToken = _jwtUtils.GenerateLegacyToken(user, company.idCompany);
+            }
 
             // save changes to db
             //_context.Update(user);

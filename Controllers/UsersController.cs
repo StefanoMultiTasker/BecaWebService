@@ -11,10 +11,12 @@ namespace BecaWebService.Controllers
     public class UsersController : ControllerBase
     {
         private IUserService _userService;
+        private IHomePageService _homePageService;
 
-        public UsersController(IUserService userService)
+        public UsersController(IUserService userService, IHomePageService homePageService)
         {
             _userService = userService;
+            _homePageService = homePageService;
         }
 
         [AllowAnonymous]
@@ -85,6 +87,13 @@ namespace BecaWebService.Controllers
         {
             var menu = _userService.GetMenuByUser(id);
             return Ok(menu);
+        }
+
+        [HttpGet("HomePage")]
+        public IActionResult GetHomePage()
+        {
+            var homePage = _homePageService.GetHomePageByUser();
+            return Ok(homePage);
         }
 
         // helper methods

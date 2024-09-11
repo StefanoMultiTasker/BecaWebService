@@ -76,15 +76,11 @@ namespace Entities.Models
     //[Owned]
     public partial class UserCompany
     {
-        [JsonIgnore]
-        public int idUtente { get; set; }
-        [JsonIgnore]
+        [JsonIgnore] public int idUtente { get; set; }
         public int idUtenteLoc { get; set; }
         private int isDefault { get; set; }
-        [NotMapped]
-        public bool IsDefault { get => isDefault != 0; set => isDefault = value ? 1 : 0; }
-        [Key]
-        public int idCompany { get; set; }
+        [NotMapped] public bool IsDefault { get => isDefault != 0; set => isDefault = value ? 1 : 0; }
+        [Key] public int idCompany { get; set; }
         public string CompanyName { get; set; }
         public string? Logo1url { get; set; }
         public string? Logo2url { get; set; }
@@ -97,6 +93,7 @@ namespace Entities.Models
         public string? Color4 { get; set; }
         public string? Color5 { get; set; }
         public string MainFolder { get; set; }
+        [NotMapped] public string LegacyToken { get; set; }
 
         public List<UserProfile> Profiles { get; set; }
         [NotMapped] public List<UserBusinessUnit> BusinessUnits1 { get; set; }

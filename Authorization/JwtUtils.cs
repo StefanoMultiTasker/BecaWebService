@@ -14,6 +14,7 @@ namespace BecaWebService.Authorization
         public string GenerateJwtToken(BecaUser user);
         public int? ValidateJwtToken(string token);
         public RefreshToken GenerateRefreshToken(string ipAddress);
+        public string GenerateLegacyToken(BecaUser user, int idCompany);
     }
 
     public class JwtUtils : IJwtUtils
@@ -38,6 +39,36 @@ namespace BecaWebService.Authorization
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
+        }
+        public string GenerateLegacyToken(BecaUser user, int idCompany)
+        {
+            //generate token
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
+
+            int idProfile = user.idProfileDef(idCompany) ?? 0;
+            UserCompany? company = user.Companies.Find(c => c.idCompany == idCompany) ?? null;
+            if (company == null) return "";
+            UserProfile? profile = company.Profiles.Find(p => p.idProfile == idProfile) ?? null;
+            if (profile == null) return "";
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new Claim[]{
+                    new Claim(ClaimTypes.Name, user.UserName),
+                    new Claim(ClaimTypes.NameIdentifier, user.idUtenteLoc(idCompany).ToString()),
+                    new Claim(ClaimTypes.Role, idProfile.ToString()),
+                    new Claim(ClaimTypes.GroupSid, profile.Flags ?? ""),
+                    new Claim(ClaimTypes.PrimarySid, company.MainFolder ?? "")
+                }),
+                Expires = DateTime.Now.AddDays(1),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var tokenString = tokenHandler.WriteToken(token);
+
+            return tokenString;
         }
 
         public int? ValidateJwtToken(string token)

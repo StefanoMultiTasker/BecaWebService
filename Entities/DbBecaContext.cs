@@ -40,6 +40,7 @@ namespace Entities.Contexts
         public DbSet<BecaFormLevels> BecaFormLevels { get; set; }
         public DbSet<BecaFormField> BecaFormField { get; set; }
         public DbSet<BecaFormFieldLevel> BecaFormFieldLevel { get; set; }
+        public DbSet<BecaHomePage> BecaHomePages { get; set; }
 
         //public DbdatiContext(IConfiguration configuration)
         //{
@@ -408,6 +409,9 @@ namespace Entities.Contexts
 
             modelBuilder.Entity<BecaFormFieldLevel>().ToTable("vBecaFormFields_Profile");
             modelBuilder.Entity<BecaFormFieldLevel>().HasKey(p => new { p.idProfile, p.Form, p.Name });
+
+            modelBuilder.Entity<BecaHomePage>().ToTable("HomePage");
+            modelBuilder.Entity<BecaHomePage>().HasKey(p => new { p.idProfile, p.rowPosition, p.colPosition });
 
             #endregion
 

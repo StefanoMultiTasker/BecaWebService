@@ -316,7 +316,7 @@ namespace Repository
                             if (par.value2 != null && par.value2.ToString().IsValidDateTimeJson()) par.value2 = par.value2.ToDateTimeFromJson();
                             sql += (numP - parameters.Count(p => p.used == true) - pars.Count(p => p == null)) == 0 && sql.ToUpper().IndexOf("WHERE") < 0 ? " Where " : " And ";
                             //sql += par.name + " " + par.comparison;
-                            switch (par.comparison)
+                            switch (par.comparison.ToLower())
                             {
                                 case "between":
                                     sql += par.name + " " + par.comparison;
@@ -376,7 +376,7 @@ namespace Repository
                 foreach (BecaFormField field in fields)
                 {
                     sqlOrd += (sqlOrd.Length == 0 ? " Order By " : ", ") +
-                        (field.OrderOnField == null ? field.Name : field.OrderOnField) +
+                        (field.OrderOnField == null ? field.Name.Trim() : field.OrderOnField.Trim()) +
                         (field.OrderSequence < 0 ? " DESC" : "");
                 }
                 sql += sqlOrd;
@@ -878,7 +878,7 @@ namespace Repository
                         if (par.value2 != null && par.value2.ToString().IsValidDateTimeJson()) par.value2 = par.value2.ToDateTimeFromJson();
                         sql += (numP - parameters.Count(p => p.used == true) - pars.Count(p => p == null)) == 0 && sql.ToUpper().IndexOf("WHERE") < 0 ? " Where " : " And ";
                         //sql += par.name + " " + par.comparison;
-                        switch (par.comparison)
+                        switch (par.comparison.ToLower())
                         {
                             case "between":
                                 sql += par.name + " " + par.comparison;
@@ -1024,7 +1024,7 @@ namespace Repository
                     {
                         sql += sql.ToUpper().Contains("WHERE") ? " And " : " Where ";
                         sql += par.name + " " + par.comparison;
-                        switch (par.comparison)
+                        switch (par.comparison.ToLower())
                         {
                             case "between":
                                 sql += " {" + numP + "} and {" + (numP + 1).ToString() + "}";

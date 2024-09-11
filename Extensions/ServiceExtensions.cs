@@ -91,6 +91,9 @@ namespace BecaWebService.Extensions
             services.AddScoped<IGenericRepository, GenericRepository>();
             services.AddScoped<IGenericService, GenericService>();
             services.AddScoped<IBecaViewRepository, BecaViewRepository>();
+
+            services.AddScoped<IHomePageRepository, HomePageRepository>();
+            services.AddScoped<IHomePageService, HomePageService>();
         }
 
         public static void ConfigureJSON(this IServiceCollection services)
