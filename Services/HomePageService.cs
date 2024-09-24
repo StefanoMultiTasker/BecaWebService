@@ -1,6 +1,8 @@
-﻿using BecaWebService.Models.Users;
+﻿using BecaWebService.ExtensionsLib;
+using BecaWebService.Models.Users;
 using Contracts;
 using Entities.Models;
+using ExtensionsLib;
 using Microsoft.EntityFrameworkCore;
 
 namespace BecaWebService.Services
@@ -13,7 +15,9 @@ namespace BecaWebService.Services
     public class HomePageService: IHomePageService
     {
         private readonly IHomePageRepository _repo;
-        public HomePageService(IHomePageRepository repo) { _repo = repo; }
+        private readonly IGenericRepository _genericRepository;
+
+        public HomePageService(IHomePageRepository repo, IGenericRepository genericRepository) { _repo = repo; _genericRepository = genericRepository; }
         public BecaHomePageResponse GetHomePageByUser()
         {
             BecaHomePageResponse homePage = new BecaHomePageResponse();
@@ -46,8 +50,23 @@ namespace BecaWebService.Services
                         title = item.colTitle,
                         contentType = item.colContentType,
                         content = item.colContent,
-                        options=item.options
+                        options=item.options,
+                        icon=item.colIcon,
+                        color=item.colColor,
+                        fontColor = item.colFontColor,
+                        redirect=item.colRedirect,
                     };
+
+                    if(item.sourceSQL != null)
+                    {
+                        List<object> testi = _genericRepository.GetDataBySQL(item.ConnectionName, item.sourceSQL, new List<BecaParameter>() );
+                        if (testi.Count > 0) {
+                            column.content = testi[0].GetPropertyString("Testo");
+                        } else
+                        {
+                            column.content = item.colContentDefault ?? "";
+                        }
+                    }
 
                     row.columns.Add(column);
                 }

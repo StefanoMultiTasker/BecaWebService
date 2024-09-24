@@ -436,20 +436,23 @@ namespace BecaWebService.Services
                     case "C":
                         sql = "Select * From v4Beca_FilialiClienti Where idUtente = {0}";
                         pars.Add(user.idUtenteLoc(_company.idCompany));
+                        company.BusinessUnits1 = new List<UserBusinessUnit>();
                         break;
                     case "I":
                         sql = "Select * From v4Beca_FilialiLavoratori Where idUtente = {0}";
                         pars.Add(user.idUtenteLoc(_company.idCompany));
+                        company.BusinessUnits1 = new List<UserBusinessUnit>();
                         break;
                     case "F":
                         sql = "Select * From v4Beca_FilialiUtenti Where idUtente = {0}";
                         pars.Add(user.idUtenteLoc(_company.idCompany));
+                        company.BusinessUnits1 = db.ExecuteQuery<UserBusinessUnit>("_UserBusinessUnit", sql, false, pars.ToArray());
                         break;
                     default:
                         sql = "Select * From v4Beca_FilialiSede";
+                        company.BusinessUnits1 = db.ExecuteQuery<UserBusinessUnit>("_UserBusinessUnit", sql, false, pars.ToArray());
                         break;
                 }
-                company.BusinessUnits1 = db.ExecuteQuery<UserBusinessUnit>("_UserBusinessUnit", sql, false, pars.ToArray());
             }
         }
         // helper methods

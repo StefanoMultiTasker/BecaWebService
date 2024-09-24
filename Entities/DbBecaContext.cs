@@ -410,7 +410,7 @@ namespace Entities.Contexts
             modelBuilder.Entity<BecaFormFieldLevel>().ToTable("vBecaFormFields_Profile");
             modelBuilder.Entity<BecaFormFieldLevel>().HasKey(p => new { p.idProfile, p.Form, p.Name });
 
-            modelBuilder.Entity<BecaHomePage>().ToTable("HomePage");
+            modelBuilder.Entity<BecaHomePage>().ToView("vHomePage");
             modelBuilder.Entity<BecaHomePage>().HasKey(p => new { p.idProfile, p.rowPosition, p.colPosition });
 
             #endregion
