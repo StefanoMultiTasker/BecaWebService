@@ -52,7 +52,8 @@ namespace BecaWebService.Services
                         content = item.colContent,
                         options=item.options,
                         icon=item.colIcon,
-                        color=item.colColor,
+                        iconColor=item.colIconColor,
+                        color =item.colColor,
                         fontColor = item.colFontColor,
                         redirect=item.colRedirect,
                     };
@@ -61,7 +62,13 @@ namespace BecaWebService.Services
                     {
                         List<object> testi = _genericRepository.GetDataBySQL(item.ConnectionName, item.sourceSQL, new List<BecaParameter>() );
                         if (testi.Count > 0) {
-                            column.content = testi[0].GetPropertyString("Testo");
+                            switch (item.sourceType)
+                            {
+                                case "JSON":
+                                    column.content = String.Join("", testi.Select(o => o.GetPropertyStringByPos(0))); break;
+                                default:
+                                    column.content = testi[0].GetPropertyString("Testo"); break;
+                            }
                         } else
                         {
                             column.content = item.colContentDefault ?? "";

@@ -22,6 +22,7 @@ namespace BecaWebService.Services
         IEnumerable<BecaUser> GetAll();
         BecaUser GetById(int id);
         UserMenuResponse GetMenuByUser(int idUtente);
+        Task<BecaUserEntity?> AddOrUpdateUserAsync(BecaUserDTO userDto);
     }
 
     public class UserService : IUserService
@@ -32,18 +33,13 @@ namespace BecaWebService.Services
         private IJwtUtils _jwtUtils;
         private readonly AppSettings _appSettings;
 
-        public UserService(
-            IDependencies deps,
-            DbBecaContext context,
-            //DbMemoryContext memoryContext,
-            IJwtUtils jwtUtils,
-            IOptions<AppSettings> appSettings)
+        public UserService(IDependencies deps, DbBecaContext context, IJwtUtils jwtUtils, IOptions<AppSettings> appSettings) //DbMemoryContext memoryContext,
         {
             _context = context;
             _memoryCache = deps.memoryCache;
-            //_memoryContext = memoryContext;
             _jwtUtils = jwtUtils;
             _appSettings = appSettings.Value;
+            //_memoryContext = memoryContext;
         }
 
         public AuthenticateResponse Authenticate(AuthenticateRequest model, string ipAddress)
@@ -132,37 +128,10 @@ namespace BecaWebService.Services
             }
 
             // save changes to db
-            //_context.Update(user);
             _context.SaveChanges();
 
             // Store the user in the cache
             var userCopy = GetById(user.idUtente);
-            //_memoryCache.Cache.Set($"User_{user.idUtente}", user.deepCopy(), TimeSpan.FromMinutes(30)); // Configura il tempo di scadenza come desiderato
-
-            //var userCopy = GetById(user.idUtente); // user.deepCopy();
-            //var existingUser = _memoryContext.Users.SingleOrDefault(u => u.idUtente == user.idUtente);
-            //if (existingUser != null)
-            //{
-            //    _memoryContext.Entry(existingUser).CurrentValues.SetValues(user);
-            //}
-            //else
-            //{
-            //    _memoryContext.Users.Add(userCopy);
-            //}
-
-            //// Explicitly set the state to Added or Modified
-            //_memoryContext.Entry(userCopy).State = existingUser != null ? EntityState.Modified : EntityState.Added;
-
-            //try
-            //{
-            //    _memoryContext.SaveChanges();
-            //}
-            //catch (Exception ex)
-            //{
-            //    Console.WriteLine($"Error: {ex.Message}");
-            //    Console.WriteLine($"Inner Exception: {ex.InnerException?.Message}");
-            //    throw;
-            //}
 
             return new AuthenticateResponse(user, jwtToken, refreshToken.Token);
         }
@@ -280,73 +249,6 @@ namespace BecaWebService.Services
                 menu.Companies.Add(c);
             }
 
-            ////List<UserMenuCompany>
-            //var companies = rawMenu.GroupBy(
-            //c => c.idCompany,
-            //(key) => new { idCompany = key }
-            //);
-            //foreach (var company in companies)
-            //{
-            //    UserMenuCompany c = new UserMenuCompany();
-            //    c.idCompany = company.Key;
-
-            //    var areas = rawMenu.Where(m => m.idCompany == c.idCompany).GroupBy(
-            //        c => new { c.idArea, c.Area },
-            //        (key) => new { idArea = key.idArea, Area = key.Area, IconType = key.AreaIconType, Icon = key.AreaIcon }
-            //        );
-            //    foreach (var area in areas)
-            //    {
-            //        UserMenuArea a = new UserMenuArea();
-            //        a.idArea = area.Key.idArea;
-            //        a.Area = area.Key.Area;
-            //        a.IconType = area.ElementAt(0).IconType;
-            //        a.Icon = area.ElementAt(0).Icon;
-
-            //        var panels = rawMenu.Where(m => m.idCompany == c.idCompany && m.idArea == a.idArea).GroupBy(
-            //            c => new { c.idPanel, c.Panel },
-            //            (key) => new { idPanel = key.idPanel, Panel = key.Panel, IconType = key.PanelIconType, Icon = key.PanelIcon }
-            //            );
-            //        foreach (var panel in panels)
-            //        {
-            //            UserMenuPanel p = new UserMenuPanel();
-            //            p.idPanel = panel.Key.idPanel;
-            //            p.Panel = panel.Key.Panel;
-            //            p.IconType = panel.ElementAt(0).IconType;
-            //            p.Icon = panel.ElementAt(0).Icon;
-
-            //            var items = rawMenu
-            //                .Where(m => m.idCompany == c.idCompany && m.idArea == a.idArea && m.idPanel == p.idPanel);
-            //            foreach (UserMenu item in items)
-            //            {
-            //                UserMenuItem i = new UserMenuItem();
-            //                i.idItem = item.idItem;
-            //                i.Caption = item.Caption;
-            //                i.DescMenuItem = item.DescMenuItem;
-            //                i.IconType = item.IconType;
-            //                i.Icon = item.Icon;
-            //                i.idGroup = item.idGroup;
-            //                i.Position = item.Position;
-            //                i.Form = item.Form;
-            //                i.DetailsForm = item.DetailsForm;
-            //                i.CustomForm = item.CustomForm;
-            //                i.GridWait4Param = item.GridWait4Param;
-            //                i.Parameters = item.Parameters;
-            //                i.flAdd = item.flAdd;
-            //                i.flEdit = item.flEdit;
-            //                i.flDel = item.flDel;
-            //                i.flDetail = item.flDetail;
-            //                i.flList = item.flList;
-            //                i.flExcel = item.flExcel;
-
-            //                p.Menu.Add(i);
-            //            }
-
-            //            a.Panels.Add(p);
-            //        }
-            //        c.Areas.Add(a);
-            //    }
-            //    menu.Companies.Add(c);
-            //}
             return menu;
         }
 
@@ -524,6 +426,64 @@ namespace BecaWebService.Services
                 iterationCount: 100000,
                 numBytesRequested: 256 / 8));
             return hashed;
+        }
+
+        public async Task<BecaUserEntity?> AddOrUpdateUserAsync(BecaUserDTO userDto)
+        {
+            BecaUserEntity user;
+            if (userDto.idUtente.HasValue)
+            {
+                // Update
+                user = await _context.BecaUserentities.FindAsync(userDto.idUtente!.Value);
+                if (user == null) return null;
+
+                user.UserName = userDto.UserName;
+                user.FirstName = userDto.FirstName;
+                user.LastName = userDto.LastName;
+            }
+            else
+            {
+                // Insert
+                user = new BecaUserEntity
+                {
+                    UserName = userDto.UserName,
+                    FirstName = userDto.FirstName,
+                    LastName = userDto.LastName,
+                    Pwd = GenerateRandomPassword(8)
+                };
+
+                _context.BecaUserentities.Add(user);
+            }
+
+            await _context.SaveChangesAsync();
+            return user;
+        }
+
+        private string GenerateRandomPassword(int length)
+        {
+            const string upperChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            const string lowerChars = "abcdefghijklmnopqrstuvwxyz";
+            const string digitChars = "0123456789";
+            const string specialChars = "!@?";
+
+            Random random = new Random();
+
+            // Garantire almeno un carattere per ogni categoria
+            char upper = upperChars[random.Next(upperChars.Length)];
+            char lower = lowerChars[random.Next(lowerChars.Length)];
+            char digit = digitChars[random.Next(digitChars.Length)];
+            char special = specialChars[random.Next(specialChars.Length)];
+
+            // Generare il resto della password casualmente dai gruppi di caratteri
+            string allChars = upperChars + lowerChars + digitChars + specialChars;
+            string remainingChars = new string(Enumerable.Repeat(allChars, length - 4)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+
+            // Combinare tutti i caratteri
+            string password = upper.ToString() + lower.ToString() + digit.ToString() + special.ToString() + remainingChars;
+
+            // Mescolare i caratteri
+            return new string(password.OrderBy(c => random.Next()).ToArray());
         }
     }
 }

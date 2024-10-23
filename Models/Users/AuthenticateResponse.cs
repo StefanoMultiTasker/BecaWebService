@@ -10,7 +10,7 @@ namespace BecaWebService.Models.Users
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Title { get; set; }
-        public string EMail { get; set; }
+        public string email { get; set; }
         public string Phone { get; set; }
         public bool isConfirmed { get; set; }
         public bool isPrivacyRead { get; set; }
@@ -28,7 +28,7 @@ namespace BecaWebService.Models.Users
             FirstName = user.FirstName;
             LastName = user.LastName;
             Title = user.Title;
-            Phone = user.EMail;
+            email = user.email;
             Phone = user.Phone;
             isConfirmed = user.isConfirmed;
             isPrivacyRead = user.isPrivacyRead;

@@ -978,6 +978,12 @@ namespace Repository
 
         public List<object> GetDataBySQL(string dbName, string sql, List<BecaParameter> parameters, bool useidUtente = true)
         {
+            string sqlFor = "";
+            if (sql.ToUpper().Contains("FOR "))
+            {
+                sqlFor = sql.Substring(sql.ToUpper().IndexOf("FOR "));
+                sql = sql.Substring(0, sql.ToUpper().IndexOf("FOR ") - 1);
+            }
             string sqlOrd = "";
             if (sql.ToUpper().Contains("ORDER"))
             {
@@ -1056,7 +1062,7 @@ namespace Repository
                     }
                 }
             }
-            sql = sql + " " + sqlGroup + " " + sqlOrd;
+            sql = sql + " " + sqlGroup + " " + sqlOrd + " " + sqlFor;
             return getContext(dbName).ExecuteQuery<object>("", sql, false, pars.ToArray());
         }
 

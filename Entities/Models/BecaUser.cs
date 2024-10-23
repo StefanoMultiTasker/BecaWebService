@@ -23,7 +23,7 @@ namespace Entities.Models
         public string? LastName { get; set; }
         public string? FirstName { get; set; }
         public string? Title { get; set; }
-        public string? EMail { get; set; }
+        public string? email { get; set; }
         public string? Phone { get; set; }
         public bool isConfirmed { get; set; }
         public bool isPrivacyRead { get; set; }
@@ -78,8 +78,8 @@ namespace Entities.Models
     {
         [JsonIgnore] public int idUtente { get; set; }
         public int idUtenteLoc { get; set; }
-        private int isDefault { get; set; }
-        [NotMapped] public bool IsDefault { get => isDefault != 0; set => isDefault = value ? 1 : 0; }
+        private bool isDefault { get; set; }
+        //[NotMapped] public bool IsDefault { get => isDefault != 0; set => isDefault = value ? 1 : 0; }
         [Key] public int idCompany { get; set; }
         public string CompanyName { get; set; }
         public string? Logo1url { get; set; }
@@ -104,5 +104,36 @@ namespace Entities.Models
     {
         public string code { get; set; }
         public string value { get; set; }
+    }
+    public partial class BecaUserDTO()
+    {
+        [Key]
+        public int? idUtente { get; set; }
+        public string UserName { get; set; }
+        public string? LastName { get; set; }
+        public string? FirstName { get; set; }
+        public string? Title { get; set; }
+        public string? email { get; set; }
+        public string? Phone { get; set; }
+        public bool isConfirmed { get; set; }
+        public bool isPrivacyRead { get; set; }
+        public bool isPwdChanged { get; set; }
+    }
+    public partial class BecaUserEntity()
+    {
+        [Key]
+        public int? idUtente { get; set; }
+        public string UserName { get; set; }
+        public string Pwd { get; set; }
+        public bool flg_Inviato { get; set; }
+        public string? LastName { get; set; }
+        public string? FirstName { get; set; }
+        public string? Title { get; set; }
+        public DateTime dtInsert { get; set; }
+        public string? email { get; set; }
+        public string? Phone { get; set; }
+        public bool isConfirmed { get; set; }
+        public bool isPrivacyRead { get; set; }
+        public bool isPwdChanged { get; set; }
     }
 }

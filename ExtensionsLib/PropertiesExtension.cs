@@ -31,6 +31,15 @@ namespace ExtensionsLib
             return property.GetValue(@this, null) == null ? "" : property.GetValue(@this, null).ToString();
         }
 
+        public static string GetPropertyStringByPos<T>(this T @this, Int16 propertyPosition) where T : class, new()
+        {
+            Type type = @this.GetType();
+            PropertyInfo[] p = type.GetProperties();
+            PropertyInfo property = type.GetProperty(p[propertyPosition].Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+
+            return property.GetValue(@this, null) == null ? "" : property.GetValue(@this, null).ToString();
+        }
+
         public static object SetPropertyValue<T>(this T @this, string propertyName, object value) where T : class, new()
         {
             Type type = @this.GetType();

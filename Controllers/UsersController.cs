@@ -1,6 +1,7 @@
 ﻿using BecaWebService.Authorization;
 using BecaWebService.Models.Users;
 using BecaWebService.Services;
+using Entities.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BecaWebService.Controllers
@@ -94,6 +95,20 @@ namespace BecaWebService.Controllers
         {
             var homePage = _homePageService.GetHomePageByUser();
             return Ok(homePage);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddOrUpdateUser(BecaUserDTO userDto)
+        {
+            if (userDto == null)
+                return BadRequest("Invalid user data");
+
+            var result = await _userService.AddOrUpdateUserAsync(userDto);
+
+            if (result == null)
+                return StatusCode(500, "An error occurred");
+
+            return Ok(result);
         }
 
         // helper methods

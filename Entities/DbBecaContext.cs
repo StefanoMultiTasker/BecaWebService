@@ -12,6 +12,7 @@ namespace Entities.Contexts
         //private readonly IConfiguration Configuration;
 
         public virtual DbSet<BecaUser> BecaUsers { get; set; }
+        public virtual DbSet<BecaUserEntity> BecaUserentities { get; set; }
         public virtual DbSet<UserMenu> RawUserMenu { get; set; }
         public virtual DbSet<BasicMenu> RawMenu { get; set; }
 
@@ -57,6 +58,12 @@ namespace Entities.Contexts
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+
+            modelBuilder.Entity<BecaUserEntity>(entity =>
+            {
+                entity.ToTable("Users");
+                entity.HasKey(e => e.idUtente);
+            });
 
             modelBuilder.Entity<Company>(entity =>
             {
@@ -151,8 +158,8 @@ namespace Entities.Contexts
                     a.Property<string>("CompanyName")
                         .HasColumnType("nvarchar(max)");
 
-                    a.Property<int>("isDefault")
-                        .HasColumnType("int");
+                    a.Property<bool>("isDefault")
+                        .HasColumnType("bit");
 
                     a.Property<string>("Logo1url")
                         .HasColumnType("nvarchar(max)");
