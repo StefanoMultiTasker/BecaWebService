@@ -59,11 +59,11 @@ namespace Entities.Contexts
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
 
-            modelBuilder.Entity<BecaUserEntity>(entity =>
-            {
-                entity.ToTable("Users");
-                entity.HasKey(e => e.idUtente);
-            });
+            //modelBuilder.Entity<BecaUserEntity>(entity =>
+            //{
+            //    entity.ToTable("Users");
+            //    entity.HasKey(e => e.idUtente);
+            //});
 
             modelBuilder.Entity<Company>(entity =>
             {
@@ -184,7 +184,7 @@ namespace Entities.Contexts
                         .HasColumnType("nvarchar(50)");
 
                     a.Property<string>("MainFolder")
-                        .HasColumnType("varchar(50)");
+                        .HasColumnType("nvarchar(50)");
 
                     a.HasKey("idUtente", "idCompany");
                     a.WithOwner()

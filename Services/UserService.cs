@@ -2,14 +2,19 @@
 using BecaWebService.Authorization;
 using BecaWebService.ExtensionsLib;
 using BecaWebService.Helpers;
+using BecaWebService.Models.Communications;
 using BecaWebService.Models.Users;
 using Entities;
 using Entities.Contexts;
 using Entities.Models;
+using ExtensionsLib;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using System.Net.Mail;
+using System.Security.Cryptography.Xml;
 using System.Text;
+using static NLog.LayoutRenderers.Wrappers.ReplaceLayoutRendererWrapper;
 
 namespace BecaWebService.Services
 {
@@ -22,7 +27,9 @@ namespace BecaWebService.Services
         IEnumerable<BecaUser> GetAll();
         BecaUser GetById(int id);
         UserMenuResponse GetMenuByUser(int idUtente);
-        Task<BecaUserEntity?> AddOrUpdateUserAsync(BecaUserDTO userDto);
+        Task<GenericResponse> AddOrUpdateUserAsync(BecaUserDTO userDto);
+        Task<GenericResponse> CreatePassword(int idUtente);
+        Task<GenericResponse> GenerateUserName(BecaUserDTO userDto);
     }
 
     public class UserService : IUserService
@@ -44,7 +51,7 @@ namespace BecaWebService.Services
 
         public AuthenticateResponse Authenticate(AuthenticateRequest model, string ipAddress)
         {
-            var user = _context.BecaUsers.SingleOrDefault(x => x.UserName == model.Username);
+            var user = _context.BecaUsers.SingleOrDefault(x => x.UserName.ToLower() == model.Username.ToLower());
 
             // validate
             if (user == null || EncryptedString(model.Password) != user.Pwd)
@@ -59,9 +66,9 @@ namespace BecaWebService.Services
             // remove old refresh tokens from user
             removeOldRefreshTokens(user);
 
-            foreach(UserCompany company in user.Companies)
+            foreach (UserCompany company in user.Companies)
             {
-                company.LegacyToken=_jwtUtils.GenerateLegacyToken(user,company.idCompany);
+                company.LegacyToken = _jwtUtils.GenerateLegacyToken(user, company.idCompany);
             }
 
             // save changes to db
@@ -107,7 +114,7 @@ namespace BecaWebService.Services
 
         public AuthenticateResponse LoginById(int id, string ipAddress)
         {
-            var user = _context.BecaUsers.SingleOrDefault(x => x.Companies.Any(c => c.idUtenteLoc == id) );
+            var user = _context.BecaUsers.SingleOrDefault(x => x.Companies.Any(c => c.idUtenteLoc == id));
 
             // validate
             if (user == null)
@@ -193,7 +200,7 @@ namespace BecaWebService.Services
         {
             var user = _memoryCache.GetOrSetCache($"UserById_{id}", () =>
             {
-                return _context.BecaUsers.Find(id); 
+                return _context.BecaUsers.Find(id);
             });
 
             //var user = _memoryContext.Users.Find(id);
@@ -310,7 +317,7 @@ namespace BecaWebService.Services
             return i;
         }
 
-        public void getFilialiByUser(ref BecaUser user )
+        public void getFilialiByUser(ref BecaUser user)
         {
             foreach (UserCompany company in user.Companies)
             {
@@ -329,31 +336,37 @@ namespace BecaWebService.Services
                 UserProfile? profile = company.Profiles
                     .Where(c => c.isDefault == true)
                     .FirstOrDefault() ?? company.Profiles.FirstOrDefault();
-                if(profile == null) return;
+                if (profile == null) return;
 
                 string sql = "";
                 List<object> pars = new List<object>();
-                switch (profile.Flags)
+                if (company.hasBusinessUnit)
                 {
-                    case "C":
-                        sql = "Select * From v4Beca_FilialiClienti Where idUtente = {0}";
-                        pars.Add(user.idUtenteLoc(_company.idCompany));
-                        company.BusinessUnits1 = new List<UserBusinessUnit>();
-                        break;
-                    case "I":
-                        sql = "Select * From v4Beca_FilialiLavoratori Where idUtente = {0}";
-                        pars.Add(user.idUtenteLoc(_company.idCompany));
-                        company.BusinessUnits1 = new List<UserBusinessUnit>();
-                        break;
-                    case "F":
-                        sql = "Select * From v4Beca_FilialiUtenti Where idUtente = {0}";
-                        pars.Add(user.idUtenteLoc(_company.idCompany));
-                        company.BusinessUnits1 = db.ExecuteQuery<UserBusinessUnit>("_UserBusinessUnit", sql, false, pars.ToArray());
-                        break;
-                    default:
-                        sql = "Select * From v4Beca_FilialiSede";
-                        company.BusinessUnits1 = db.ExecuteQuery<UserBusinessUnit>("_UserBusinessUnit", sql, false, pars.ToArray());
-                        break;
+                    switch (profile.Flags)
+                    {
+                        case "C":
+                            sql = "Select * From v4Beca_FilialiClienti Where idUtente = {0}";
+                            pars.Add(user.idUtenteLoc(_company.idCompany));
+                            company.BusinessUnits1 = new List<UserBusinessUnit>();
+                            break;
+                        case "I":
+                            sql = "Select * From v4Beca_FilialiLavoratori Where idUtente = {0}";
+                            pars.Add(user.idUtenteLoc(_company.idCompany));
+                            company.BusinessUnits1 = new List<UserBusinessUnit>();
+                            break;
+                        case "F":
+                            sql = "Select * From v4Beca_FilialiUtenti Where idUtente = {0}";
+                            pars.Add(user.idUtenteLoc(_company.idCompany));
+                            company.BusinessUnits1 = db.ExecuteQuery<UserBusinessUnit>("_UserBusinessUnit", sql, false, pars.ToArray());
+                            break;
+                        default:
+                            sql = "Select * From v4Beca_FilialiSede";
+                            company.BusinessUnits1 = db.ExecuteQuery<UserBusinessUnit>("_UserBusinessUnit", sql, false, pars.ToArray());
+                            break;
+                    }
+                } else
+                {
+                    company.BusinessUnits1 = new List<UserBusinessUnit>();
                 }
             }
         }
@@ -428,35 +441,104 @@ namespace BecaWebService.Services
             return hashed;
         }
 
-        public async Task<BecaUserEntity?> AddOrUpdateUserAsync(BecaUserDTO userDto)
+        public async Task<GenericResponse> GenerateUserName(BecaUserDTO userDto) { 
+            bool userOk = false;
+            int count = 1;
+            int nameChars = 1;
+            string extraNumber = "";
+            string userName = "";
+
+            if ((userDto.firstName ?? "") == "" || (userDto.lastName ?? "") == "") return new GenericResponse("Inserire nome e congome");
+
+            int safeCount = 100 + userDto.firstName.Length;
+
+            while (count < safeCount) {
+                if(count> userDto.firstName.Length) extraNumber = (count - userDto.firstName.Length).ToString();
+                userName = $"{userDto.firstName.ToLower().left(nameChars)}{extraNumber}.{userDto.lastName.ToLower()}";
+                int check = _context.BecaUsers.Count(u => u.UserName == userName);
+                if (check == 0)
+                {
+                    userDto.userName = userName;
+                    return new GenericResponse(userDto);
+                }
+                count++;
+                if(count<=userDto.firstName.Length) nameChars++;
+            }
+            return new GenericResponse("Non sono riuscito a generare uno username adeguato");
+        }
+
+        public async Task<GenericResponse> AddOrUpdateUserAsync(BecaUserDTO userDto)
         {
-            BecaUserEntity user;
+            //BecaUserEntity user;
+            BecaUser user;
+
             if (userDto.idUtente.HasValue)
             {
                 // Update
-                user = await _context.BecaUserentities.FindAsync(userDto.idUtente!.Value);
+                user = await _context.BecaUsers.FindAsync(userDto.idUtente!.Value);
                 if (user == null) return null;
 
-                user.UserName = userDto.UserName;
-                user.FirstName = userDto.FirstName;
-                user.LastName = userDto.LastName;
+                if(user.UserName != userDto.userName)
+                {
+                    int check = _context.BecaUsers.Count(u => u.UserName == userDto.userName);
+                    if (check > 0) return new GenericResponse("Username già esistente");
+                }
+
+                user.UserName = userDto.userName;
+                user.FirstName = userDto.firstName;
+                user.LastName = userDto.lastName;
+                user.Title = userDto.title;
+                user.Phone = userDto.phone;
+                user.email = userDto.email;
+                user.isConfirmed = userDto.isConfirmed;
+                user.isPrivacyRead = userDto.isPrivacyRead;
+                user.isPwdChanged = userDto.isPwdChanged;
+
+                _context.Entry(user).State = EntityState.Modified;
             }
             else
             {
+                int check = _context.BecaUsers.Count(u => u.UserName == userDto.userName);
+                if (check > 0) return new GenericResponse("Username già esistente");
                 // Insert
-                user = new BecaUserEntity
+                user = new BecaUser//Entity
                 {
-                    UserName = userDto.UserName,
-                    FirstName = userDto.FirstName,
-                    LastName = userDto.LastName,
-                    Pwd = GenerateRandomPassword(8)
+                    UserName = userDto.userName,
+                    FirstName = userDto.firstName,
+                    LastName = userDto.lastName,
+                    Title = userDto.title,
+                    Phone = userDto.phone,
+                    email = userDto.email,
+                    Pwd = "xxx" //EncryptedString(pwd)
                 };
 
-                _context.BecaUserentities.Add(user);
+                //_context.BecaUserentities.Add(user);
+                _context.BecaUsers.Add(user);
             }
 
             await _context.SaveChangesAsync();
-            return user;
+
+            return new GenericResponse( user);
+        }
+
+        public async Task<GenericResponse> CreatePassword(int idUtente) {
+            try
+            {
+                BecaUser? user = await _context.BecaUsers.FindAsync(idUtente);
+                if (user == null) return new GenericResponse("Utente non trovato");
+
+                string pwd = GenerateRandomPassword(8);
+                user.Pwd = EncryptedString(pwd);
+
+                _context.Entry(user).State = EntityState.Modified;
+
+                await _context.SaveChangesAsync();
+                UserSendCrentials(idUtente, pwd);
+            }
+            catch (Exception ex) {
+                return new GenericResponse($"Si è verificato un erorre nella generazione della password o nell'invio: {ex.Message}");
+            }
+            return new GenericResponse(true);
         }
 
         private string GenerateRandomPassword(int length)
@@ -483,7 +565,46 @@ namespace BecaWebService.Services
             string password = upper.ToString() + lower.ToString() + digit.ToString() + special.ToString() + remainingChars;
 
             // Mescolare i caratteri
-            return new string(password.OrderBy(c => random.Next()).ToArray());
+            string pwd = new string(password.OrderBy(c => random.Next()).ToArray());
+            return pwd;
+        }
+
+        public async Task<GenericResponse> UserSendCrentials(int idUtente, string pwd)
+        {
+            try
+            {
+                BecaUser? user = await _context.BecaUsers.FindAsync(idUtente);
+                if (user == null) return new GenericResponse("Utente non trovato");
+
+                UserCompany? cpy = user.Companies.FirstOrDefault(c => c.isDefault == true);
+                if (cpy == null) return new GenericResponse("Nessuna company associata");
+
+                System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+                System.Net.Mail.SmtpClient objSMTP = new System.Net.Mail.SmtpClient
+                {
+                    Host = "192.168.0.5",
+                    Port = 25
+                };
+                string owner = cpy.senderEmail;
+                System.Net.Mail.MailMessage objMail = new System.Net.Mail.MailMessage();
+                objMail.Sender = new MailAddress(owner, owner);
+                objMail.From = new MailAddress(owner, owner);
+                objMail.ReplyToList.Add(new MailAddress(owner));
+
+                objMail.Subject = $"Invio credenziali accesso My{cpy.CompanyName}";
+                objMail.IsBodyHtml = true;
+                objMail.BodyEncoding = System.Text.Encoding.UTF8;
+                objMail.Body = ($"{cpy.InvioCredenziali}");
+                objMail.Body = objMail.Body.Replace("#PWD#", pwd);
+                objMail.To.Add(new MailAddress($"{user.email}"));
+                
+                objSMTP.Send(objMail);
+                return new GenericResponse(true);
+            }
+            catch (Exception ex)
+            {
+                return new GenericResponse(ex.Message);
+            }
         }
     }
 }

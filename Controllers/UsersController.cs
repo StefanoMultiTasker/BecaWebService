@@ -1,4 +1,5 @@
 ﻿using BecaWebService.Authorization;
+using BecaWebService.Models.Communications;
 using BecaWebService.Models.Users;
 using BecaWebService.Services;
 using Entities.Models;
@@ -97,7 +98,21 @@ namespace BecaWebService.Controllers
             return Ok(homePage);
         }
 
-        [HttpPost]
+        [HttpPost("GenerateUserName")]
+        public async Task<IActionResult> GenerateUserName(BecaUserDTO userDto)
+        {
+            if (userDto == null)
+                return BadRequest("Invalid user data");
+
+            var result = await _userService.GenerateUserName(userDto);
+
+            if (result == null)
+                return StatusCode(500, "An error occurred");
+
+            return Ok(result);
+        }
+
+        [HttpPost("AddOrUpdateUser")]
         public async Task<IActionResult> AddOrUpdateUser(BecaUserDTO userDto)
         {
             if (userDto == null)
@@ -109,6 +124,17 @@ namespace BecaWebService.Controllers
                 return StatusCode(500, "An error occurred");
 
             return Ok(result);
+        }
+
+        [HttpGet("CreatePassword/{idUtente}")]
+        public async Task<IActionResult> CreatePassword(int idUtente)
+        {
+            GenericResponse result = await _userService.CreatePassword(idUtente);
+
+            if (result.Success == false)
+                return BadRequest(result.Message);
+
+            return Ok();
         }
 
         // helper methods

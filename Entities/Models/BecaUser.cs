@@ -78,7 +78,7 @@ namespace Entities.Models
     {
         [JsonIgnore] public int idUtente { get; set; }
         public int idUtenteLoc { get; set; }
-        private bool isDefault { get; set; }
+        public bool isDefault { get; set; }
         //[NotMapped] public bool IsDefault { get => isDefault != 0; set => isDefault = value ? 1 : 0; }
         [Key] public int idCompany { get; set; }
         public string CompanyName { get; set; }
@@ -92,7 +92,10 @@ namespace Entities.Models
         public string? Color3 { get; set; }
         public string? Color4 { get; set; }
         public string? Color5 { get; set; }
-        public string MainFolder { get; set; }
+        public string? MainFolder { get; set; }
+        public bool hasBusinessUnit { get; set; }
+        [JsonIgnore] public string senderEmail { get; set; }
+        [JsonIgnore] public string InvioCredenziali { get; set; }
         [NotMapped] public string LegacyToken { get; set; }
 
         public List<UserProfile> Profiles { get; set; }
@@ -109,12 +112,12 @@ namespace Entities.Models
     {
         [Key]
         public int? idUtente { get; set; }
-        public string UserName { get; set; }
-        public string? LastName { get; set; }
-        public string? FirstName { get; set; }
-        public string? Title { get; set; }
+        public string userName { get; set; }
+        public string? lastName { get; set; }
+        public string? firstName { get; set; }
+        public string? title { get; set; }
         public string? email { get; set; }
-        public string? Phone { get; set; }
+        public string? phone { get; set; }
         public bool isConfirmed { get; set; }
         public bool isPrivacyRead { get; set; }
         public bool isPwdChanged { get; set; }
