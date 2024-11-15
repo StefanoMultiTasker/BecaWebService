@@ -126,6 +126,17 @@ namespace BecaWebService.Controllers
             return Ok(result);
         }
 
+        [HttpPost("changePassword")]
+        public async Task<IActionResult> changePassword([FromBody] string pwd)
+        {
+            GenericResponse result = await _userService.changePassword(pwd);
+
+            if (result.Success == false)
+                return BadRequest(result.Message);
+
+            return Ok();
+        }
+
         [HttpGet("CreatePassword/{idUtente}")]
         public async Task<IActionResult> CreatePassword(int idUtente)
         {

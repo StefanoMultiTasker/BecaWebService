@@ -87,7 +87,7 @@ namespace BecaWebService.Services
                                     property.Name,
                                     DateTimeOffset.Parse(
                                         ((DateTime)jsonRecord[jproperty.Name]).ToString()
-                                        ).ToLocalTime().Date);
+                                        ).ToLocalTime().DateTime);
                             }
                         }
                         else

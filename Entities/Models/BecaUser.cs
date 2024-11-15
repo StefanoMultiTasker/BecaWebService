@@ -95,6 +95,7 @@ namespace Entities.Models
         public string? MainFolder { get; set; }
         public bool hasBusinessUnit { get; set; }
         [JsonIgnore] public string senderEmail { get; set; }
+        [JsonIgnore] public int senderSMTP { get; set; }
         [JsonIgnore] public string InvioCredenziali { get; set; }
         [NotMapped] public string LegacyToken { get; set; }
 
@@ -121,6 +122,12 @@ namespace Entities.Models
         public bool isConfirmed { get; set; }
         public bool isPrivacyRead { get; set; }
         public bool isPwdChanged { get; set; }
+    }
+
+    public partial class BecaUserPwdDTO()
+    { 
+        public int idUtente { get; set; }
+        public string Password { get; set; }
     }
     public partial class BecaUserEntity()
     {

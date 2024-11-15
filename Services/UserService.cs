@@ -4,11 +4,13 @@ using BecaWebService.ExtensionsLib;
 using BecaWebService.Helpers;
 using BecaWebService.Models.Communications;
 using BecaWebService.Models.Users;
+using Contracts;
 using Entities;
 using Entities.Contexts;
 using Entities.Models;
 using ExtensionsLib;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Net.Mail;
@@ -30,6 +32,7 @@ namespace BecaWebService.Services
         Task<GenericResponse> AddOrUpdateUserAsync(BecaUserDTO userDto);
         Task<GenericResponse> CreatePassword(int idUtente);
         Task<GenericResponse> GenerateUserName(BecaUserDTO userDto);
+        Task<GenericResponse> changePassword(string pwd);
     }
 
     public class UserService : IUserService
@@ -38,14 +41,16 @@ namespace BecaWebService.Services
         //private DbMemoryContext _memoryContext;
         private IMyMemoryCache _memoryCache;
         private IJwtUtils _jwtUtils;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly AppSettings _appSettings;
 
-        public UserService(IDependencies deps, DbBecaContext context, IJwtUtils jwtUtils, IOptions<AppSettings> appSettings) //DbMemoryContext memoryContext,
+        public UserService(IDependencies deps, DbBecaContext context, IJwtUtils jwtUtils, IOptions<AppSettings> appSettings, IHttpContextAccessor httpContextAccessor) //DbMemoryContext memoryContext,
         {
             _context = context;
             _memoryCache = deps.memoryCache;
             _jwtUtils = jwtUtils;
             _appSettings = appSettings.Value;
+            this._httpContextAccessor = httpContextAccessor;
             //_memoryContext = memoryContext;
         }
 
@@ -521,24 +526,46 @@ namespace BecaWebService.Services
             return new GenericResponse( user);
         }
 
-        public async Task<GenericResponse> CreatePassword(int idUtente) {
+        public async Task<GenericResponse> changePassword(string pwd)
+        {
             try
             {
-                BecaUser? user = await _context.BecaUsers.FindAsync(idUtente);
+                BecaUser? tokenUser = (BecaUser)_httpContextAccessor.HttpContext.Items["User"];
+                if (tokenUser == null) return new GenericResponse("Token non valido");
+
+                BecaUser? user = await _context.BecaUsers.FindAsync(tokenUser.idUtente);
                 if (user == null) return new GenericResponse("Utente non trovato");
 
-                string pwd = GenerateRandomPassword(8);
                 user.Pwd = EncryptedString(pwd);
 
                 _context.Entry(user).State = EntityState.Modified;
 
                 await _context.SaveChangesAsync();
-                UserSendCrentials(idUtente, pwd);
+            }
+            catch (Exception ex)
+            {
+                return new GenericResponse($"Si è verificato un erorre nella modifica della password: {ex.Message}");
+            }
+            return new GenericResponse(true);
+        }
+
+        public async Task<GenericResponse> CreatePassword(int idUtente) {
+            string pwd = GenerateRandomPassword(8);
+            try
+            {
+                BecaUser? user = await _context.BecaUsers.FindAsync(idUtente);
+                if (user == null) return new GenericResponse("Utente non trovato");
+
+                user.Pwd = EncryptedString(pwd);
+
+                _context.Entry(user).State = EntityState.Modified;
+
+                await _context.SaveChangesAsync();
             }
             catch (Exception ex) {
                 return new GenericResponse($"Si è verificato un erorre nella generazione della password o nell'invio: {ex.Message}");
             }
-            return new GenericResponse(true);
+            return await UserSendCrentials(idUtente, pwd);
         }
 
         private string GenerateRandomPassword(int length)
@@ -583,9 +610,10 @@ namespace BecaWebService.Services
                 System.Net.Mail.SmtpClient objSMTP = new System.Net.Mail.SmtpClient
                 {
                     Host = "192.168.0.5",
-                    Port = 25
+                    Port = cpy.senderSMTP
                 };
                 string owner = cpy.senderEmail;
+                //owner = "postmaster@abeaform.it";
                 System.Net.Mail.MailMessage objMail = new System.Net.Mail.MailMessage();
                 objMail.Sender = new MailAddress(owner, owner);
                 objMail.From = new MailAddress(owner, owner);
@@ -603,7 +631,7 @@ namespace BecaWebService.Services
             }
             catch (Exception ex)
             {
-                return new GenericResponse(ex.Message);
+                return new GenericResponse(ex, ex.Message);
             }
         }
     }
