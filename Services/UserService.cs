@@ -29,6 +29,8 @@ namespace BecaWebService.Services
         IEnumerable<BecaUser> GetAll();
         BecaUser GetById(int id);
         UserMenuResponse GetMenuByUser(int idUtente);
+        List<UserMenuItem> GetMenuByProfile(int idProfile, int idCompany);
+        List<UserMenuItem> GetMenuAll();
         Task<GenericResponse> AddOrUpdateUserAsync(BecaUserDTO userDto);
         Task<GenericResponse> CreatePassword(int idUtente);
         Task<GenericResponse> GenerateUserName(BecaUserDTO userDto);
@@ -232,7 +234,7 @@ namespace BecaWebService.Services
 
             foreach (var parent in parents)
             {
-                addParentMenu(ref rawUserMenu, parent.Key.ParentItem, parent.Key.idCompany, parent.Key.CompanyName);
+                addParentUserMenu(ref rawUserMenu, parent.Key.ParentItem, parent.Key.idCompany, parent.Key.CompanyName);
             }
 
             UserMenuResponse menu = new UserMenuResponse();
@@ -264,7 +266,7 @@ namespace BecaWebService.Services
             return menu;
         }
 
-        private void addParentMenu(ref IList<UserMenu> rawUserMenu, int? parentItem, int idCompany, string CompanyName)
+        private void addParentUserMenu(ref IList<UserMenu> rawUserMenu, int? parentItem, int idCompany, string CompanyName)
         {
             if (!rawUserMenu.Any(m => m.idItem == parentItem && m.idCompany == idCompany))
             {
@@ -276,7 +278,7 @@ namespace BecaWebService.Services
                 newMenu.CompanyName = CompanyName;
                 rawUserMenu.Add(newMenu);
                 if (rawMenu.ParentItem != null)
-                    addParentMenu(ref rawUserMenu, rawMenu.ParentItem, idCompany, CompanyName);
+                    addParentUserMenu(ref rawUserMenu, rawMenu.ParentItem, idCompany, CompanyName);
             }
         }
 
@@ -320,6 +322,165 @@ namespace BecaWebService.Services
             i.flExcel = item.flExcel;
 
             return i;
+        }
+
+        public List<UserMenuItem> GetMenuAll()
+        {
+            IList<BasicMenu> rawMenu = _context.RawMenu.ToList();
+            if (rawMenu == null) throw new KeyNotFoundException("Menu non configurato");
+
+            List<UserMenuItem> menu = new List<UserMenuItem>();
+
+            foreach (BasicMenu item in rawMenu
+                .Where(m => m.ParentItem == null)
+                .OrderBy(m => m.Position).ToList())
+            {
+                UserMenuItem i = createBasicMenuItem(item);
+                menu.Add(i);
+                AddBasicMenuItems(ref i, rawMenu);
+            }
+            if (menu.Count == 1)
+            {
+                List<UserMenuItem> level2 = menu[0].Items;
+                menu.RemoveAt(0);
+                menu.AddRange(level2);
+            }
+
+            return menu;
+        }
+
+        private void AddBasicMenuItems(ref UserMenuItem menu, IList<BasicMenu> allItems)
+        {
+            int itemId = menu.idItem;
+            IList<BasicMenu> subItems = allItems
+                .Where(m => m.ParentItem == itemId)
+                .OrderBy(m => m.Position).ToList()
+                .ToList();
+            foreach (BasicMenu item in subItems)
+            {
+                UserMenuItem i = createBasicMenuItem(item);
+                menu.Items.Add(i);
+                if (item.isContainer)
+                    AddBasicMenuItems(ref i, allItems);
+            }
+        }
+
+        private UserMenuItem createBasicMenuItem(BasicMenu item)
+        {
+            UserMenuItem i = new UserMenuItem();
+            i.idItem = item.idItem;
+            i.Caption = item.Caption;
+            i.DescMenuItem = item.DescMenuItem;
+            i.IconType = item.IconType;
+            i.Icon = item.Icon;
+            i.idGroup = item.idGroup;
+            i.Position = item.Position;
+            i.isContainer = item.isContainer;
+            i.Form = item.Form;
+            i.DetailsForm = item.DetailsForm;
+            i.CustomForm = item.CustomForm;
+            i.GridWait4Param = item.GridWait4Param;
+            i.Parameters = item.Parameters;
+            i.flAdd = false;
+            i.flEdit = false;
+            i.flDel = false;
+            i.flDetail = false;
+            i.flList = false;
+            i.flExcel = false;
+
+            return i;
+        }
+
+        public List<UserMenuItem> GetMenuByProfile(int idProfile, int idCompany)
+        {
+            IList<ProfileMenu> rawMenu = _context.RawProfileMenu.Where(m => m.idProfile == idProfile && m.idCompany == idCompany).ToList();
+            if (rawMenu == null) throw new KeyNotFoundException("Menu non configurato");
+
+            var parents = rawMenu
+                .Where(m => m.ParentItem != null)
+                .GroupBy(m => new { m.ParentItem },
+                    (key) => new { ParentItem = key.ParentItem })
+                .ToList();
+
+            foreach (var parent in parents)
+            {
+                addParentProfileMenu(ref rawMenu, parent.Key.ParentItem, idCompany, idProfile);
+            }
+
+            List<UserMenuItem> menu = new List<UserMenuItem>();
+
+            foreach (ProfileMenu item in rawMenu
+                .Where(m => m.ParentItem == null)
+                .OrderBy(m => m.Position).ToList())
+            {
+                UserMenuItem i = createProfileMenuItem(item);
+                menu.Add(i);
+                AddProfileMenuItems(ref i, rawMenu);
+            }
+            if (menu.Count == 1)
+            {
+                List<UserMenuItem> level2 = menu[0].Items;
+                menu.RemoveAt(0);
+                menu.AddRange(level2);
+            }
+
+            return menu;
+        }
+
+        private void addParentProfileMenu(ref IList<ProfileMenu> rawUserMenu, int? parentItem, int idCompany, int idProfile)
+        {
+            if (!rawUserMenu.Any(m => m.idItem == parentItem))
+            {
+                BasicMenu rawMenu = _context.RawMenu.FirstOrDefault(m => m.idItem == parentItem);
+                ProfileMenu newMenu = new ProfileMenu(rawMenu);
+                newMenu.idCompany = rawUserMenu[0].idCompany;
+                newMenu.idProfile = rawUserMenu[0].idProfile;
+                rawUserMenu.Add(newMenu);
+                if (rawMenu.ParentItem != null)
+                    addParentProfileMenu(ref rawUserMenu, rawMenu.ParentItem, idCompany, idProfile);
+            }
+        }
+
+        private UserMenuItem createProfileMenuItem(ProfileMenu item)
+        {
+            UserMenuItem i = new UserMenuItem();
+            i.idItem = item.idItem;
+            i.Caption = item.Caption;
+            i.DescMenuItem = item.DescMenuItem;
+            i.IconType = item.IconType;
+            i.Icon = item.Icon;
+            i.idGroup = item.idGroup;
+            i.Position = item.Position;
+            i.isContainer = item.isContainer;
+            i.Form = item.Form;
+            i.DetailsForm = item.DetailsForm;
+            i.CustomForm = item.CustomForm;
+            i.GridWait4Param = item.GridWait4Param;
+            i.Parameters = item.Parameters;
+            i.flAdd = false;
+            i.flEdit = false;
+            i.flDel = false;
+            i.flDetail = false;
+            i.flList = false;
+            i.flExcel = false;
+
+            return i;
+        }
+
+        private void AddProfileMenuItems(ref UserMenuItem menu, IList<ProfileMenu> allItems)
+        {
+            int itemId = menu.idItem;
+            IList<ProfileMenu> subItems = allItems
+                .Where(m => m.ParentItem == itemId)
+                .OrderBy(m => m.Position).ToList()
+                .ToList();
+            foreach (ProfileMenu item in subItems)
+            {
+                UserMenuItem i = createProfileMenuItem(item);
+                menu.Items.Add(i);
+                if (item.isContainer)
+                    AddProfileMenuItems(ref i, allItems);
+            }
         }
 
         public void getFilialiByUser(ref BecaUser user)
@@ -369,7 +530,8 @@ namespace BecaWebService.Services
                             company.BusinessUnits1 = db.ExecuteQuery<UserBusinessUnit>("_UserBusinessUnit", sql, false, pars.ToArray());
                             break;
                     }
-                } else
+                }
+                else
                 {
                     company.BusinessUnits1 = new List<UserBusinessUnit>();
                 }
@@ -446,7 +608,8 @@ namespace BecaWebService.Services
             return hashed;
         }
 
-        public async Task<GenericResponse> GenerateUserName(BecaUserDTO userDto) { 
+        public async Task<GenericResponse> GenerateUserName(BecaUserDTO userDto)
+        {
             bool userOk = false;
             int count = 1;
             int nameChars = 1;
@@ -457,8 +620,9 @@ namespace BecaWebService.Services
 
             int safeCount = 100 + userDto.firstName.Length;
 
-            while (count < safeCount) {
-                if(count> userDto.firstName.Length) extraNumber = (count - userDto.firstName.Length).ToString();
+            while (count < safeCount)
+            {
+                if (count > userDto.firstName.Length) extraNumber = (count - userDto.firstName.Length).ToString();
                 userName = $"{userDto.firstName.ToLower().left(nameChars)}{extraNumber}.{userDto.lastName.ToLower()}";
                 int check = _context.BecaUsers.Count(u => u.UserName == userName);
                 if (check == 0)
@@ -467,7 +631,7 @@ namespace BecaWebService.Services
                     return new GenericResponse(userDto);
                 }
                 count++;
-                if(count<=userDto.firstName.Length) nameChars++;
+                if (count <= userDto.firstName.Length) nameChars++;
             }
             return new GenericResponse("Non sono riuscito a generare uno username adeguato");
         }
@@ -483,7 +647,7 @@ namespace BecaWebService.Services
                 user = await _context.BecaUsers.FindAsync(userDto.idUtente!.Value);
                 if (user == null) return null;
 
-                if(user.UserName != userDto.userName)
+                if (user.UserName != userDto.userName)
                 {
                     int check = _context.BecaUsers.Count(u => u.UserName == userDto.userName);
                     if (check > 0) return new GenericResponse("Username già esistente");
@@ -523,7 +687,7 @@ namespace BecaWebService.Services
 
             await _context.SaveChangesAsync();
 
-            return new GenericResponse( user);
+            return new GenericResponse(user);
         }
 
         public async Task<GenericResponse> changePassword(string pwd)
@@ -549,7 +713,8 @@ namespace BecaWebService.Services
             return new GenericResponse(true);
         }
 
-        public async Task<GenericResponse> CreatePassword(int idUtente) {
+        public async Task<GenericResponse> CreatePassword(int idUtente)
+        {
             string pwd = GenerateRandomPassword(8);
             try
             {
@@ -562,7 +727,8 @@ namespace BecaWebService.Services
 
                 await _context.SaveChangesAsync();
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 return new GenericResponse($"Si è verificato un erorre nella generazione della password o nell'invio: {ex.Message}");
             }
             return await UserSendCrentials(idUtente, pwd);
@@ -625,7 +791,7 @@ namespace BecaWebService.Services
                 objMail.Body = ($"{cpy.InvioCredenziali}");
                 objMail.Body = objMail.Body.Replace("#PWD#", pwd);
                 objMail.To.Add(new MailAddress($"{user.email}"));
-                
+
                 objSMTP.Send(objMail);
                 return new GenericResponse(true);
             }

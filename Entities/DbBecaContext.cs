@@ -14,6 +14,7 @@ namespace Entities.Contexts
         public virtual DbSet<BecaUser> BecaUsers { get; set; }
         public virtual DbSet<BecaUserEntity> BecaUserentities { get; set; }
         public virtual DbSet<UserMenu> RawUserMenu { get; set; }
+        public virtual DbSet<ProfileMenu> RawProfileMenu { get; set; }
         public virtual DbSet<BasicMenu> RawMenu { get; set; }
 
         public virtual DbSet<Company> Companies { get; set; }
@@ -226,6 +227,12 @@ namespace Entities.Contexts
             {
                 entity.ToView("vMenuUser");
                 entity.HasKey(e => new { e.idUtente, e.idCompany, e.idItem });
+            });
+
+            modelBuilder.Entity<ProfileMenu>(entity =>
+            {
+                entity.ToView("vMenuConfiguration");
+                entity.HasKey(e => new { e.idCompany, e.idProfile, e.idItem });
             });
 
             modelBuilder.Entity<BasicMenu>(entity =>

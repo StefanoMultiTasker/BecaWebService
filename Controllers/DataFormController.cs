@@ -1,4 +1,5 @@
-﻿using BecaWebService.Models.Communications;
+﻿using BecaWebService.Authorization;
+using BecaWebService.Models.Communications;
 using Contracts;
 using Entities.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -8,6 +9,7 @@ using System.IO.Compression;
 
 namespace BecaWebService.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("[controller]")]
     public class DataFormController : ControllerBase

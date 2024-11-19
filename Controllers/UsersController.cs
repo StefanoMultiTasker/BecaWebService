@@ -91,6 +91,21 @@ namespace BecaWebService.Controllers
             return Ok(menu);
         }
 
+        [AllowAnonymous]
+        [HttpGet("MenuProfile")]///{idCompany}/{idProfile}")]
+        public IActionResult GetMenuProfile([FromQuery] int idCompany, [FromQuery] int idProfile)
+        {
+            List<UserMenuItem> menu = _userService.GetMenuByProfile(idProfile, idCompany);
+            return Ok(menu);
+        }
+
+        [HttpGet("MenuAll")]
+        public IActionResult GetMenuAll()
+        {
+            List<UserMenuItem> menu = _userService.GetMenuAll();
+            return Ok(menu);
+        }
+
         [HttpGet("HomePage")]
         public IActionResult GetHomePage()
         {
