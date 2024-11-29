@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using System.Net;
 using System.Net.Mail;
 using System.Security.Cryptography.Xml;
 using System.Text;
@@ -302,6 +303,7 @@ namespace BecaWebService.Services
         {
             UserMenuItem i = new UserMenuItem();
             i.idItem = item.idItem;
+            i.ParentItem = item.ParentItem;
             i.Caption = item.Caption;
             i.DescMenuItem = item.DescMenuItem;
             i.IconType = item.IconType;
@@ -369,6 +371,7 @@ namespace BecaWebService.Services
         {
             UserMenuItem i = new UserMenuItem();
             i.idItem = item.idItem;
+            i.ParentItem = item.ParentItem;
             i.Caption = item.Caption;
             i.DescMenuItem = item.DescMenuItem;
             i.IconType = item.IconType;
@@ -445,6 +448,7 @@ namespace BecaWebService.Services
         {
             UserMenuItem i = new UserMenuItem();
             i.idItem = item.idItem;
+            i.ParentItem = item.ParentItem;
             i.Caption = item.Caption;
             i.DescMenuItem = item.DescMenuItem;
             i.IconType = item.IconType;
@@ -457,12 +461,12 @@ namespace BecaWebService.Services
             i.CustomForm = item.CustomForm;
             i.GridWait4Param = item.GridWait4Param;
             i.Parameters = item.Parameters;
-            i.flAdd = false;
-            i.flEdit = false;
-            i.flDel = false;
-            i.flDetail = false;
-            i.flList = false;
-            i.flExcel = false;
+            i.flAdd = item.flAdd;
+            i.flEdit = item.flEdit;
+            i.flDel = item.flDel;
+            i.flDetail = item.flDetail;
+            i.flList = item.flList;
+            i.flExcel = item.flExcel;
 
             return i;
         }
@@ -772,11 +776,14 @@ namespace BecaWebService.Services
                 UserCompany? cpy = user.Companies.FirstOrDefault(c => c.isDefault == true);
                 if (cpy == null) return new GenericResponse("Nessuna company associata");
 
-                System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+                //System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
                 System.Net.Mail.SmtpClient objSMTP = new System.Net.Mail.SmtpClient
                 {
-                    Host = "192.168.0.5",
-                    Port = cpy.senderSMTP
+                    Host = "pro.eu.turbo-smtp.com",
+                    Port = 587,
+                    EnableSsl = true,
+                    DeliveryMethod = SmtpDeliveryMethod.Network,
+                    Credentials = new NetworkCredential("gruppoedp@abeaform.it", "ddHu39eX")
                 };
                 string owner = cpy.senderEmail;
                 //owner = "postmaster@abeaform.it";

@@ -61,6 +61,7 @@
     {
         public string Form { get; set; }
         public string? DescForm { get; set; }
+        public string? DetailComponent { get; set; }
         public bool AddRecord { get; set; }
         public bool EditRecord { get; set; }
         public bool DeleteRecord { get; set; }
@@ -81,6 +82,12 @@
         public string? EMailOnAdd { get; set; }
         public string? EMailOnUpdate { get; set; }
         public string? EMailOnDelete { get; set; }
+
+        public string getMainSource(bool view)
+        {
+            string tbl = view ? ((this.ViewName == null || this.ViewName.ToString() == "" ? this.TableName : this.ViewName)) : this.TableName;
+            return tbl.Contains(";") ? tbl.Split(";").First() : tbl;
+        }
     }
 
     public class BecaFormLevels

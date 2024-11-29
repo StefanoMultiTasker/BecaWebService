@@ -394,7 +394,7 @@ namespace Repository
                         BecaForm childForm = _context.BecaForm
                             .FirstOrDefault(f => f.Form == level.ChildForm);
 
-                        string parent = (form.ViewName == null || form.ViewName.ToString() == "" ? form.TableName : form.ViewName);
+                        string parent = form.getMainSource(true); // (form.ViewName == null || form.ViewName.ToString() == "" ? form.TableName : form.ViewName);
                         string child = (childForm.ViewName == null || childForm.ViewName.ToString() == "" ? childForm.TableName : childForm.ViewName);
 
                         string sqlParent = sqlOrd == "" ? sql : sql.Replace(sqlOrd, "");
@@ -518,8 +518,8 @@ namespace Repository
             if (uplWithoutUnderscore) upl = upl.Replace("_", "");
             string sql = "Select *" +
                 (upl.Length > 0 ? ", " + upl + " " : " ") +
-                "From " +
-                (view ? ((form.ViewName == null || form.ViewName.ToString() == "" ? form.TableName : form.ViewName)) : form.TableName);
+                "From " + form.getMainSource(view);
+                //(view ? ((form.ViewName == null || form.ViewName.ToString() == "" ? form.TableName : form.ViewName)) : form.TableName);
 
             return sql;
         }

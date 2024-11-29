@@ -1,10 +1,13 @@
 ﻿using BecaWebService.Authorization;
+using BecaWebService.Helpers;
 using BecaWebService.Models.Communications;
 using Contracts;
 using Entities.Models;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
+using System.Collections;
 using System.IO.Compression;
 
 namespace BecaWebService.Controllers
@@ -188,14 +191,20 @@ namespace BecaWebService.Controllers
 
                 GenericResponse result = await _genericService.UpdateDataByForm(form, recordOld, recordNew);
                 if (!result.Success)
-                    return BadRequest(result.Message);
+                    return BadRequest(result); //.Message);
+
+                // Verifica se `lowercase` è `true` e applica la trasformazione
+                if (data.lowerCase)
+                {
+                    result._extraLoad = ConvertToLowercaseRecursive(result._extraLoad);
+                }
 
                 return Ok(result);
                 //return Ok(result._extraLoad);
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(ex.Message.toResponse());
             }
         }
 
@@ -212,13 +221,18 @@ namespace BecaWebService.Controllers
 
                 GenericResponse result = await _genericService.AddDataByForm(form, recordNew, data.force.Value);
                 if (!result.Success)
-                    return BadRequest(result.Message);
+                    return BadRequest(result);//.Message);
 
+                // Verifica se `lowercase` è `true` e applica la trasformazione
+                if (data.lowerCase)
+                {
+                    result._extraLoad = ConvertToLowercaseRecursive(result._extraLoad);
+                }
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(ex.Message.toResponse());
             }
         }
 
@@ -236,8 +250,13 @@ namespace BecaWebService.Controllers
             GenericResponse result = await _genericService.AddOrUpdateDataByForm(form, recordNew);
             //Log.Information($"FormAddOrUpdate done");
             if (!result.Success)
-                return BadRequest(result.Message);
+                return BadRequest(result); //.Message);
 
+            // Verifica se `lowercase` è `true` e applica la trasformazione
+            if (data.lowerCase)
+            {
+                result._extraLoad = ConvertToLowercaseRecursive(result._extraLoad);
+            }
             return Ok(result);
         }
 
@@ -255,13 +274,13 @@ namespace BecaWebService.Controllers
 
                 GenericResponse result = await _genericService.DeleteDataByForm(form, recordNew);
                 if (!result.Success)
-                    return BadRequest(result.Message);
+                    return BadRequest(result); //.Message);
 
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(ex.Message.toResponse());
             }
         }
 
@@ -396,6 +415,40 @@ namespace BecaWebService.Controllers
             return Content(json); // return non-compressed data
 
         }
+        private object ConvertToLowercaseRecursive(object obj)
+        {
+            if (obj == null) return null;
+
+            // Se è una collezione (array o lista)
+            if (obj is IEnumerable enumerable && !(obj is string))
+            {
+                var list = new List<object>();
+                foreach (var item in enumerable)
+                {
+                    list.Add(ConvertToLowercaseRecursive(item));
+                }
+                return list;
+            }
+
+            // Se è un oggetto con proprietà
+            var type = obj.GetType();
+            if (type.IsClass && type != typeof(string))
+            {
+                var dictionary = new Dictionary<string, object>();
+                foreach (var property in type.GetProperties())
+                {
+                    var value = property.GetValue(obj);
+                    dictionary[property.Name.ToLower()] = ConvertToLowercaseRecursive(value);
+                }
+                return dictionary;
+            }
+
+            // Per tutti gli altri tipi primitivi
+            return obj;
+        }
+
+
+
     }
 
     public class dataFormPostParameter

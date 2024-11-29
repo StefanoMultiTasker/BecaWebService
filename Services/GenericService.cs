@@ -85,9 +85,7 @@ namespace BecaWebService.Services
                             {
                                 obj.SetPropertyValue(
                                     property.Name,
-                                    DateTimeOffset.Parse(
-                                        ((DateTime)jsonRecord[jproperty.Name]).ToString()
-                                        ).ToLocalTime().DateTime);
+                                    DateTimeOffset.Parse((string)jsonRecord[jproperty.Name]).UtcDateTime);
                             }
                         }
                         else

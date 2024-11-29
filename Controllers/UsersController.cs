@@ -91,7 +91,6 @@ namespace BecaWebService.Controllers
             return Ok(menu);
         }
 
-        [AllowAnonymous]
         [HttpGet("MenuProfile")]///{idCompany}/{idProfile}")]
         public IActionResult GetMenuProfile([FromQuery] int idCompany, [FromQuery] int idProfile)
         {

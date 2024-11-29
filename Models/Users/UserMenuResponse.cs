@@ -41,6 +41,7 @@
         public UserMenuItem() => Items = new List<UserMenuItem>();
 
         public int idItem { get; set; }
+        public int? ParentItem { get; set; }
         public bool isContainer { get; set; }
         public string Caption { get; set; }
         public string DescMenuItem { get; set; }

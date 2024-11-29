@@ -32,6 +32,7 @@ namespace Entities.Models
         public short? viewAxisXStep { get; set; }
         public string? HttpGetUrl { get; set; }
         public string PrimaryKey { get; set; }
+        public string? DetailComponent { get; set; }
         public bool AddRecord { get; set; }
         public bool EditRecord { get; set; }
         public bool DeleteRecord { get; set; }
@@ -373,6 +374,7 @@ namespace Entities.Models
         public string? ChildAddOk { get; set; }
         public string? ChildAddErr { get; set; }
         public string? ChildAddSaveBefore { get; set; }
+        public string? DetailComponent { get; set; }
         public bool AddRecord { get; set; }
         public bool EditRecord { get; set; }
         public bool DeleteRecord { get; set; }

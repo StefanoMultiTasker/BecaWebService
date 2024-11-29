@@ -57,6 +57,7 @@ namespace Entities.DataTransferObjects
         public string HttpGetUrl { get; set; }
         public List<string> KeyFields { get; set; }
         public IList<dtoBecaViewChild> childrenForm { get; set; }
+        public string? DetailComponent { get; set; }
         public bool AddRecord { get; set; }
         public bool EditRecord { get; set; }
         public bool DeleteRecord { get; set; }
@@ -227,6 +228,7 @@ namespace Entities.DataTransferObjects
         public string ChildAddOk { get; set; }
         public string ChildAddErr { get; set; }
         public string ChildAddSaveBefore { get; set; }
+        public string? DetailComponent { get; set; }
         public bool AddRecord { get; set; }
         public bool EditRecord { get; set; }
         public bool DeleteRecord { get; set; }
