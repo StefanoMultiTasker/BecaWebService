@@ -228,17 +228,17 @@ namespace BecaWebService.Mappings
                         )
                 .ForMember(dest => dest.ComboAddSql1Display,
                         opts => opts.MapFrom(
-                            src => src.ComboAddSql1Display.ToCamelCase()
+                            src => (src.ComboAddSql1Display ?? "").ToLower()//.ToCamelCase()
                             )
                         )
                 .ForMember(dest => dest.ComboAddSql2Display,
                         opts => opts.MapFrom(
-                            src => src.ComboAddSql2Display.ToCamelCase()
+                            src => (src.ComboAddSql2Display ?? "").ToLower()//.ToCamelCase()
                             )
                         )
                 .ForMember(dest => dest.ComboAddSql3Display,
                         opts => opts.MapFrom(
-                            src => src.ComboAddSql3Display.ToCamelCase()
+                            src => (src.ComboAddSql3Display ?? "").ToLower()//.ToCamelCase()
                             )
                         )
                 ;

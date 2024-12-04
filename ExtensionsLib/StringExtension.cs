@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
 namespace BecaWebService.ExtensionsLib
@@ -78,6 +79,9 @@ namespace BecaWebService.ExtensionsLib
 
         public static string left(this string str, int chars) =>
             String.Concat(str.ToCharArray().Take(chars));
+
+        public static string leftExcept(this string str, int chars) =>
+            String.Concat(str.ToCharArray().Take(str.Length - chars < 0 ? 0 : str.Length - chars));
 
         public static string right(this string str, int chars) =>
             String.Concat(str.ToCharArray().TakeLast(chars));

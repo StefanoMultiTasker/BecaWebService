@@ -61,9 +61,39 @@ namespace BecaWebService.Services
         {
             var user = _context.BecaUsers.SingleOrDefault(x => x.UserName.ToLower() == model.Username.ToLower());
 
+            if (user == null)
+            {
+                throw new AppException("Username non valida");
+            }
             // validate
-            if (user == null || EncryptedString(model.Password) != user.Pwd)
-                throw new AppException("Username or password is incorrect");
+            if (user.Pwd.ToLower() == "migrazione")
+            {
+                if (user.Companies.Count() == 0 || user.Companies.Count(c => c.idUtenteLoc != null) == 0)
+                {
+                    throw new AppException("Utente migrato in modo errato");
+                }
+                try
+                {
+                    string pwd = getLegacyPasswordByUser(user.Companies.First(c => c.idUtenteLoc != null));
+
+                    Simple3Des cry = new Simple3Des("BecaW3bC1phKey");
+                    string chkPwd = cry.DecryptData(user.Pwd);
+                    if (chkPwd != model.Password)
+                    {
+                        throw new AppException("Username o password non validi");
+                    }
+
+                    user.Pwd = EncryptedString(chkPwd);
+
+                    _context.Entry(user).State = EntityState.Modified;
+                }
+                catch (Exception ex) { throw new AppException(ex.Message); }
+            }
+            else
+            {
+                if (user == null || EncryptedString(model.Password) != user.Pwd)
+                    throw new AppException("Username o password non validi");
+            }
 
             // authentication successful so generate jwt and refresh tokens
             var jwtToken = _jwtUtils.GenerateJwtToken(user);
@@ -118,6 +148,29 @@ namespace BecaWebService.Services
             //}
 
             return new AuthenticateResponse(user, jwtToken, refreshToken.Token);
+        }
+
+        public string getLegacyPasswordByUser(UserCompany company)
+        {
+            Connection? cnn = _context.Companies
+                .Where(c => c.idCompany == company.idCompany)
+                .SelectMany(c => c.Connections)
+                .OrderByDescending(c => c.Default)
+                .FirstOrDefault();
+            if (cnn == null) { 
+                    throw new AppException("DB Legacy non corretto");
+        } 
+
+            string dbName = cnn.ConnectionString;
+            DbDatiContext db = new DbDatiContext(null, dbName);
+
+            List<BecaUser> res = db.ExecuteQuery<BecaUser>("legacyUser", "Select Pwd From AnagrafeUtenti Where idUtente = {0}", false, (new List<object>() { company.idUtenteLoc }).ToArray());
+            if (res == null || res.Count==0)
+            {
+                throw new AppException("Utente non trovato sul DB Legacy");
+            }
+
+            return res[0].GetPropertyString("Pwd");
         }
 
         public AuthenticateResponse LoginById(int id, string ipAddress)
@@ -249,7 +302,8 @@ namespace BecaWebService.Services
                 c.idCompany = company.Key;
                 foreach (UserMenu item in rawUserMenu
                     .Where(m => m.ParentItem == null && m.idCompany == c.idCompany)
-                    .OrderBy(m => m.Position).ToList())
+                    .OrderBy(m => m.idGroup)
+                    .ThenBy(m => m.Position).ToList())
                 {
                     UserMenuItem i = createMenuItem(item);
                     c.Menu.Add(i);
@@ -288,7 +342,8 @@ namespace BecaWebService.Services
             int itemId = menu.idItem;
             IList<UserMenu> subItems = allItems
                 .Where(m => m.ParentItem == itemId && m.idCompany == idCompany)
-                .OrderBy(m => m.Position).ToList()
+                    .OrderBy(m => m.idGroup)
+                    .ThenBy(m => m.Position).ToList()
                 .ToList();
             foreach (UserMenu item in subItems)
             {
@@ -335,7 +390,8 @@ namespace BecaWebService.Services
 
             foreach (BasicMenu item in rawMenu
                 .Where(m => m.ParentItem == null)
-                .OrderBy(m => m.Position).ToList())
+                .OrderBy(m => m.idGroup)
+                .ThenBy(m => m.Position).ToList())
             {
                 UserMenuItem i = createBasicMenuItem(item);
                 menu.Add(i);
@@ -356,7 +412,8 @@ namespace BecaWebService.Services
             int itemId = menu.idItem;
             IList<BasicMenu> subItems = allItems
                 .Where(m => m.ParentItem == itemId)
-                .OrderBy(m => m.Position).ToList()
+                .OrderBy(m => m.idGroup)
+                .ThenBy(m => m.Position).ToList()
                 .ToList();
             foreach (BasicMenu item in subItems)
             {
@@ -414,7 +471,8 @@ namespace BecaWebService.Services
 
             foreach (ProfileMenu item in rawMenu
                 .Where(m => m.ParentItem == null)
-                .OrderBy(m => m.Position).ToList())
+                    .OrderBy(m => m.idGroup)
+                    .ThenBy(m => m.Position).ToList())
             {
                 UserMenuItem i = createProfileMenuItem(item);
                 menu.Add(i);
@@ -476,7 +534,8 @@ namespace BecaWebService.Services
             int itemId = menu.idItem;
             IList<ProfileMenu> subItems = allItems
                 .Where(m => m.ParentItem == itemId)
-                .OrderBy(m => m.Position).ToList()
+                .OrderBy(m => m.idGroup)
+                .ThenBy(m => m.Position).ToList()
                 .ToList();
             foreach (ProfileMenu item in subItems)
             {

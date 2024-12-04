@@ -514,7 +514,7 @@ namespace Repository
         {
             string upl = noUpload ? "" : string.Join(", ", _context.BecaFormField
                 .Where(f => f.Form == form.Form && f.FieldType == "upload")
-                .ToList().Select(n => "'' As [_" + n.Name.Trim() + "_upl_], '' As [_" + n.Name.Trim() + "_uplName_]"));
+                .ToList().Select(n => "'' As [_" + n.Name.Trim() + "_upl_], '' As [_" + n.Name.Trim() + "_uplname_]"));
             if (uplWithoutUnderscore) upl = upl.Replace("_", "");
             string sql = "Select *" +
                 (upl.Length > 0 ? ", " + upl + " " : " ") +
@@ -563,7 +563,7 @@ namespace Repository
             List<object> pars = new List<object>();
             if (form != null)
             {
-                string sql = getFormSQL(form, view, true, noUpload);
+                string sql = getFormSQL(form, view, false, noUpload);
                 object def = getContext(form.TableNameDB).GetQueryDef<object>(Form, sql + " Where 0 = 1", fields);
                 return (T)def;
             }
@@ -585,7 +585,9 @@ namespace Repository
             spName = spName.Replace("#Before", "").Replace("#After", "");
             List<string> names = getContext(dbName).GetProcedureParams(spName);
             string sql = $"Exec {spName} " + string.Join(", ", names.Select((x, i) => $"{{{i}}}"));
-            var pars = names.Select((x, i) => record.HasPropertyValue(x.Replace("@", "")) ? record.GetPropertyValue(x.Replace("@", "")) : null).ToArray();
+            var pars = names.Select((x, i) => record.HasPropertyValue(x.Replace("@", "")) 
+                ? record.GetPropertyValue(x.Replace("@", "")) 
+                : record.HasPropertyValue(x.ToLower().Replace("@", "")) ? record.GetPropertyValue(x.ToLower().Replace("@", "")) : null).ToArray();
             return await getContext(dbName).ExecuteSqlCommandAsync(sql, pars);
         }
 
@@ -1205,11 +1207,11 @@ namespace Repository
                 List<BecaFormField> upl = _context.BecaFormField
                 .Where(f => f.Form == form.Form && f.FieldType == "upload")
                 .ToList();
-                foreach (BecaFormField field in upl.Where(f => record.HasPropertyValue(f.Name + "upl") && record.GetPropertyString(f.Name + "upl").ToString() != ""))
+                foreach (BecaFormField field in upl.Where(f => record.HasPropertyValue($"_{f.Name}_upl_") && record.GetPropertyString($"_{f.Name}_upl_").ToString() != ""))
                 {
                     string res = await SaveFileByField(form, field, record);
                     if (res.Contains("ERR: ")) return res.Replace("ERR: ", "");
-                    record.SetPropertyValue(field.Name, res); //field.Parameters.Split("|").Last()
+                    record.SetPropertyValue(field.Name.leftExcept(3), res); //field.Parameters.Split("|").Last()
                 }
             }
             catch (Exception ex)
@@ -1264,7 +1266,7 @@ namespace Repository
 
                 object tipoDoc = data[0];
                 string folderNameSub = GetSaveName(tipoDoc.GetPropertyValue("Fld").ToString(), record).Replace("/", @"\");
-                string folderName = folderNameSub.Contains(@"\\") || folderNameSub.Contains(@":\")
+                string folderName = folderNameSub.Contains(@"\") || folderNameSub.Contains(@":\")
                     ? @"\\192.168.0.207\BecaWeb\Web\Upload\" + _activeCompany.MainFolder + @"\" + folderNameSub
                     : @"E:\BecaWeb\Web\Upload\" + _activeCompany.MainFolder + @"\" + folderNameSub;
                 folderName = @"\\192.168.0.207\BecaWeb\Web\Upload\" + _activeCompany.MainFolder + @"\" + folderNameSub;
@@ -1284,8 +1286,8 @@ namespace Repository
                 if (!Directory.Exists(folderName)) Directory.CreateDirectory(folderName);
 
 
-                string fileUploaded = record.GetPropertyValue(field.Name + "upl").ToString();
-                string fileUploadedName = record.GetPropertyValue(field.Name + "uplName").ToString();
+                string fileUploaded = record.GetPropertyValue($"_{field.Name}_upl_").ToString();
+                string fileUploadedName = record.GetPropertyValue($"_{field.Name}_uplname_").ToString();
 
                 if (fileName == "") fileName = fileUploadedName;
                 if (fileUploaded.Length > 0)

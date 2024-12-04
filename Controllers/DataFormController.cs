@@ -304,6 +304,12 @@ namespace BecaWebService.Controllers
                 if (!result.Success)
                     return BadRequest(result.Message);
 
+                // Verifica se `lowercase` è `true` e applica la trasformazione
+                if (data.lowerCase)
+                {
+                    result._extraLoad = ConvertToLowercaseRecursive(result._extraLoad);
+                }
+
                 return Ok(result._extraLoad);
             }
             catch (Exception ex)
@@ -480,6 +486,7 @@ namespace BecaWebService.Controllers
         public JObject? child1 { get; set; }
         public JObject? child2 { get; set; }
         public JObject? child3 { get; set; }
+        public bool lowerCase { get; set; }
     }
 
     internal class Compressor
