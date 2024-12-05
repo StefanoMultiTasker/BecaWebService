@@ -12,6 +12,7 @@ namespace Entities.Contexts
         //private readonly IConfiguration Configuration;
 
         public virtual DbSet<BecaUser> BecaUsers { get; set; }
+        public virtual DbSet<UserReset> UsersReset { get; set; }
         public virtual DbSet<BecaUserEntity> BecaUserentities { get; set; }
         public virtual DbSet<UserMenu> RawUserMenu { get; set; }
         public virtual DbSet<ProfileMenu> RawProfileMenu { get; set; }
@@ -240,6 +241,9 @@ namespace Entities.Contexts
                 entity.ToView("MenuItems");
                 entity.HasKey(e => e.idItem);
             });
+
+            modelBuilder.Entity<UserReset>().ToTable("UsersReset");
+            modelBuilder.Entity<UserReset>().HasKey(p => new { p.idUtente });
 
             #endregion
 

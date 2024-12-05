@@ -162,6 +162,30 @@ namespace BecaWebService.Controllers
             return Ok();
         }
 
+        [AllowAnonymous]
+        [HttpPost("requestResetPassword")]
+        public async Task<IActionResult> requestResetPassword(UserResetRequest req)
+        {
+            var result = await _userService.RequestResetPassword(req);
+
+            if (result.Success == false)
+                return BadRequest(result.Message);
+
+            return Ok();
+        }
+
+        [AllowAnonymous]
+        [HttpGet("reset/{token}")]
+        public async Task<IActionResult> reset(string token)
+        {
+            var result = await _userService.ResetPassword(token);
+
+            if (result.Success == false)
+                return Redirect(result.Message);
+
+            return Redirect(result.Message);
+        }
+
         // helper methods
 
         private void setTokenCookie(string token)

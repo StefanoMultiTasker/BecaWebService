@@ -1,6 +1,7 @@
 ﻿using Entities.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Reflection.Metadata.Ecma335;
@@ -97,6 +98,7 @@ namespace Entities.Models
         [JsonIgnore] public string senderEmail { get; set; }
         [JsonIgnore] public int senderSMTP { get; set; }
         [JsonIgnore] public string InvioCredenziali { get; set; }
+        [JsonIgnore] public string ResetCredenziali { get; set; }
         [NotMapped] public string LegacyToken { get; set; }
 
         public List<UserProfile> Profiles { get; set; }
@@ -145,5 +147,26 @@ namespace Entities.Models
         public bool isConfirmed { get; set; }
         public bool isPrivacyRead { get; set; }
         public bool isPwdChanged { get; set; }
+    }
+
+    public class  UserReset
+    {
+        [Key]
+        public int idUtente { get; set; }
+        public string token { get; set; }
+        public DateTime dtScadenza { get; set; }
+
+    }
+
+    public class UserResetRequest
+    {
+        public string? UserName { get; set; }
+        public string? email { get; set; }
+        public string? Nome { get; set; }
+        public string? Cognome { get; set; }
+        public string? CodiceFiscale { get; set; }
+        public string? Cliente { get; set; }
+        public string? apl { get; set; }
+
     }
 }

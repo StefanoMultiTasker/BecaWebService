@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Net;
 using System.Net.Mail;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography.Xml;
 using System.Text;
 using static NLog.LayoutRenderers.Wrappers.ReplaceLayoutRendererWrapper;
@@ -34,6 +35,8 @@ namespace BecaWebService.Services
         List<UserMenuItem> GetMenuAll();
         Task<GenericResponse> AddOrUpdateUserAsync(BecaUserDTO userDto);
         Task<GenericResponse> CreatePassword(int idUtente);
+        Task<GenericResponse> RequestResetPassword(UserResetRequest req);
+        Task<GenericResponse> ResetPassword(string token);
         Task<GenericResponse> GenerateUserName(BecaUserDTO userDto);
         Task<GenericResponse> changePassword(string pwd);
     }
@@ -47,6 +50,7 @@ namespace BecaWebService.Services
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly AppSettings _appSettings;
 
+        const Int16 resetValidity = 30;
         public UserService(IDependencies deps, DbBecaContext context, IJwtUtils jwtUtils, IOptions<AppSettings> appSettings, IHttpContextAccessor httpContextAccessor) //DbMemoryContext memoryContext,
         {
             _context = context;
@@ -797,7 +801,82 @@ namespace BecaWebService.Services
             return await UserSendCrentials(idUtente, pwd);
         }
 
-        private string GenerateRandomPassword(int length)
+        public async Task<GenericResponse> RequestResetPassword(UserResetRequest req)
+        {
+            string pwd = GenerateRandomPassword(25);
+            try
+            {
+                BecaUser? user = null;
+
+                if((req.UserName ?? "") != "")
+                {
+                    user = await _context.BecaUsers.FirstOrDefaultAsync(u => u.UserName == req.UserName);
+                }
+
+                if ((req.UserName ?? "") == "" && (req.email ?? "") != "")
+                {
+                    List<BecaUser> users = _context.BecaUsers.Where(u => u.UserName == req.UserName).ToList();
+                    if (users.Count == 1) user = users[0];
+                }
+
+                if (user == null) {
+                    UserSendResetRequest(req);
+                    return new GenericResponse(true, "");    
+                };
+
+                UserReset? reset = await _context.UsersReset.FindAsync(user.idUtente);
+                if (reset != null)
+                {
+                    if (reset.dtScadenza < DateTime.Now)
+                    {
+                        reset.token = pwd;
+                        reset.dtScadenza = DateTime.Now.AddMinutes(resetValidity);
+
+                        _context.UsersReset.Update(reset);
+                    }
+                    else
+                    {
+                        return new GenericResponse(true, "Il reset è già stato chiesto");
+                    }
+                } else
+                {
+                    _context.UsersReset.Add(new UserReset { idUtente = user.idUtente, token = pwd, dtScadenza=DateTime.Now.AddMinutes(resetValidity) });
+                }
+                await _context.SaveChangesAsync();
+                await UserSendReset(user.idUtente, pwd);
+                return new GenericResponse(true, "");
+            }
+            catch (Exception ex)
+            {
+                return new GenericResponse(true, $"Si è verificato un erorre nella generazione del token di reset: {ex.Message}");
+            }
+        }
+
+        public async Task<GenericResponse> ResetPassword(string token) {
+            try
+            {
+                UserReset? reset = await _context.UsersReset.FirstOrDefaultAsync(r => r.token == token);
+                if (reset == null)
+                {
+                    return new GenericResponse(false, "");
+                }
+                if (reset.dtScadenza < DateTime.Now.AddMinutes(resetValidity))
+                {
+                    return new GenericResponse(false, "");
+                }
+
+                _context.UsersReset.Remove(reset);
+                await _context.SaveChangesAsync();
+                return new GenericResponse(true, "");
+            }
+            catch (Exception)
+            {
+                return new GenericResponse(false, "");
+            }
+        }
+
+
+        private string GenerateRandomPassword(int length, bool useSpecial = true)
         {
             const string upperChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             const string lowerChars = "abcdefghijklmnopqrstuvwxyz";
@@ -810,7 +889,7 @@ namespace BecaWebService.Services
             char upper = upperChars[random.Next(upperChars.Length)];
             char lower = lowerChars[random.Next(lowerChars.Length)];
             char digit = digitChars[random.Next(digitChars.Length)];
-            char special = specialChars[random.Next(specialChars.Length)];
+            char special = useSpecial ? specialChars[random.Next(specialChars.Length)] : '\0';
 
             // Generare il resto della password casualmente dai gruppi di caratteri
             string allChars = upperChars + lowerChars + digitChars + specialChars;
@@ -825,7 +904,7 @@ namespace BecaWebService.Services
             return pwd;
         }
 
-        public async Task<GenericResponse> UserSendCrentials(int idUtente, string pwd)
+        private async Task<GenericResponse> UserSendCrentials(int idUtente, string pwd)
         {
             try
             {
@@ -857,6 +936,90 @@ namespace BecaWebService.Services
                 objMail.Body = ($"{cpy.InvioCredenziali}");
                 objMail.Body = objMail.Body.Replace("#PWD#", pwd);
                 objMail.To.Add(new MailAddress($"{user.email}"));
+
+                objSMTP.Send(objMail);
+                return new GenericResponse(true);
+            }
+            catch (Exception ex)
+            {
+                return new GenericResponse(ex, ex.Message);
+            }
+        }
+
+        private async Task<GenericResponse> UserSendReset(int idUtente, string pwd)
+        {
+            try
+            {
+                BecaUser? user = await _context.BecaUsers.FindAsync(idUtente);
+                if (user == null) return new GenericResponse("Utente non trovato");
+
+                UserCompany? cpy = user.Companies.FirstOrDefault(c => c.isDefault == true);
+                if (cpy == null) return new GenericResponse("Nessuna company associata");
+
+                //System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+                System.Net.Mail.SmtpClient objSMTP = new System.Net.Mail.SmtpClient
+                {
+                    Host = "pro.eu.turbo-smtp.com",
+                    Port = 587,
+                    EnableSsl = true,
+                    DeliveryMethod = SmtpDeliveryMethod.Network,
+                    Credentials = new NetworkCredential("gruppoedp@abeaform.it", "ddHu39eX")
+                };
+                string owner = cpy.senderEmail;
+                //owner = "postmaster@abeaform.it";
+                System.Net.Mail.MailMessage objMail = new System.Net.Mail.MailMessage();
+                objMail.Sender = new MailAddress(owner, owner);
+                objMail.From = new MailAddress(owner, owner);
+                objMail.ReplyToList.Add(new MailAddress(owner));
+
+                objMail.Subject = $"Richiesta di reset delle credenziali per l'accesso a My{cpy.CompanyName}";
+                objMail.IsBodyHtml = true;
+                objMail.BodyEncoding = System.Text.Encoding.UTF8;
+                objMail.Body = ($"{cpy.ResetCredenziali.Replace("#token#", pwd)}");
+                objMail.Body = objMail.Body.Replace("#PWD#", pwd);
+                objMail.To.Add(new MailAddress($"{user.email}"));
+
+                objSMTP.Send(objMail);
+                return new GenericResponse(true);
+            }
+            catch (Exception ex)
+            {
+                return new GenericResponse(ex, ex.Message);
+            }
+        }
+
+        private GenericResponse UserSendResetRequest(UserResetRequest req)
+        {
+            try
+            {
+                //System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+                System.Net.Mail.SmtpClient objSMTP = new System.Net.Mail.SmtpClient
+                {
+                    Host = "pro.eu.turbo-smtp.com",
+                    Port = 587,
+                    EnableSsl = true,
+                    DeliveryMethod = SmtpDeliveryMethod.Network,
+                    Credentials = new NetworkCredential("gruppoedp@abeaform.it", "ddHu39eX")
+                };
+                string owner = "credenziali.bw@attalgroup.it";
+                string dest = $"my{req.apl}@lavoratori.it";
+                //owner = "postmaster@abeaform.it";
+                System.Net.Mail.MailMessage objMail = new System.Net.Mail.MailMessage();
+                objMail.Sender = new MailAddress(owner, owner);
+                objMail.From = new MailAddress(owner, owner);
+                objMail.ReplyToList.Add(new MailAddress(owner));
+
+                objMail.Subject = $"TEST - Richiesta di reset delle credenziali per l'accesso a My{req.apl}";
+                objMail.IsBodyHtml = true;
+                objMail.BodyEncoding = System.Text.Encoding.UTF8;
+                objMail.Body = $"<p>E' stato richiesto il reset della password per un utente che non è stato possibile indentificare a sistema.</p>" +
+                    $"<p>email: {req.email}</P>" +
+                    $"<p>Nome: {req.Nome}</P>" +
+                    $"<p>Cognome: {req.Cognome}</P>" +
+                    $"<p>APL: {req.apl}</P>" +
+                    $"<p></P>";
+                objMail.To.Add(new MailAddress(dest));
+                objMail.Bcc.Add(new MailAddress("s.bettica@abeaform.it"));
 
                 objSMTP.Send(objMail);
                 return new GenericResponse(true);
