@@ -1,2 +1,0 @@
-2021-01-04 18:29:09.8555 INFO Returned View for id 3.
-2021-01-04 18:29:12.8360 INFO Returned View for id 6.

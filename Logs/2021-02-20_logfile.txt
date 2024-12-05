@@ -1,9 +1,0 @@
-2021-02-20 11:14:28.4289 INFO Returned View for id 7.
-2021-02-20 11:14:28.4289 INFO Returned View for id 5.
-2021-02-20 11:16:08.1218 INFO Returned View for id 7.
-2021-02-20 11:18:40.4241 INFO Returned View for id 7.
-2021-02-20 11:19:08.9986 INFO Returned View for id 7.
-2021-02-20 11:19:50.4152 INFO Returned View for id 7.
-2021-02-20 11:28:23.9878 INFO Returned View for id 7.
-2021-02-20 11:28:56.7822 INFO Returned View for id 7.
-2021-02-20 11:41:06.5700 INFO Returned View for id 7.

@@ -808,14 +808,14 @@ namespace BecaWebService.Services
             {
                 BecaUser? user = null;
 
-                if((req.UserName ?? "") != "")
-                {
-                    user = await _context.BecaUsers.FirstOrDefaultAsync(u => u.UserName == req.UserName);
-                }
+                //if((req.UserName ?? "") != "")
+                //{
+                //    user = await _context.BecaUsers.FirstOrDefaultAsync(u => u.UserName == req.UserName);
+                //}
 
                 if ((req.UserName ?? "") == "" && (req.email ?? "") != "")
                 {
-                    List<BecaUser> users = _context.BecaUsers.Where(u => u.UserName == req.UserName).ToList();
+                    List<BecaUser> users = _context.BecaUsers.Where(u => u.email == req.email).ToList();
                     if (users.Count == 1) user = users[0];
                 }
 

@@ -1,5 +1,0 @@
-2020-10-26 15:27:09.0546 INFO Returned View for id 3.
-2020-10-26 15:27:43.3756 INFO Returned View for id 2.
-2020-10-26 15:27:44.1945 INFO Returned View for id 3.
-2020-10-26 15:28:22.7040 INFO Returned View for id 2.
-2020-10-26 15:29:03.2937 INFO Returned View for id 3.

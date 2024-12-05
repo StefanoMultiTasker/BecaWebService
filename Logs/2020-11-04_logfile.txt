@@ -1,9 +1,0 @@
-2020-11-04 18:10:23.3864 INFO Returned View for id 2.
-2020-11-04 18:10:27.8456 INFO Returned View for id 1.
-2020-11-04 18:10:36.6486 INFO Returned View for id 2.
-2020-11-04 18:10:39.0887 INFO Returned View for id 1.
-2020-11-04 18:11:03.1486 INFO Returned View for id 2.
-2020-11-04 18:11:25.6771 INFO Returned View for id 1.
-2020-11-04 18:13:22.3051 INFO Returned View for id 2.
-2020-11-04 18:13:26.6498 INFO Returned View for id 1.
-2020-11-04 18:22:26.8584 INFO Returned View for id 1.

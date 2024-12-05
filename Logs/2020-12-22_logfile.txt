@@ -1,9 +1,0 @@
-2020-12-22 10:36:18.3726 INFO Returned View for id 3.
-2020-12-22 10:36:27.0207 ERROR Something went wrong inside GetViewByID action: Object reference not set to an instance of an object.
-2020-12-22 11:14:09.7752 ERROR Something went wrong inside GetViewByID action: Object reference not set to an instance of an object.
-2020-12-22 11:18:08.5214 INFO Returned View for id 3.
-2020-12-22 11:18:17.7600 INFO Returned View for id 5.
-2020-12-22 11:23:12.9473 INFO Returned View for id 5.
-2020-12-22 11:24:50.5343 INFO Returned View for id 5.
-2020-12-22 11:26:25.3253 INFO Returned View for id 5.
-2020-12-22 11:35:17.7369 INFO Returned View for id 5.

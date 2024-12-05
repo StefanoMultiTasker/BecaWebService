@@ -1,9 +1,0 @@
-2020-08-28 12:23:19.1050 INFO Returned View for id 1.
-2020-08-28 12:27:28.7618 INFO Returned View for id 1.
-2020-08-28 12:29:47.3947 INFO Returned View for id 1.
-2020-08-28 12:54:07.5135 INFO Returned View for id 1.
-2020-08-28 12:59:28.1215 INFO Returned View for id 1.
-2020-08-28 13:00:38.1532 INFO Returned View for id 1.
-2020-08-28 13:02:58.5673 INFO Returned View for id 1.
-2020-08-28 13:12:38.4480 INFO Returned View for id 1.
-2020-08-28 13:16:07.5356 INFO Returned View for id 1.

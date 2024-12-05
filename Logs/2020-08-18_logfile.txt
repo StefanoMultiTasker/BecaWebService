@@ -1,2 +1,0 @@
-2020-08-18 17:15:26.6770 INFO Returned View for id 1.
-2020-08-18 17:16:42.4454 INFO Returned View for id 2.

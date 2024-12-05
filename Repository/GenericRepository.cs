@@ -23,11 +23,12 @@ namespace Repository
         private BecaUser _currentUser;
         private Company _activeCompany;
         private readonly FormTool _formTool;
-        private readonly ILogger<GenericRepository> _logger;
+        //private readonly ILogger<GenericRepository> _logger;
+        private ILoggerManager _logger;
 
         private Dictionary<string, DbDatiContext> _databases = new Dictionary<string, DbDatiContext>();
 
-        public GenericRepository(IDependencies deps, IHttpContextAccessor httpContextAccessor, ILogger<GenericRepository> logger)
+        public GenericRepository(IDependencies deps, IHttpContextAccessor httpContextAccessor, ILoggerManager logger) //ILogger<GenericRepository> logger)
         {
             _context = deps.context;
             _currentUser = (BecaUser)httpContextAccessor.HttpContext.Items["User"];
@@ -1216,7 +1217,7 @@ namespace Repository
             }
             catch (Exception ex)
             {
-                _logger.LogCritical($"UploadByForm: {ex.Message}");
+                _logger.LogError($"UploadByForm: {ex.Message}");
             }
             return "";
         }
@@ -1314,7 +1315,7 @@ namespace Repository
             }
             catch (Exception ex)
             {
-                _logger.LogCritical($"Errore nel salvataggio del file: {ex.Message}");
+                _logger.LogError($"Errore nel salvataggio del file: {ex.Message}");
                 return "ERR: " + ex.Message;
             }
         }
