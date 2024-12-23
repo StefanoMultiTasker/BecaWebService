@@ -81,7 +81,7 @@ namespace BecaWebService.Services
                     string pwd = getLegacyPasswordByUser(user.Companies.First(c => c.idUtenteLoc != null));
 
                     Simple3Des cry = new Simple3Des("BecaW3bC1phKey");
-                    string chkPwd = cry.DecryptData(user.Pwd);
+                    string chkPwd = cry.DecryptData(pwd);
                     if (chkPwd != model.Password)
                     {
                         throw new AppException("Username o password non validi");
@@ -789,6 +789,7 @@ namespace BecaWebService.Services
                 if (user == null) return new GenericResponse("Utente non trovato");
 
                 user.Pwd = EncryptedString(pwd);
+                user.isPwdChanged = false;
 
                 _context.Entry(user).State = EntityState.Modified;
 
@@ -803,7 +804,7 @@ namespace BecaWebService.Services
 
         public async Task<GenericResponse> RequestResetPassword(UserResetRequest req)
         {
-            string pwd = GenerateRandomPassword(25);
+            string pwd = GenerateRandomPassword(25,false);
             try
             {
                 BecaUser? user = null;
@@ -821,7 +822,7 @@ namespace BecaWebService.Services
 
                 if (user == null) {
                     UserSendResetRequest(req);
-                    return new GenericResponse(true, "");    
+                    return new GenericResponse(true);    
                 };
 
                 UserReset? reset = await _context.UsersReset.FindAsync(user.idUtente);
@@ -844,11 +845,11 @@ namespace BecaWebService.Services
                 }
                 await _context.SaveChangesAsync();
                 await UserSendReset(user.idUtente, pwd);
-                return new GenericResponse(true, "");
+                return new GenericResponse(true);
             }
             catch (Exception ex)
             {
-                return new GenericResponse(true, $"Si è verificato un erorre nella generazione del token di reset: {ex.Message}");
+                return new GenericResponse($"Si è verificato un erorre nella generazione del token di reset: {ex.Message}");
             }
         }
 
@@ -858,20 +859,21 @@ namespace BecaWebService.Services
                 UserReset? reset = await _context.UsersReset.FirstOrDefaultAsync(r => r.token == token);
                 if (reset == null)
                 {
-                    return new GenericResponse(false, "");
+                    return new GenericResponse(false, "https://www.mytemporary.it/reset/reset-nonvalido.html");
                 }
-                if (reset.dtScadenza < DateTime.Now.AddMinutes(resetValidity))
+                if (reset.dtScadenza < DateTime.Now)
                 {
-                    return new GenericResponse(false, "");
+                    return new GenericResponse(false, "https://www.mytemporary.it/reset/reset-scaduto.html");
                 }
 
+                await CreatePassword(reset.idUtente);
                 _context.UsersReset.Remove(reset);
                 await _context.SaveChangesAsync();
-                return new GenericResponse(true, "");
+                return new GenericResponse(true, "https://www.mytemporary.it/reset/reset-ok.html");
             }
             catch (Exception)
             {
-                return new GenericResponse(false, "");
+                return new GenericResponse(false, "https://www.mytemporary.it/reset/reset-errore.html");
             }
         }
 
@@ -892,12 +894,16 @@ namespace BecaWebService.Services
             char special = useSpecial ? specialChars[random.Next(specialChars.Length)] : '\0';
 
             // Generare il resto della password casualmente dai gruppi di caratteri
-            string allChars = upperChars + lowerChars + digitChars + specialChars;
-            string remainingChars = new string(Enumerable.Repeat(allChars, length - 4)
+            string allChars = upperChars + lowerChars + digitChars + (useSpecial ? specialChars : "");
+            int remainingLength = useSpecial ? length - 4 : length - 3; // Ridurre di 3 o 4 in base all'uso di caratteri speciali
+
+            string remainingChars = new string(Enumerable.Repeat(allChars, remainingLength)
                 .Select(s => s[random.Next(s.Length)]).ToArray());
 
             // Combinare tutti i caratteri
-            string password = upper.ToString() + lower.ToString() + digit.ToString() + special.ToString() + remainingChars;
+            string password = useSpecial
+                ? upper.ToString() + lower.ToString() + digit.ToString() + special.ToString() + remainingChars
+                : upper.ToString() + lower.ToString() + digit.ToString() + remainingChars;
 
             // Mescolare i caratteri
             string pwd = new string(password.OrderBy(c => random.Next()).ToArray());
@@ -1002,7 +1008,7 @@ namespace BecaWebService.Services
                     Credentials = new NetworkCredential("gruppoedp@abeaform.it", "ddHu39eX")
                 };
                 string owner = "credenziali.bw@attalgroup.it";
-                string dest = $"my{req.apl}@lavoratori.it";
+                string dest = "r.spina@abeaform.it"; // $"lavoratori.bw@{req.apl}.it";
                 //owner = "postmaster@abeaform.it";
                 System.Net.Mail.MailMessage objMail = new System.Net.Mail.MailMessage();
                 objMail.Sender = new MailAddress(owner, owner);
@@ -1016,6 +1022,7 @@ namespace BecaWebService.Services
                     $"<p>email: {req.email}</P>" +
                     $"<p>Nome: {req.Nome}</P>" +
                     $"<p>Cognome: {req.Cognome}</P>" +
+                    $"<p>Cliente: {req.Cliente}</P>" +
                     $"<p>APL: {req.apl}</P>" +
                     $"<p></P>";
                 objMail.To.Add(new MailAddress(dest));

@@ -27,7 +27,7 @@ namespace Contracts
         Task<int> ExecuteSqlCommandAsync(string dbName, string commandText, params object[] parameters);
         int ExecuteSqlCommand(string dbName, string commandText, params object[] parameters);
         Task<int> ExecuteProcedure(string dbName, string spName, List<BecaParameter> parameters);
-
+        Task CompleteAsync();
         List<object> GetDataBySQL(string dbName, string sql, List<BecaParameter> parameters, bool useidUtente = true);
         IDictionary<string, object> GetDataDictBySQL(string dbName, string sql, List<BecaParameter> parameters);
 
@@ -37,5 +37,7 @@ namespace Contracts
         ViewChart GetGraphByFormField(string Form, string field, List<BecaParameter> parameters);
 
         BecaUser GetLoggedUser();
+        Company GetActiveCompany();
+        string domain { get; }
     }
 }

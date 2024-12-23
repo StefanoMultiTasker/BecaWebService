@@ -184,12 +184,49 @@ namespace BecaWebService.Controllers
                 if ((form ?? "") == "")
                     return BadRequest("La View non ha form associate");
 
-                object recordNew = _genericService.CreateObjectFromJObject<object>(form, data.newData, true);
-                object recordOld = _genericService.CreateObjectFromJObject<object>(form, data.originalData, true);
+                if(data.newData == null && data.newListData == null)
+                {
+                    return BadRequest(new GenericResponse("Nessun dato fornito"));
+                }
+
+                if (data.newData != null && data.originalData == null)
+                {
+                    return BadRequest(new GenericResponse("Nessun dato di confronto fornito"));
+                }
+
+                if (data.newListData != null && data.originalListData == null)
+                {
+                    return BadRequest(new GenericResponse("Nessun dato di confronto fornito"));
+                }
+
+                GenericResponse result = new GenericResponse(true);
+                if (data.newData != null)
+                {
+                    object recordNew = _genericService.CreateObjectFromJObject<object>(form, data.newData, true);
+                    object recordOld = _genericService.CreateObjectFromJObject<object>(form, data.originalData, true);
+
+                    result = await _genericService.UpdateDataByForm(form, recordOld, recordNew);
+                }
+                if (data.newListData != null)
+                {
+                    List<object> recordsNew = _genericService.CreateObjectsFromJArray<object>(form, data.newListData, true);
+                    List<object> recordsOld = _genericService.CreateObjectsFromJArray<object>(form, data.originalListData, true);
+
+                    string resultMessage = "";
+                    bool resultSuccess = false;
+                    List<object> resultObj = new List<object>();
+                    for (int i = 0; i < recordsNew.Count; i++)
+                    {
+                        GenericResponse singleResult = await _genericService.UpdateDataByForm(form, recordsOld[i], recordsNew[i]);
+                        resultMessage = String.Join(";", resultMessage, singleResult.Message);
+                        resultObj.Add(singleResult._extraLoad);
+                        if (singleResult.Success) resultSuccess = true;
+                    }
+                    result = new GenericResponse(resultObj, resultMessage);
+                }
 
                 _logger.LogDebug($"DataFormUpdate: {form}");
 
-                GenericResponse result = await _genericService.UpdateDataByForm(form, recordOld, recordNew);
                 if (!result.Success)
                     return BadRequest(result); //.Message);
 
@@ -217,9 +254,36 @@ namespace BecaWebService.Controllers
                 if ((form ?? "") == "")
                     return BadRequest("La View non ha form associate");
 
-                object recordNew = _genericService.CreateObjectFromJObject<object>(form, data.newData, false);
+                if (data.newData == null && data.newListData == null)
+                {
+                    return BadRequest(new GenericResponse("Nessun dato fornito"));
+                }
 
-                GenericResponse result = await _genericService.AddDataByForm(form, recordNew, data.force.Value);
+                GenericResponse result = new GenericResponse(true);
+                if (data.newData != null)
+                {
+
+                    object recordNew = _genericService.CreateObjectFromJObject<object>(form, data.newData, false);
+
+                    result = await _genericService.AddDataByForm(form, recordNew, data.force.Value);
+                }
+                if (data.newListData != null)
+                {
+                    List<object> recordsNew = _genericService.CreateObjectsFromJArray<object>(form, data.newListData, true);
+
+                    string resultMessage = "";
+                    bool resultSuccess = false;
+                    List<object> resultObj = new List<object>();
+                    for (int i = 0; i < recordsNew.Count; i++)
+                    {
+                        GenericResponse singleResult = await _genericService.AddDataByForm(form, recordsNew[i], data.force.Value);
+                        resultMessage = String.Join(";", resultMessage, singleResult.Message);
+                        resultObj.Add(singleResult._extraLoad);
+                        if (singleResult.Success) resultSuccess = true;
+                    }
+                    result = new GenericResponse(resultObj, resultMessage);
+                }
+
                 if (!result.Success)
                     return BadRequest(result);//.Message);
 
@@ -244,10 +308,40 @@ namespace BecaWebService.Controllers
                 return BadRequest("La View non ha form associate");
             //Log.Information($"FormAddOrUpdate {form}");
 
-            object recordNew = _genericService.CreateObjectFromJObject<object>(form, data.newData, false, true);
+            if (data.newData == null && data.newListData == null)
+            {
+                return BadRequest(new GenericResponse("Nessun dato fornito"));
+            }
+
+            GenericResponse result = new GenericResponse(true);
+            if (data.newData != null)
+            {
+                object recordNew = _genericService.CreateObjectFromJObject<object>(form, data.newData, false, true);
             //Log.Information($"FormAddOrUpdate {form} object generated");
 
-            GenericResponse result = await _genericService.AddOrUpdateDataByForm(form, recordNew);
+                result = await _genericService.AddOrUpdateDataByForm(form, recordNew);
+            }
+            if (data.newListData != null)
+            {
+                List<object> recordsNew = _genericService.CreateObjectsFromJArray<object>(form, data.newListData, true);
+
+                string resultMessage = "";
+                bool resultSuccess = false;
+                List<object> resultObj = new List<object>();
+                for (int i = 0; i < recordsNew.Count; i++)
+                {
+                    GenericResponse singleResult = await _genericService.AddOrUpdateDataByForm(form, recordsNew[i]);
+                    resultMessage = String.Join(";", resultMessage, singleResult.Message); 
+                    if (data.lowerCase && singleResult._extraLoad != null)
+                    {
+                        singleResult._extraLoad = ConvertToLowercaseRecursive(singleResult._extraLoad);
+                        resultObj.Add(singleResult._extraLoad);
+                    } else
+                    if (singleResult.Success) resultSuccess = true;
+                }
+                result = new GenericResponse(resultObj, resultMessage);
+            }
+
             //Log.Information($"FormAddOrUpdate done");
             if (!result.Success)
                 return BadRequest(result); //.Message);
@@ -457,6 +551,10 @@ namespace BecaWebService.Controllers
 
     }
 
+    public class dataFormPostParameters
+    {
+        public List<dataFormPostParameter> RequestList { get; set; }
+    }
     public class dataFormPostParameter
     {
         public string? Form { get; set; }
@@ -468,6 +566,8 @@ namespace BecaWebService.Controllers
         public bool? force { get; set; }
         public JObject? newData { get; set; }
         public JObject? originalData { get; set; }
+        public JArray? newListData { get; set; }
+        public JArray? originalListData { get; set; }
         public bool lowerCase { get; set; }
     }
 

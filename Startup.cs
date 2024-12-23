@@ -38,6 +38,7 @@ namespace BecaWebService
             services.ConfigureMyCache();
             //services.ConfigureRepositoryWrapper();
             services.ConfigureDI();
+            services.ConfigureDICustom();
             services.AddControllers();
             services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
         }

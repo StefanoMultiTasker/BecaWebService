@@ -352,6 +352,11 @@ namespace BecaWebService.Mappings
                             src => src.BecaViewChildren
                             )
                         )
+                .ForPath(dest => dest.ViewDefinition.DetailComponent,
+                        opts => opts.MapFrom(
+                            src => src.DetailComponent
+                            )
+                        )
                 .ForPath(dest => dest.ViewDefinition.AddRecord,
                         opts => opts.MapFrom(
                             src => src.AddRecord

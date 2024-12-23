@@ -2,8 +2,10 @@
 using BecaWebService.Models.Communications;
 using BecaWebService.Models.Users;
 using BecaWebService.Services;
+using Contracts;
 using Entities.Models;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace BecaWebService.Controllers
 {
@@ -14,11 +16,13 @@ namespace BecaWebService.Controllers
     {
         private IUserService _userService;
         private IHomePageService _homePageService;
+        private readonly ILoggerManager _logger;
 
-        public UsersController(IUserService userService, IHomePageService homePageService)
+        public UsersController(IUserService userService, IHomePageService homePageService, ILoggerManager logger)
         {
             _userService = userService;
             _homePageService = homePageService;
+            _logger = logger;
         }
 
         [AllowAnonymous]
@@ -87,6 +91,7 @@ namespace BecaWebService.Controllers
         [HttpGet("Menu/{id}")]
         public IActionResult GetMenu(int id)
         {
+            _logger.LogInfo($"get menu {id}");
             var menu = _userService.GetMenuByUser(id);
             return Ok(menu);
         }
@@ -166,12 +171,14 @@ namespace BecaWebService.Controllers
         [HttpPost("requestResetPassword")]
         public async Task<IActionResult> requestResetPassword(UserResetRequest req)
         {
+            _logger.LogDebug($"requestResetPassword");
             var result = await _userService.RequestResetPassword(req);
+            _logger.LogDebug($"res: {result.Message}, {result.Success.ToString()}");
 
-            if (result.Success == false)
+            if (result.Success == false) 
                 return BadRequest(result.Message);
 
-            return Ok();
+            return Ok(); // result.Message == "" ? "richiesta presa in carico dal sistema": result.Message);
         }
 
         [AllowAnonymous]
@@ -180,10 +187,9 @@ namespace BecaWebService.Controllers
         {
             var result = await _userService.ResetPassword(token);
 
-            if (result.Success == false)
-                return Redirect(result.Message);
-
-            return Redirect(result.Message);
+            //if (result.Success == false)
+            //    return Redirect(result.Message);
+            return Ok(new { RedirectTo = result.Message }); // URL della landing page
         }
 
         // helper methods

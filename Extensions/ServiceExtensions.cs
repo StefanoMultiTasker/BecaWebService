@@ -1,7 +1,9 @@
 ﻿using BecaWebService.Authorization;
 using BecaWebService.ExtensionsLib;
 using BecaWebService.Services;
+using BecaWebService.Services.Custom;
 using Contracts;
+using Contracts.Custom;
 using Entities;
 using Entities.Contexts;
 using LoggerService;
@@ -94,6 +96,38 @@ namespace BecaWebService.Extensions
 
             services.AddScoped<IHomePageRepository, HomePageRepository>();
             services.AddScoped<IHomePageService, HomePageService>();
+
+            //services.AddScoped<IMiscService, MiscService>();
+
+            //services.ConfigureDICustom();
+        }
+
+        public static void ConfigureDICustom(this IServiceCollection services)
+        {
+            //var assembly = typeof(MiscService).Assembly;
+
+            //var subServiceTypes = assembly.GetTypes()
+            //    .Where(t => t.IsClass && !t.IsAbstract && (t.Namespace ?? "").Contains("Custom"))
+            //    .Select(t => new
+            //    {
+            //        Interface = t.GetInterfaces()
+            //            .FirstOrDefault(i => i.Namespace != null && i.Namespace.Contains("Custom")), // Filtra per namespace
+            //        Implementation = t
+            //    })
+            //    .Where(x => x.Interface != null); // Filtra solo classi che implementano un'interfaccia
+
+            //foreach (var subService in subServiceTypes)
+            //{
+            //    services.AddScoped(subService.Interface, subService.Implementation);
+            //}
+            services.AddScoped<ISharedService, SharedService>();
+            services.AddScoped<IDocumentiService, DocumentiService>();
+            services.AddScoped<ILavorService, LavorService>();
+            services.AddScoped<IPmsService, PmsService>();
+            services.AddScoped<IPresenzeService, PresenzeService>();
+            services.AddScoped<ISavinoService, SavinoService>();
+            services.AddScoped<IMiscService, MiscService>();
+            //services.AddScoped<IMiscServiceBase>(provider => (IMiscServiceBase)provider.GetRequiredService<IMiscService>());
         }
 
         public static void ConfigureJSON(this IServiceCollection services)

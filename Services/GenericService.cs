@@ -100,6 +100,54 @@ namespace BecaWebService.Services
             return obj;
         }
 
+        public List<T> CreateObjectsFromJArray<T>(string Form, JArray jsonRecord, bool view) where T : class, new() =>
+            this.CreateObjectsFromJArray<T>(Form, jsonRecord, view, false);
+
+        public List<T> CreateObjectsFromJArray<T>(string Form, JArray jsonRecords, bool view, bool partial) where T : class, new()
+        {
+            var objects = new List<T>();
+
+            foreach (JObject jsonRecord in jsonRecords)
+            {
+                var obj = _genericRepository.getFormObject<T>(Form, view,
+                    (partial ? jsonRecord.Properties().Select(p => p.Name.ToLower()).ToList() : new List<string>()));
+
+                foreach (JProperty jproperty in jsonRecord.Properties())
+                {
+                    foreach (PropertyInfo property in obj.GetType().GetProperties())
+                    {
+                        if (jproperty.Name.ToLower() == property.Name.ToLower())
+                        {
+                            if (property.PropertyType.FullName.ToLower().Contains("date"))
+                            {
+                                if (jsonRecord[jproperty.Name].Type.ToString() == "Null")
+                                {
+                                    obj.SetPropertyValue(property.Name, null);
+                                }
+                                else
+                                {
+                                    obj.SetPropertyValue(
+                                        property.Name,
+                                        DateTimeOffset.Parse((string)jsonRecord[jproperty.Name]).UtcDateTime);
+                                }
+                            }
+                            else
+                            {
+                                if (!jsonRecord[jproperty.Name].IsNullOrEmpty())
+                                {
+                                    obj.SetPropertyValue(property.Name, jsonRecord[jproperty.Name]);
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+                objects.Add(obj);
+            }
+            return objects;
+        }
+
+
         public object CreateObjectFromJSON<T>(string jsonRecord) where T : class, new()
         {
             return _genericRepository.CreateObjectFromJSON<object>(jsonRecord);

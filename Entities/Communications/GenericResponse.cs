@@ -22,11 +22,14 @@
         public GenericResponse(object ExtraLoad) : this(true, string.Empty, true)
         { _extraLoad = ExtraLoad; }
 
-        public GenericResponse(List<object> ExtraLoads) : this(true, string.Empty, true)
-        { _extraLoads = ExtraLoads; }
+        public GenericResponse(IEnumerable<object> ExtraLoads) : this(true, string.Empty, true)
+        { _extraLoads = ExtraLoads.ToList(); }
 
         public GenericResponse(object ExtraLoad, string message) : this(true, message, true)
         { _extraLoad = ExtraLoad; }
+
+        public GenericResponse(IEnumerable<object> ExtraLoads, string message) : this(true, message, true)
+        { _extraLoads = ExtraLoads.ToList(); }
 
         /// <summary>
         /// Creates am error response.
