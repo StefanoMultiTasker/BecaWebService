@@ -59,22 +59,34 @@ namespace Entities.Contexts
         {
             using (var command = db.Database.GetDbConnection().CreateCommand())
             {
-                var rawSqlCommand = db.Database
-                     .GetService<IRawSqlCommandBuilder>()
-                     .Build(query, parameters);
+                //var rawSqlCommand = db.Database
+                //     .GetService<IRawSqlCommandBuilder>()
+                //     .Build(query, parameters);
 
-                command.CommandText = query;
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    query = query.Replace($"{{{i}}}", $"@p{i}");
+                }
+                command.CommandText = $"{query}";
                 command.CommandType = CommandType.Text;
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    var parameter = command.CreateParameter();
+                    parameter.ParameterName = $"@p{i}"; // Assegna un nome unico al parametro
+                    parameter.Value = parameters[i] ?? DBNull.Value; // Usa DBNull.Value per i valori nulli
+                    command.Parameters.Add(parameter);
+                }
 
                 db.Database.OpenConnection();
-                var paramObject = new RelationalCommandParameterObject(db.Database.GetService<IRelationalConnection>(), rawSqlCommand.ParameterValues, null, db, null);
+                //var paramObject = new RelationalCommandParameterObject(db.Database.GetService<IRelationalConnection>(), rawSqlCommand.ParameterValues, null, db, null);
 
                 //using (var reader = command.ExecuteReader())
-                using (var reader = rawSqlCommand
-                    .RelationalCommand
-                    .ExecuteReader(paramObject)
-                    .DbDataReader
-                    )
+                //using (var reader = rawSqlCommand
+                //    .RelationalCommand
+                //    .ExecuteReader(paramObject)
+                //    .DbDataReader
+                //    )
+                using (var reader = command.ExecuteReader())
                 {
                     var lst = new List<T>();
                     var lstColumns = new T().GetType().GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).ToList();
@@ -131,24 +143,34 @@ namespace Entities.Contexts
 
         public static object GetQueryDef<T>(this DbDatiContext db, string formName, string query, List<string> fields, params object[] parameters) where T : class, new()
         {
+            // Sostituisci i parametri null con DBNull.Value
+            var sanitizedParameters = parameters.Select(p => p ?? DBNull.Value).ToArray();
             using (var command = db.Database.GetDbConnection().CreateCommand())
             {
-                var rawSqlCommand = db.Database
-                     .GetService<IRawSqlCommandBuilder>()
-                     .Build(query, parameters);
+                //var rawSqlCommand = db.Database
+                //     .GetService<IRawSqlCommandBuilder>()
+                //     .Build(query, sanitizedParameters);
 
-                command.CommandText = query;
+                command.CommandText = $"{query}";
                 command.CommandType = CommandType.Text;
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    var parameter = command.CreateParameter();
+                    parameter.ParameterName = $"@p{i}"; // Assegna un nome unico al parametro
+                    parameter.Value = parameters[i] ?? DBNull.Value; // Usa DBNull.Value per i valori nulli
+                    command.Parameters.Add(parameter);
+                }
 
                 db.Database.OpenConnection();
-                var paramObject = new RelationalCommandParameterObject(db.Database.GetService<IRelationalConnection>(), rawSqlCommand.ParameterValues, null, db, null);
+                //var paramObject = new RelationalCommandParameterObject(db.Database.GetService<IRelationalConnection>(), rawSqlCommand.ParameterValues, null, db, null);
 
                 //using (var reader = command.ExecuteReader())
-                using (var reader = rawSqlCommand
-                    .RelationalCommand
-                    .ExecuteReader(paramObject)
-                    .DbDataReader
-                    )
+                //using (var reader = rawSqlCommand
+                //    .RelationalCommand
+                //    .ExecuteReader(paramObject)
+                //    .DbDataReader
+                //    )
+                using (var reader = command.ExecuteReader())
                 {
                     var lstColumns = new T().GetType().GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).ToList();
                     if (lstColumns.Count() == 0)

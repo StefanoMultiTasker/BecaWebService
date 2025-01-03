@@ -41,10 +41,11 @@ namespace BecaWebService.ExtensionsLib
         {
             string format = "ddd, dd MMM yyyy HH:mm:ss GMT";
             string dateString = source.ToString();
-            DateTime dateTime;
-            if (DateTime.TryParseExact(dateString, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out dateTime))
+            DateTimeOffset dateTimeOffset;
+
+            if (DateTimeOffset.TryParseExact(dateString, format, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out dateTimeOffset))
             {
-                return dateTime;
+                return dateTimeOffset.UtcDateTime; // Ritorna l'ora in UTC senza conversioni
             }
             else
             {

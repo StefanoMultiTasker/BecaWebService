@@ -823,10 +823,11 @@ namespace Repository
             {
                 //List<BecaParameter> parameters = new List<BecaParameter>();
                 string sql = ddl;
-                string sqlChk = "Select * From " + ddl.Substring(ddl.ToUpper().IndexOf("FROM") + 5);
+                string sqlChk = $"Select * From " + ddl.Substring(ddl.ToUpper().IndexOf("FROM") + 5);
                 if (sqlChk.ToUpper().Contains("WHERE")) sqlChk = sqlChk.Substring(0, sqlChk.ToUpper().IndexOf("WHERE") - 1);
                 if (sqlChk.ToUpper().Contains("ORDER")) sqlChk = sqlChk.Substring(0, sqlChk.ToUpper().IndexOf("ORDER") - 1);
                 if (sqlChk.ToUpper().Contains("GROUP")) sqlChk = sqlChk.Substring(0, sqlChk.ToUpper().IndexOf("GROUP") - 1);
+                //sqlChk += " WITH (NOLOCK)";
 
                 List<object> pars = new List<object>();
                 int numP = 0;
