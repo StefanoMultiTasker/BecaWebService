@@ -324,6 +324,25 @@ namespace BecaWebService.Services.Custom
             }
         }
 
+        public async Task<GenericResponse> InvalidaFasi(pmsInvalidaFasi fasi)
+        {
+            try {
+                pmsInvalidaFasiJson pmsInvalidaFasiJson = new pmsInvalidaFasiJson()
+                {
+                    data = new List<pmsInvalidaFasi> { fasi }
+                };
+                var pmsRes = _miscServiceBase.CallWS_JSON_mode<pmsPostResponse>("https://api.pms.attalgroup.it/pms/processes/update-user-processes", "", Method.Post, pmsInvalidaFasiJson);
+
+                BecaParameters parameters = new BecaParameters();
+                parameters.Add("user_process_id", fasi.user_process_id);
+                parameters.Add("user_process_status", "Reinviato all'utente");
+                int res2 = await _gRepository.ExecuteProcedure("MainDB", "spPMS_Processo_aggiorna_stato", parameters.parameters);
+          
+                return new GenericResponse(true);
+            }
+            catch (Exception ex) { return ex.Message.toResponse(); }
+        }
+
 
         private async Task<int> SaveError(pmsJson pmsJson, string err, StreamWriter sw)
         {

@@ -88,6 +88,7 @@ namespace BecaWebService.Services.Custom
         #region "PMS"
         public async Task<bool> pms(pmsJson pmsJson, string json, StreamWriter sw) => await pmsService.pms(pmsJson, json, sw);
         public async Task<GenericResponse> AvviaProcesso(pmsAvviaProcesso avvio) => await pmsService.AvviaProcesso(avvio);
+        public async Task<GenericResponse> InvalidaFasi(pmsInvalidaFasi fasi) => await pmsService.InvalidaFasi(fasi);
 
         #endregion
 

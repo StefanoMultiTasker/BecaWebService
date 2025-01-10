@@ -216,6 +216,17 @@ namespace BecaWebService.Controllers
             return Ok(result);
         }
 
+        [HttpPost("pmsInvalida")]
+        public async Task<IActionResult> pmsInvalida([FromBody] pmsInvalidaFasi data)
+        {
+            GenericResponse result = await _service.InvalidaFasi(data);
+
+            if (!result.Success)
+                return BadRequest(result.Message);
+
+            return Ok(result);
+        }
+
         [HttpPost("PreparaEbitemp")]
         public IActionResult PreparaDocs([FromBody] PreparaEbitemp data)
         {

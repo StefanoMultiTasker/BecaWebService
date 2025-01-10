@@ -66,4 +66,21 @@ namespace Entities.Models.Custom
         //public string TipoAnagrafica { get; set; }
         public dynamic data { get; set; }
     }
+
+    public class pmsInvalidaFasi
+    {
+        public int user_process_id { get; set; }
+        public List<pmsInvalidaFase> user_steps { get; set; }
+    }
+
+    public class pmsInvalidaFase
+    {
+        public int user_step_id { get; set; }
+        public string feedback { get; set; }
+    }
+
+    public class pmsInvalidaFasiJson
+    {
+        public List<pmsInvalidaFasi> data { get; set; }
+    }
 }
