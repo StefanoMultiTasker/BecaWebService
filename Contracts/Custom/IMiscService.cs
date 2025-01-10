@@ -17,6 +17,7 @@ namespace Contracts.Custom
     public interface IPmsService
     {
         Task<bool> pms(pmsJson pmsJson, string json, StreamWriter sw);
+        Task<GenericResponse> AvviaProcesso(pmsAvviaProcesso avvio);
     }
     public interface IPresenzeService
     {

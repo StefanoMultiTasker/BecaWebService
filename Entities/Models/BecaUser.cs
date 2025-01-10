@@ -93,7 +93,13 @@ namespace Entities.Models
         public string? Color3 { get; set; }
         public string? Color4 { get; set; }
         public string? Color5 { get; set; }
+        public string? mail1 { get; set; }
+        public string? mail2 { get; set; }
+        public string? mail3 { get; set; }
+        public string? mail4 { get; set; }
+        public string? mail5 { get; set; }
         public string? MainFolder { get; set; }
+        public string? urlDomain { get; set; }
         public bool hasBusinessUnit { get; set; }
         [JsonIgnore] public string senderEmail { get; set; }
         [JsonIgnore] public int senderSMTP { get; set; }

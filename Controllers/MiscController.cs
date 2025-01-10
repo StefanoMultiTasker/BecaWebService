@@ -205,6 +205,17 @@ namespace BecaWebService.Controllers
             return Ok();
         }
 
+        [HttpPost("pmsAvvia")]
+        public async Task<IActionResult> pmsAvvia([FromBody] pmsAvviaProcesso data)
+        {
+            GenericResponse result = await _service.AvviaProcesso(data);
+
+            if (!result.Success)
+                return BadRequest(result.Message);
+
+            return Ok(result);
+        }
+
         [HttpPost("PreparaEbitemp")]
         public IActionResult PreparaDocs([FromBody] PreparaEbitemp data)
         {

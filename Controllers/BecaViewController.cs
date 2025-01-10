@@ -1,5 +1,6 @@
 ﻿//using System.Web.Http;
 using AutoMapper;
+using BecaWebService.Authorization;
 using Contracts;
 using Entities.DataTransferObjects;
 using Entities.Models;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BecaWebService.Controllers
 {
+    [Authorize]
     [Route("[controller]")]
     [ApiController]
     public class BecaViewController : ControllerBase

@@ -172,7 +172,12 @@ namespace BecaWebService.Controllers
         public async Task<IActionResult> requestResetPassword(UserResetRequest req)
         {
             _logger.LogDebug($"requestResetPassword");
-            var result = await _userService.RequestResetPassword(req);
+
+            // Estrarre il dominio
+            var domain = HttpContext.Request.Host.Host;
+            _logger.LogDebug($"Request received from domain: {domain}");
+
+            var result = await _userService.RequestResetPassword(req, domain);
             _logger.LogDebug($"res: {result.Message}, {result.Success.ToString()}");
 
             if (result.Success == false) 

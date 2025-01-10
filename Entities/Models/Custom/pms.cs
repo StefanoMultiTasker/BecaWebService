@@ -43,10 +43,27 @@ namespace Entities.Models.Custom
     }
     public class pmsPostResponseData
     {
-        public int external_user_id { get; set; }
+        public int? external_user_id { get; set; }
         public int user_process_id { get; set; }
 
-        public List<int> user_step_ids { get; set; }
-        public string link { get; set; }
+        public List<int>? user_step_ids { get; set; }
+        public string? link { get; set; }
+        public pmsPostResponseDataError? errors { get; set; }
+    }
+
+    public class pmsPostResponseDataError
+    {
+        public object missing_keys { get; set; }
+    }
+
+    public class pmsAvviaProcesso
+    {
+        public int idAnagAttivita { get; set; }
+        public string apl { get; set; }
+        public string cdff { get; set; }
+        public string email { get; set; }
+        public string? CodiceAnagrafica { get; set; }
+        //public string TipoAnagrafica { get; set; }
+        public dynamic data { get; set; }
     }
 }

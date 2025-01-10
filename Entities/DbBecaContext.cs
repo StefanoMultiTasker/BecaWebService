@@ -174,6 +174,17 @@ namespace Entities.Contexts
                     a.Property<string>("Logo5url")
                         .HasColumnType("nvarchar(max)");
 
+                    a.Property<string>("mail1")
+                        .HasColumnType("nvarchar(200)");
+                    a.Property<string>("mail2")
+                        .HasColumnType("nvarchar(200)");
+                    a.Property<string>("mail3")
+                        .HasColumnType("nvarchar(200)");
+                    a.Property<string>("mail4")
+                        .HasColumnType("nvarchar(200)");
+                    a.Property<string>("mail5")
+                        .HasColumnType("nvarchar(200)");
+
                     a.Property<string>("Color1")
                         .HasColumnType("nvarchar(50)");
                     a.Property<string>("Color2")
@@ -186,6 +197,8 @@ namespace Entities.Contexts
                         .HasColumnType("nvarchar(50)");
 
                     a.Property<string>("MainFolder")
+                        .HasColumnType("nvarchar(50)");
+                    a.Property<string>("urlDomain")
                         .HasColumnType("nvarchar(50)");
 
                     a.HasKey("idUtente", "idCompany");

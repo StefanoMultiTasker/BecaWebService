@@ -35,7 +35,7 @@ namespace BecaWebService.Services
         List<UserMenuItem> GetMenuAll();
         Task<GenericResponse> AddOrUpdateUserAsync(BecaUserDTO userDto);
         Task<GenericResponse> CreatePassword(int idUtente);
-        Task<GenericResponse> RequestResetPassword(UserResetRequest req);
+        Task<GenericResponse> RequestResetPassword(UserResetRequest req, string domain);
         Task<GenericResponse> ResetPassword(string token);
         Task<GenericResponse> GenerateUserName(BecaUserDTO userDto);
         Task<GenericResponse> changePassword(string pwd);
@@ -802,7 +802,7 @@ namespace BecaWebService.Services
             return await UserSendCrentials(idUtente, pwd);
         }
 
-        public async Task<GenericResponse> RequestResetPassword(UserResetRequest req)
+        public async Task<GenericResponse> RequestResetPassword(UserResetRequest req, string domain)
         {
             string pwd = GenerateRandomPassword(25,false);
             try
@@ -818,6 +818,12 @@ namespace BecaWebService.Services
                 {
                     List<BecaUser> users = _context.BecaUsers.Where(u => u.email == req.email).ToList();
                     if (users.Count == 1) user = users[0];
+                    else
+                    {
+                        //users = users.Where(u => u.Companies.Count(c=> domain.ToLower().Contains((c.urlDomain ?? "mybeca").ToLower()))>0).ToList();
+                        users = users.Where(u => u.Companies.Count(c=> req.apl!.ToLower().Contains((c.MainFolder ?? "mybeca").ToLower()))>0).ToList();
+                        if (users.Count == 1) user = users[0];
+                    }
                 }
 
                 if (user == null) {
@@ -844,7 +850,11 @@ namespace BecaWebService.Services
                     _context.UsersReset.Add(new UserReset { idUtente = user.idUtente, token = pwd, dtScadenza=DateTime.Now.AddMinutes(resetValidity) });
                 }
                 await _context.SaveChangesAsync();
-                await UserSendReset(user.idUtente, pwd);
+
+                //UserCompany? cpy = user.Companies.FirstOrDefault(c => domain.ToLower().Contains((c.urlDomain ?? "mybeca").ToLower())) ?? user.Companies.FirstOrDefault(c=>c.isDefault==true);
+                UserCompany? cpy = user.Companies.FirstOrDefault(c => req.apl!.ToLower().Contains((c.MainFolder ?? "beca").ToLower())) ?? user.Companies.FirstOrDefault(c=>c.isDefault==true);
+                string sender = cpy == null ? "credenziali.bw@becaweb.it" : cpy.mail2 ?? cpy.senderEmail;
+                await UserSendReset(user.idUtente, pwd, sender);
                 return new GenericResponse(true);
             }
             catch (Exception ex)
@@ -952,7 +962,7 @@ namespace BecaWebService.Services
             }
         }
 
-        private async Task<GenericResponse> UserSendReset(int idUtente, string pwd)
+        private async Task<GenericResponse> UserSendReset(int idUtente, string pwd, string sender)
         {
             try
             {
@@ -971,7 +981,7 @@ namespace BecaWebService.Services
                     DeliveryMethod = SmtpDeliveryMethod.Network,
                     Credentials = new NetworkCredential("gruppoedp@abeaform.it", "ddHu39eX")
                 };
-                string owner = cpy.senderEmail;
+                string owner = sender;
                 //owner = "postmaster@abeaform.it";
                 System.Net.Mail.MailMessage objMail = new System.Net.Mail.MailMessage();
                 objMail.Sender = new MailAddress(owner, owner);
@@ -1008,7 +1018,7 @@ namespace BecaWebService.Services
                     Credentials = new NetworkCredential("gruppoedp@abeaform.it", "ddHu39eX")
                 };
                 string owner = "credenziali.bw@attalgroup.it";
-                string dest = "r.spina@abeaform.it"; // $"lavoratori.bw@{req.apl}.it";
+                string dest = "credenziali@attalgroup.it";
                 //owner = "postmaster@abeaform.it";
                 System.Net.Mail.MailMessage objMail = new System.Net.Mail.MailMessage();
                 objMail.Sender = new MailAddress(owner, owner);

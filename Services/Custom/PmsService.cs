@@ -1,4 +1,6 @@
-﻿using BecaWebService.ExtensionsLib;
+﻿using Azure.Core.Serialization;
+using BecaWebService.ExtensionsLib;
+using BecaWebService.Helpers;
 using BecaWebService.Models.Communications;
 using Contracts;
 using Contracts.Custom;
@@ -6,8 +8,12 @@ using Entities.Models;
 using Entities.Models.Custom;
 using ExtensionsLib;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using RestSharp;
+using System;
+using System.Diagnostics;
 using System.Dynamic;
+using static iText.IO.Image.Jpeg2000ImageData;
 
 namespace BecaWebService.Services.Custom
 {
@@ -15,8 +21,8 @@ namespace BecaWebService.Services.Custom
     {
         private readonly ISharedService _miscServiceBase;
         private readonly IGenericRepository _gRepository;
-        private readonly ILogger<MiscService> _logger;
-        public PmsService(ISharedService miscServiceBase, IGenericRepository genRepository, ILogger<MiscService> logger)
+        private readonly ILoggerManager _logger;
+        public PmsService(ISharedService miscServiceBase, IGenericRepository genRepository, ILoggerManager logger)
         {
             _miscServiceBase = miscServiceBase;
             _gRepository = genRepository;
@@ -178,6 +184,146 @@ namespace BecaWebService.Services.Custom
                 return false;
             }
         }
+
+        public async Task<GenericResponse> AvviaProcesso(pmsAvviaProcesso avvio)
+        {
+            try
+            {
+                _logger.LogDebug($"Avvio l'attività per il soggetto {avvio.email}");
+                _logger.LogDebug("Eseguo spPMS_Avvia_Attivita");
+
+                BecaParameters parameters = new BecaParameters();
+                parameters = new BecaParameters();
+                parameters.Add("idAnagAttivita", avvio.idAnagAttivita);
+                parameters.Add("apl", avvio.apl);
+                parameters.Add("cdff", avvio.cdff);
+                parameters.Add("pwdi", _gRepository.GetLoggedUser().idUtenteLoc(_gRepository.GetActiveCompany().idCompany));
+                parameters.Add("user_email", avvio.email);
+                parameters.Add("communication_link", true);
+                parameters.Add("communication_email", true);
+                parameters.Add("codiceanagrafica", null);
+                parameters.Add("tipoanagrafica", "L");
+                List<object> res1 =  _gRepository.GetDataBySP<object>("MainDB", "spPMS_Avvia_Attivita", parameters.parameters);
+                if (res1.Count == 0) {
+                    return "spPMS_Avvia_Attivita ha dato esito negativo".toResponse();
+                }
+                int idAttivita = int.Parse(res1[0].GetPropertyString("idAttivita"));
+
+                _logger.LogDebug("Avvio PMS");
+
+                List<object> apl = _gRepository.GetDataBySQL("DbDati", "Select * From ANSDA", null);
+                if (apl.Count == 0) { return "Non trovo i dati dell'APL".toResponse(); }
+
+                parameters = new BecaParameters();
+                parameters.Add("cdff", avvio.cdff);
+                List<object> filiali = _gRepository.GetDataBySQL("DbDati", "Select * From ANTEX", parameters.parameters);
+                if (filiali.Count == 0) { return "Non trovo i dati della filiale".toResponse(); }
+
+                dynamic data = new ExpandoObject();
+
+                data.lavoratore_identificativo = avvio.data.lavoratore_identificativo;
+                data.cell_provvisorio = avvio.data.cell_provvisorio;
+                data.cdff = avvio.cdff;
+                data.comune_filiale = filiali[0].GetPropertyString("COFL");
+                data.aplP = apl[0].GetPropertyString("RSSL");
+                data.piva_apl = apl[0].GetPropertyString("PISL");
+                data.comune_sede_legale = apl[0].GetPropertyString("COSL");
+                data.indirizzo_sede_legale = apl[0].GetPropertyString("INSL");
+                data.data_odierna = DateTime.Today.ToString("dd/MM/yyyy");
+                data.anno_corrente = DateTime.Today.ToString("yyyy");
+
+                pmsPostData pmsPostData = new pmsPostData()
+                {
+                    external_user_id = idAttivita,
+                    email = avvio.email,
+                    apl = avvio.apl,
+                    communication = new List<string>() { "link", "email" },
+                    content = data
+                };
+
+                pmsPost body = new pmsPost()
+                {
+                    template_process_id = 5,
+                    data = new List<pmsPostData> { pmsPostData }
+                };
+
+                string jsonbody = JsonConvert.SerializeObject(body);
+                _logger.LogDebug($"{jsonbody}");
+
+                pmsPostResponse pmsRes = _miscServiceBase.CallWS_JSON_mode<pmsPostResponse>("https://api.pms.attalgroup.it/pms/processes", "", Method.Post, body);
+
+                string pmsResJson = JsonConvert.SerializeObject(pmsRes);
+                _logger.LogDebug($"Risposta: {pmsResJson}");
+
+                if (pmsRes != null)
+                {
+                    if (pmsRes.response == null || pmsRes.response.Count == 0)
+                    {
+                        _logger.LogError($"La risposta è vuota");
+                        return "La risposta è PMS vuota".toResponse();
+                    }
+                    if (pmsRes.response[0].errors != null)
+                    {
+                        string jsonError = JsonConvert.SerializeObject(pmsRes.response[0].errors);
+                        _logger.LogError($"La risposta è un errore: {jsonError}");
+                        return $"La risposta è un errore: {jsonError}".toResponse();
+                    }
+                    else
+                    {
+                        pmsPostResponseData pmsResData = pmsRes.response[0];
+
+                        //var rowDictionary = data as JObject;
+                        //string sParamas = "";
+
+                        //if (rowDictionary != null)
+                        //{
+                        //    // Seleziona le proprietà a partire dall'ottava in avanti
+                        //    var columnValues = rowDictionary
+                        //                        .Properties().Where(p => p.Name.ToLower() != "email") // Ottieni le proprietà dell'oggetto JObject
+                        //                                      //.Skip(7) // Salta le prime 7 proprietà
+                        //                        .Select(prop => @"""" + (prop.Value?.ToString() ?? "NULL") + @""""); // Trasforma i valori in stringa, usando "NULL" se il valore è null
+
+                        //    sParamas = "[" + string.Join(", ", columnValues) + "]";
+
+                        //    // Log o utilizzo del risultato
+                        //    Console.WriteLine(sParamas);
+                        //}
+                        var rowDictionary = (IDictionary<string, object>)data;
+
+                        // Seleziona le colonne partendo dall'ottava in avanti
+                        var columnValues = rowDictionary
+                                            .Where(p => p.Key.ToLower() != "email")
+                                            .Select(kvp => @"""" + (kvp.Value?.ToString() ?? "NULL") + @"""");  // Trasforma i valori in stringa, usando "NULL" se il valore è null
+
+                        string sParamas = "[" + string.Join(", ", columnValues) + "]";
+
+                        _logger.LogDebug("Eseguo spPMS_Avvia_Processo2");
+
+                        parameters = new BecaParameters();
+                        parameters.Add("idAttivita", idAttivita);
+                        parameters.Add("template_process_id", 5);
+                        parameters.Add("user_process_id", pmsResData.user_process_id);
+                        parameters.Add("user_steps_id", "[" + string.Join(",", (pmsResData.user_step_ids ?? new List<int>())) + "]");
+                        parameters.Add("link", pmsResData.link);
+                        parameters.Add("parametri_processo", sParamas);
+                        parameters.Add("PWDI", _gRepository.GetLoggedUser().idUtenteLoc(_gRepository.GetActiveCompany().idCompany));
+                        int res2 = await _gRepository.ExecuteProcedure("MainDB", "spPMS_Avvia_Processo2", parameters.parameters);
+                    }
+                }
+                else
+                {
+                    _logger.LogDebug($"La risposta è nulla");
+                    return "La risposta è PMS nulla".toResponse();
+                }
+                return true.toResponse();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug($"Non ha funzionato: {ex.Message}");
+                return ex.Message.toResponse();
+            }
+        }
+
 
         private async Task<int> SaveError(pmsJson pmsJson, string err, StreamWriter sw)
         {
