@@ -67,6 +67,12 @@ namespace Entities.Models.Custom
         public dynamic data { get; set; }
     }
 
+    public class pmsValidaFase
+    {
+        public int idAttivita { get; set; }
+        public int user_process_id { get; set; }
+    }
+
     public class pmsInvalidaFasi
     {
         public int user_process_id { get; set; }

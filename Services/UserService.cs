@@ -768,6 +768,7 @@ namespace BecaWebService.Services
                 if (user == null) return new GenericResponse("Utente non trovato");
 
                 user.Pwd = EncryptedString(pwd);
+                user.isPwdChanged = true;
 
                 _context.Entry(user).State = EntityState.Modified;
 

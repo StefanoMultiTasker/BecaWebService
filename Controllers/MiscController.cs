@@ -216,6 +216,17 @@ namespace BecaWebService.Controllers
             return Ok(result);
         }
 
+        [HttpPost("pmsValida")]
+        public async Task<IActionResult> pmsValida([FromBody] pmsValidaFase data)
+        {
+            GenericResponse result = await _service.ValidaFase(data.idAttivita, data.user_process_id);
+
+            if (!result.Success)
+                return BadRequest(result.Message);
+
+            return Ok(result);
+        }
+
         [HttpPost("pmsInvalida")]
         public async Task<IActionResult> pmsInvalida([FromBody] pmsInvalidaFasi data)
         {
