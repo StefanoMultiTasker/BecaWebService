@@ -175,4 +175,22 @@ namespace Entities.Models
         public string? apl { get; set; }
 
     }
+
+    public class UserLogin
+    {
+        [Key]
+        public int idLogin { get; set; }
+        public int idUtente { get; set; }
+        public DateTime dtLogin { get; set; }
+        public string IP { get; set; }
+        public string? Citta { get; set; }
+        public string? PV { get; set; }
+        public string? Regione { get; set; }
+        public string? Nazione { get; set; }
+        public string? UserAgent { get; set; }
+        public string? Browser { get; set; }
+        public string? OS { get; set; }
+        public Int16? Mobile { get; set; }
+        public string? Device { get; set; }
+    }
 }

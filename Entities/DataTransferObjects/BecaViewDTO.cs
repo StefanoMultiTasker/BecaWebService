@@ -211,7 +211,7 @@ namespace Entities.DataTransferObjects
     {
         public string form { get; set; }
         public int subLevel { get; set; }
-        public string Caption { get; set; }
+        public string? Caption { get; set; }
         public List<string> KeyFields { get; set; }
         public bool LoadInGrid { get; set; }
         public bool LoadInDetails { get; set; }

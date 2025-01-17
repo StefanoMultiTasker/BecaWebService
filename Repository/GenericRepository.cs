@@ -275,7 +275,8 @@ namespace Repository
                 if ((form.SelectProcedureName ?? "") != "") return this.GetDataBySP<T>(form.TableNameDB, form.SelectProcedureName, parameters);
                 string upl = string.Join(", ", _context.BecaFormField
                     .Where(f => f.Form == Form && f.FieldType == "upload")
-                    .ToList().Select(n => "Null As [_" + n.Name.Trim() + "_upl_], Null As [_" + n.Name.Trim() + "_uplName_]"));
+                    .ToList().Select(n => "Null As [" + n.Name.Replace("upl","").Trim() + "upl], Null As [" + n.Name.Replace("upl", "").Trim() + "uplName]"));
+                    //.ToList().Select(n => "Null As [_" + n.Name.Trim() + "_upl_], Null As [_" + n.Name.Trim() + "_uplName_]"));
                 string sql = getFormSQL(form, view);
                 string sqlChk = sql;
                 string db = form.ViewName.isNullOrempty() ? form.TableNameDB : form.ViewNameDB;
@@ -429,6 +430,8 @@ namespace Repository
                         string parent = form.getMainSource(true); // (form.ViewName == null || form.ViewName.ToString() == "" ? form.TableName : form.ViewName);
                         string child = (childForm.ViewName == null || childForm.ViewName.ToString() == "" ? childForm.TableName : childForm.ViewName);
 
+                        db = childForm.ViewName.isNullOrempty() ? childForm.TableNameDB : childForm.ViewNameDB;
+
                         string sqlParent = sqlOrd == "" ? sql : sql.Replace(sqlOrd, "");
                         sql = "Select " +
                             string.Join(",", level.RelationColumn.Split(",").Select(n => parent + "." + n.Trim())) +
@@ -546,7 +549,8 @@ namespace Repository
         {
             string upl = noUpload ? "" : string.Join(", ", _context.BecaFormField
                 .Where(f => f.Form == form.Form && f.FieldType == "upload")
-                .ToList().Select(n => "'' As [_" + n.Name.Trim() + "_upl_], '' As [_" + n.Name.Trim() + "_uplname_]"));
+                .ToList().Select(n => "'' As [" + n.Name.Replace("upl","").Trim() + "upl], '' As [" + n.Name.Replace("upl", "").Trim() + "uplName]"));
+                //.ToList().Select(n => "'' As [_" + n.Name.Trim() + "_upl_], '' As [_" + n.Name.Trim() + "_uplname_]"));
             if (uplWithoutUnderscore) upl = upl.Replace("_", "");
             string sql = "Select *" +
                 (upl.Length > 0 ? ", " + upl + " " : " ") +
@@ -1251,11 +1255,15 @@ namespace Repository
                 List<BecaFormField> upl = _context.BecaFormField
                 .Where(f => f.Form == form.Form && f.FieldType == "upload")
                 .ToList();
-                foreach (BecaFormField field in upl.Where(f => record.HasPropertyValue($"_{f.Name}_upl_") && record.GetPropertyString($"_{f.Name}_upl_").ToString() != ""))
-                {
+                //foreach (BecaFormField field in upl.Where(f => record.HasPropertyValue($"_{f.Name}_upl_") && record.GetPropertyString($"_{f.Name}_upl_").ToString() != ""))
+                foreach (BecaFormField field in upl.Where(f => record.HasPropertyValue($"{f.Name.Replace("upl", "")}upl") && record.GetPropertyString($"{f.Name.Replace("upl", "")}upl").ToString() != ""))
+                    {
                     string res = await SaveFileByField(form, field, record);
                     if (res.Contains("ERR: ")) return res.Replace("ERR: ", "");
-                    record.SetPropertyValue(field.Name.leftExcept(3), res); //field.Parameters.Split("|").Last()
+                    if(field.Name.right(3)=="upl")
+                        record.SetPropertyValue(field.Name.leftExcept(3), res); //field.Parameters.Split("|").Last()
+                    else
+                        record.SetPropertyValue(field.Name, res); //field.Parameters.Split("|").Last()
                 }
             }
             catch (Exception ex)
@@ -1333,8 +1341,12 @@ namespace Repository
 
                 if (!Directory.Exists(physicalPath)) Directory.CreateDirectory(physicalPath);
 
-                string fileUploaded = record.GetPropertyValue($"_{field.Name}_upl_").ToString();
-                string fileUploadedName = record.GetPropertyValue($"_{field.Name}_uplname_").ToString();
+                string fileUploaded = record.GetPropertyValue($"{field.Name.Replace("upl", "")}upl").ToString();
+                //string fileUploaded = record.GetPropertyValue($"_{field.Name}_upl_").ToString();
+                //string fileUploaded = record.GetPropertyValue($"_{field.Name}_upl_").ToString();
+                string fileUploadedName = record.HasPropertyValue($"{field.Name.Replace("upl", "")}uplName") 
+                    ? record.GetPropertyValue($"{field.Name.Replace("upl", "")}uplName").ToString() 
+                    : record.HasPropertyValue($"{field.Name.Replace("upl", "")}") ? record.GetPropertyValue($"{field.Name}").ToString() : "";
 
                 if (fileName == "") fileName = fileUploadedName;
                 if (fileUploaded.Length > 0)

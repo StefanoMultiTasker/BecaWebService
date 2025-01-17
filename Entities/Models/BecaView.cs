@@ -354,7 +354,7 @@ namespace Entities.Models
         public string form { get; set; }
         public string childForm { get; set; }
         public int subLevel { get; set; }
-        public string childCaption { get; set; }
+        public string? childCaption { get; set; }
         public string PrimaryKey { get; set; }
         public bool LoadInGrid { get; set; }
         public bool LoadInDetails { get; set; }

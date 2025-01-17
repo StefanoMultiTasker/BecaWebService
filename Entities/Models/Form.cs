@@ -90,13 +90,24 @@
         }
     }
 
-    public class BecaFormLevels
+
+
+    public class BecaFormActions
+    {
+        public string Form { get; set; }
+        public Int16 PosizionePulsante { get; set; }
+        public string Caption { get; set; }
+        public string ProcedureName { get; set; }
+        public string Message { get; set; }
+    }
+
+        public class BecaFormLevels
     {
         public string Form { get; set; }
         public int SubLevel { get; set; }
         public int ParentLevel { get; set; }
         public string ChildForm { get; set; }
-        public string ChildCaption { get; set; }
+        public string? ChildCaption { get; set; }
         public string RelationName { get; set; }
         public string RelationColumn { get; set; }
         public bool LoadInGrid { get; set; }

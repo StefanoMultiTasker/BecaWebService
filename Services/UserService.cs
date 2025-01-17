@@ -5,14 +5,18 @@ using BecaWebService.Helpers;
 using BecaWebService.Models.Communications;
 using BecaWebService.Models.Users;
 using Contracts;
+using DeviceDetectorNET;
 using Entities;
 using Entities.Contexts;
 using Entities.Models;
 using ExtensionsLib;
+using iText.Commons.Actions.Contexts;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using RestSharp;
 using System.Net;
 using System.Net.Mail;
 using System.Runtime.InteropServices;
@@ -24,7 +28,7 @@ namespace BecaWebService.Services
 {
     public interface IUserService
     {
-        AuthenticateResponse Authenticate(AuthenticateRequest model, string ipAddress);
+        Task<AuthenticateResponse> Authenticate(AuthenticateRequest model, string ipAddress, IHeaderDictionary headers);
         AuthenticateResponse LoginById(int id, string ipAddress);
         AuthenticateResponse RefreshToken(string token, string ipAddress);
         void RevokeToken(string token, string ipAddress);
@@ -49,109 +53,121 @@ namespace BecaWebService.Services
         private IJwtUtils _jwtUtils;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly AppSettings _appSettings;
+        private readonly ILoggerManager _logger;
 
         const Int16 resetValidity = 30;
-        public UserService(IDependencies deps, DbBecaContext context, IJwtUtils jwtUtils, IOptions<AppSettings> appSettings, IHttpContextAccessor httpContextAccessor) //DbMemoryContext memoryContext,
+        public UserService(IDependencies deps, DbBecaContext context, IJwtUtils jwtUtils, IOptions<AppSettings> appSettings,
+            IHttpContextAccessor httpContextAccessor, ILoggerManager logger) //DbMemoryContext memoryContext,
         {
             _context = context;
             _memoryCache = deps.memoryCache;
             _jwtUtils = jwtUtils;
             _appSettings = appSettings.Value;
             this._httpContextAccessor = httpContextAccessor;
+            _logger = logger;
             //_memoryContext = memoryContext;
         }
 
-        public AuthenticateResponse Authenticate(AuthenticateRequest model, string ipAddress)
+        public async Task<AuthenticateResponse> Authenticate(AuthenticateRequest model, string ipAddress, IHeaderDictionary headers)
         {
-            var user = _context.BecaUsers.SingleOrDefault(x => x.UserName.ToLower() == model.Username.ToLower());
+            try
+            {
+                var user = _context.BecaUsers.SingleOrDefault(x => x.UserName.ToLower() == model.Username.ToLower());
 
-            if (user == null)
-            {
-                throw new AppException("Username non valida");
-            }
-            // validate
-            if (user.Pwd.ToLower() == "migrazione")
-            {
-                if (user.Companies.Count() == 0 || user.Companies.Count(c => c.idUtenteLoc != null) == 0)
+                if (user == null)
                 {
-                    throw new AppException("Utente migrato in modo errato");
+                    throw new AppException("Username non valida");
                 }
-                try
+                // validate
+                if (user.Pwd.ToLower() == "migrazione")
                 {
-                    string pwd = getLegacyPasswordByUser(user.Companies.First(c => c.idUtenteLoc != null));
-
-                    Simple3Des cry = new Simple3Des("BecaW3bC1phKey");
-                    string chkPwd = cry.DecryptData(pwd);
-                    if (chkPwd != model.Password)
+                    if (user.Companies.Count() == 0 || user.Companies.Count(c => c.idUtenteLoc != null) == 0)
                     {
-                        throw new AppException("Username o password non validi");
+                        throw new AppException("Utente migrato in modo errato");
                     }
+                    try
+                    {
+                        string pwd = getLegacyPasswordByUser(user.Companies.First(c => c.idUtenteLoc != null));
 
-                    user.Pwd = EncryptedString(chkPwd);
+                        Simple3Des cry = new Simple3Des("BecaW3bC1phKey");
+                        string chkPwd = cry.DecryptData(pwd);
+                        if (chkPwd != model.Password)
+                        {
+                            throw new AppException("Username o password non validi");
+                        }
 
-                    _context.Entry(user).State = EntityState.Modified;
+                        user.Pwd = EncryptedString(chkPwd);
+
+                        _context.Entry(user).State = EntityState.Modified;
+                    }
+                    catch (Exception ex) { throw new AppException(ex.Message); }
                 }
-                catch (Exception ex) { throw new AppException(ex.Message); }
+                else
+                {
+                    if (user == null || EncryptedString(model.Password) != user.Pwd)
+                        throw new AppException("Username o password non validi");
+                }
+
+                // authentication successful so generate jwt and refresh tokens
+                var jwtToken = _jwtUtils.GenerateJwtToken(user);
+                var refreshToken = _jwtUtils.GenerateRefreshToken(ipAddress);
+                user.RefreshTokens.Add(refreshToken);
+                bool saveLogin = await this.SaveLogin(user.idUtente, ipAddress, headers);
+                getFilialiByUser(ref user);
+
+                // remove old refresh tokens from user
+                removeOldRefreshTokens(user);
+
+                foreach (UserCompany company in user.Companies)
+                {
+                    company.LegacyToken = _jwtUtils.GenerateLegacyToken(user, company.idCompany);
+                }
+
+                // save changes to db
+                //_context.Update(user);
+                _context.SaveChanges();
+                //_context.Entry(user).State = EntityState.Detached;
+
+                // Store the user in the cache
+                var userCopy = GetById(user.idUtente);
+                //_memoryCache.Cache.Set($"User_{user.idUtente}", user.deepCopy(), TimeSpan.FromMinutes(30)); // Configura il tempo di scadenza come desiderato
+
+                //var userCopy = GetById(user.idUtente); // user.deepCopy();
+                //var existingUser = _memoryContext.Users.SingleOrDefault(u => u.idUtente == user.idUtente);
+                //if (existingUser != null)
+                //{
+                //    _memoryContext.Entry(existingUser).CurrentValues.SetValues(user);
+                //}
+                //else
+                //{
+                //    _memoryContext.Users.Add(userCopy);
+                //}
+                ////if (_memoryContext.Users.SingleOrDefault(u => u.idUtente == user.idUtente) != null)
+                ////    _memoryContext.Users.Update(_memoryContext.Users.Find(user.idUtente));
+                ////else
+                ////    _memoryContext.Users.Add(user.deepCopy());
+
+                //// Explicitly set the state to Added or Modified
+                //_memoryContext.Entry(userCopy).State = existingUser != null ? EntityState.Modified : EntityState.Added;
+
+                //try
+                //{
+                //    _memoryContext.SaveChanges();
+                //}
+                //catch (Exception ex)
+                //{
+                //    Console.WriteLine($"Error: {ex.Message}");
+                //    Console.WriteLine($"Inner Exception: {ex.InnerException?.Message}");
+                //    throw;
+                //}
+
+                return new AuthenticateResponse(user, jwtToken, refreshToken.Token);
             }
-            else
+            catch (Exception ex)
             {
-                if (user == null || EncryptedString(model.Password) != user.Pwd)
-                    throw new AppException("Username o password non validi");
+                string inner = ex.InnerException == null ? "" : ex.InnerException.Message;
+                throw new AppException($"Errore imprevisto: {ex.Message} / {inner}");
             }
-
-            // authentication successful so generate jwt and refresh tokens
-            var jwtToken = _jwtUtils.GenerateJwtToken(user);
-            var refreshToken = _jwtUtils.GenerateRefreshToken(ipAddress);
-            user.RefreshTokens.Add(refreshToken);
-            getFilialiByUser(ref user);
-
-            // remove old refresh tokens from user
-            removeOldRefreshTokens(user);
-
-            foreach (UserCompany company in user.Companies)
-            {
-                company.LegacyToken = _jwtUtils.GenerateLegacyToken(user, company.idCompany);
-            }
-
-            // save changes to db
-            //_context.Update(user);
-            _context.SaveChanges();
-            //_context.Entry(user).State = EntityState.Detached;
-
-            // Store the user in the cache
-            var userCopy = GetById(user.idUtente);
-            //_memoryCache.Cache.Set($"User_{user.idUtente}", user.deepCopy(), TimeSpan.FromMinutes(30)); // Configura il tempo di scadenza come desiderato
-
-            //var userCopy = GetById(user.idUtente); // user.deepCopy();
-            //var existingUser = _memoryContext.Users.SingleOrDefault(u => u.idUtente == user.idUtente);
-            //if (existingUser != null)
-            //{
-            //    _memoryContext.Entry(existingUser).CurrentValues.SetValues(user);
-            //}
-            //else
-            //{
-            //    _memoryContext.Users.Add(userCopy);
-            //}
-            ////if (_memoryContext.Users.SingleOrDefault(u => u.idUtente == user.idUtente) != null)
-            ////    _memoryContext.Users.Update(_memoryContext.Users.Find(user.idUtente));
-            ////else
-            ////    _memoryContext.Users.Add(user.deepCopy());
-
-            //// Explicitly set the state to Added or Modified
-            //_memoryContext.Entry(userCopy).State = existingUser != null ? EntityState.Modified : EntityState.Added;
-
-            //try
-            //{
-            //    _memoryContext.SaveChanges();
-            //}
-            //catch (Exception ex)
-            //{
-            //    Console.WriteLine($"Error: {ex.Message}");
-            //    Console.WriteLine($"Inner Exception: {ex.InnerException?.Message}");
-            //    throw;
-            //}
-
-            return new AuthenticateResponse(user, jwtToken, refreshToken.Token);
         }
 
         public string getLegacyPasswordByUser(UserCompany company)
@@ -161,15 +177,16 @@ namespace BecaWebService.Services
                 .SelectMany(c => c.Connections)
                 .OrderByDescending(c => c.Default)
                 .FirstOrDefault();
-            if (cnn == null) { 
-                    throw new AppException("DB Legacy non corretto");
-        } 
+            if (cnn == null)
+            {
+                throw new AppException("DB Legacy non corretto");
+            }
 
             string dbName = cnn.ConnectionString;
             DbDatiContext db = new DbDatiContext(null, dbName);
 
             List<BecaUser> res = db.ExecuteQuery<BecaUser>("legacyUser", "Select Pwd From AnagrafeUtenti Where idUtente = {0}", false, (new List<object>() { company.idUtenteLoc }).ToArray());
-            if (res == null || res.Count==0)
+            if (res == null || res.Count == 0)
             {
                 throw new AppException("Utente non trovato sul DB Legacy");
             }
@@ -206,6 +223,80 @@ namespace BecaWebService.Services
             var userCopy = GetById(user.idUtente);
 
             return new AuthenticateResponse(user, jwtToken, refreshToken.Token);
+        }
+
+        private async Task<bool> SaveLogin(int idUtente, string IP, IHeaderDictionary headers)
+        {
+            try
+            {
+                _logger.LogInfo("salvo il login");
+                string url = $@"http://www.geoplugin.net/json.gp?ip={IP}";
+                RestClient client = new RestClient(url);
+                RestRequest request = new RestRequest("", Method.Get);
+                request.Timeout = TimeSpan.FromMinutes(10);
+                RestResponse response = await client.ExecuteAsync(request);
+                string res = response.Content;
+
+                UserLogin login = new UserLogin();
+                login.idUtente = idUtente;
+                login.dtLogin = DateTime.Now;
+                login.IP = IP;
+
+                if (headers.ContainsKey("User-Agent"))
+                {
+                    login.UserAgent = headers["User-Agent"].ToString();
+                    // Inizializza DeviceDetector
+                    var deviceDetector = new DeviceDetector(login.UserAgent);
+                    deviceDetector.Parse();
+
+                    // Controlla se il dispositivo è un bot
+                    if (deviceDetector.IsBot())
+                    {
+                        _logger.LogWarn("Il client è un bot.");
+                        //return;
+                    }
+
+                    // Informazioni sul browser
+                    var clientInfo = deviceDetector.GetClient(); // Ottieni il client (browser, versione, ecc.)
+                    if (clientInfo != null)  login.Browser = clientInfo.Match.Name;
+
+                    // Informazioni sul sistema operativo
+                    var osInfo = deviceDetector.GetOs(); // Ottieni il sistema operativo
+                    if(osInfo!= null) login.OS = $"{osInfo.Match.Name} {osInfo.Match.Platform}";
+
+                    // Informazioni sul dispositivo
+                    var device = deviceDetector.GetDeviceName(); // Ottieni il nome del dispositivo
+                    login.Device = device;
+
+                    // Controlla se il dispositivo è mobile
+                    bool isMobile = deviceDetector.IsMobile();
+                    login.Mobile = (short?)(isMobile ? 1 : 0);
+                } else
+                {
+                    if (headers.ContainsKey("sec-ch-ua")) login.Browser = headers["sec-ch-ua"].ToString();
+                    if (headers.ContainsKey("sec-ch-ua-platform")) login.OS = headers["sec-ch-ua-platform"].ToString();
+                    if (headers.ContainsKey("sec-ch-ua-mobile")) login.Mobile =
+                            headers["sec-ch-ua-mobile"].ToString().Contains("1") ? 1 : headers["sec-ch-ua-mobile"].ToString().Contains("0") ? 0 : null;
+                }
+
+                if (res != null)
+                {
+                    dynamic json = JsonConvert.DeserializeObject<dynamic>(res);
+
+                    login.Citta = json["geoplugin_city"];
+                    login.PV = json["geoplugin_regionCode"];
+                    login.Regione = json["geoplugin_region"];
+                    login.Nazione = json["geoplugin_countryName"];
+                }
+
+                _context.UserLogins.Add(login);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"non sono riuscito: {ex.Message}");
+                return false;
+            }
         }
 
         public AuthenticateResponse RefreshToken(string token, string ipAddress)
@@ -805,7 +896,7 @@ namespace BecaWebService.Services
 
         public async Task<GenericResponse> RequestResetPassword(UserResetRequest req, string domain)
         {
-            string pwd = GenerateRandomPassword(25,false);
+            string pwd = GenerateRandomPassword(25, false);
             try
             {
                 BecaUser? user = null;
@@ -822,14 +913,15 @@ namespace BecaWebService.Services
                     else
                     {
                         //users = users.Where(u => u.Companies.Count(c=> domain.ToLower().Contains((c.urlDomain ?? "mybeca").ToLower()))>0).ToList();
-                        users = users.Where(u => u.Companies.Count(c=> req.apl!.ToLower().Contains((c.MainFolder ?? "mybeca").ToLower()))>0).ToList();
+                        users = users.Where(u => u.Companies.Count(c => req.apl!.ToLower().Contains((c.MainFolder ?? "mybeca").ToLower())) > 0).ToList();
                         if (users.Count == 1) user = users[0];
                     }
                 }
 
-                if (user == null) {
+                if (user == null)
+                {
                     UserSendResetRequest(req);
-                    return new GenericResponse(true);    
+                    return new GenericResponse(true);
                 };
 
                 UserReset? reset = await _context.UsersReset.FindAsync(user.idUtente);
@@ -846,14 +938,15 @@ namespace BecaWebService.Services
                     {
                         return new GenericResponse(true, "Il reset è già stato chiesto");
                     }
-                } else
+                }
+                else
                 {
-                    _context.UsersReset.Add(new UserReset { idUtente = user.idUtente, token = pwd, dtScadenza=DateTime.Now.AddMinutes(resetValidity) });
+                    _context.UsersReset.Add(new UserReset { idUtente = user.idUtente, token = pwd, dtScadenza = DateTime.Now.AddMinutes(resetValidity) });
                 }
                 await _context.SaveChangesAsync();
 
                 //UserCompany? cpy = user.Companies.FirstOrDefault(c => domain.ToLower().Contains((c.urlDomain ?? "mybeca").ToLower())) ?? user.Companies.FirstOrDefault(c=>c.isDefault==true);
-                UserCompany? cpy = user.Companies.FirstOrDefault(c => req.apl!.ToLower().Contains((c.MainFolder ?? "beca").ToLower())) ?? user.Companies.FirstOrDefault(c=>c.isDefault==true);
+                UserCompany? cpy = user.Companies.FirstOrDefault(c => req.apl!.ToLower().Contains((c.MainFolder ?? "beca").ToLower())) ?? user.Companies.FirstOrDefault(c => c.isDefault == true);
                 string sender = cpy == null ? "credenziali.bw@becaweb.it" : cpy.mail2 ?? cpy.senderEmail;
                 await UserSendReset(user.idUtente, pwd, sender);
                 return new GenericResponse(true);
@@ -864,7 +957,8 @@ namespace BecaWebService.Services
             }
         }
 
-        public async Task<GenericResponse> ResetPassword(string token) {
+        public async Task<GenericResponse> ResetPassword(string token)
+        {
             try
             {
                 UserReset? reset = await _context.UsersReset.FirstOrDefaultAsync(r => r.token == token);

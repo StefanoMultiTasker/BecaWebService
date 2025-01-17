@@ -27,9 +27,9 @@ namespace BecaWebService.Controllers
 
         [AllowAnonymous]
         [HttpPost("authenticate")]
-        public IActionResult Authenticate(AuthenticateRequest model)
+        public async Task<IActionResult> Authenticate(AuthenticateRequest model)
         {
-            var response = _userService.Authenticate(model, ipAddress());
+            var response = await _userService.Authenticate(model, ipAddress(), Request.Headers);
             setTokenCookie(response.RefreshToken);
             return Ok(response);
         }
@@ -213,10 +213,12 @@ namespace BecaWebService.Controllers
         private string ipAddress()
         {
             // get source ip address for the current request
+            if (Request.Headers.ContainsKey("X-Real-IP"))
+                return Request.Headers["X-Real-IP"];
             if (Request.Headers.ContainsKey("X-Forwarded-For"))
                 return Request.Headers["X-Forwarded-For"];
-            else
-                return HttpContext.Connection.RemoteIpAddress.MapToIPv4().ToString();
+            
+            return HttpContext.Connection.RemoteIpAddress.MapToIPv4().ToString();
         }
     }
 }

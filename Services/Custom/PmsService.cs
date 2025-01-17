@@ -26,7 +26,7 @@ namespace BecaWebService.Services.Custom
         {
             _miscServiceBase = miscServiceBase;
             _gRepository = genRepository;
-            _logger = logger;
+            _logger = logger;   
         }
         public async Task<bool> pms(pmsJson pmsJson, string json, StreamWriter sw)
         {
@@ -318,7 +318,7 @@ namespace BecaWebService.Services.Custom
                             parameters.Add("user_process_id", pmsResData.user_process_id);
                             parameters.Add("user_steps_id", "[" + string.Join(",", pmsResData.user_step_ids ?? new List<int>()) + "]");
                             parameters.Add("link", pmsResData.link);
-                            parameters.Add("parametri_processo", sParamas);
+                            parameters.Add("parametri_processo", sParamas.Replace("'","''"));
                             parameters.Add("PWDI", 1);
 
                             if (sw != null) sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Eseguo spPMS_Avvia_Processo2");

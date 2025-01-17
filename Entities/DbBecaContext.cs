@@ -12,6 +12,7 @@ namespace Entities.Contexts
         //private readonly IConfiguration Configuration;
 
         public virtual DbSet<BecaUser> BecaUsers { get; set; }
+        public virtual DbSet<UserLogin> UserLogins { get; set; }
         public virtual DbSet<UserReset> UsersReset { get; set; }
         public virtual DbSet<BecaUserEntity> BecaUserentities { get; set; }
         public virtual DbSet<UserMenu> RawUserMenu { get; set; }
