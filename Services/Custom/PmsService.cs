@@ -322,7 +322,7 @@ namespace BecaWebService.Services.Custom
                             parameters.Add("PWDI", 1);
 
                             if (sw != null) sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Eseguo spPMS_Avvia_Processo2");
-                            res = await _gRepository.ExecuteProcedure("DbDati", "spPMS_Avvia_Processo2", parameters.parameters);
+                            res = await _gRepository.ExecuteProcedure("MainDB", "spPMS_Avvia_Processo2", parameters.parameters);
                         }
                     }
                     else

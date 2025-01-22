@@ -116,6 +116,7 @@ namespace Entities.Models
     {
         public string code { get; set; }
         public string value { get; set; }
+        public bool isDefault { get; set; }
     }
     public partial class BecaUserDTO()
     {
