@@ -120,6 +120,7 @@ namespace Entities.Models
         public string FieldType { get; set; }
         public string? FieldInput { get; set; }
         //public string? DropDownList { get; set; }
+        public int DropDownItems { get; set; }
         public bool DropDownListAll { get; set; }
         public bool DropDownListNull { get; set; }
         public string? DropDownDisplayField { get; set; }
@@ -135,7 +136,21 @@ namespace Entities.Models
     public class BecaViewFilterUI : BecaViewUI { }
     public partial class BecaViewDetailUI : BecaViewUI { }
 
-
+    public class BecaViewUIProfile
+    {
+        public int? idBecaView { get; set; }
+        public string? Form { get; set; }
+        public int? idProfile { get; set; }
+        public string Field { get; set; }
+        [Optional] public string? Title { get; set; }
+        public string FieldType { get; set; }
+        [Optional] public string? FieldInput { get; set; }
+        [Optional] public string? DropDownList { get; set; }
+        [Optional] public string? DropDownDisplayField { get; set; }
+        [Optional] public string? DropDownKeyFields { get; set; }
+        public bool DropDownListAll { get; set; }
+        public bool DropDownListNull { get; set; }
+    }
     //public partial class BecaViewDetailUI
     //{
     //    public int idBecaView { get; set; }

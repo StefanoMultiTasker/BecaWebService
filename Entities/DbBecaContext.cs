@@ -36,6 +36,7 @@ namespace Entities.Contexts
         public virtual DbSet<BecaAggregationTypes> BecaAggregationTypes { get; set; }
         public virtual DbSet<BecaViewFilterUI> BecaViewFilterUI { get; set; }
         public virtual DbSet<BecaViewDetailUI> BecaViewDetailUI { get; set; }
+        public virtual DbSet<BecaViewUIProfile> BecaViewUIProfile { get; set; }
         public virtual DbSet<BecaViewChild> BecaViewChildren { get; set; }
         public virtual DbSet<BecaViewChildData> BecaViewChildData { get; set; }
 
@@ -405,6 +406,12 @@ namespace Entities.Contexts
                 entity.ToView("vBecaViewDetailUI");
                 entity.HasKey(e => new { e.Form, e.Name });
                 //entity.HasAlternateKey(e => new {e.idBecaView, e.Name}); 
+
+            });
+            modelBuilder.Entity<BecaViewUIProfile>(entity =>
+            {
+                entity.ToView("vBecaDataDefinitionProfile");
+                entity.HasKey(e => new { e.idBecaView, e.Form, e.idProfile, e.Field });
 
             });
             modelBuilder.Entity<BecaViewChild>(entity =>

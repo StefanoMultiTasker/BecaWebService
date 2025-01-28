@@ -106,6 +106,10 @@ namespace Repository
 
         public UIform GetViewUI(int idView, string tipoUI)
         {
+            List<BecaViewUIProfile> profileUI = dbBecaContext.BecaViewUIProfile
+                .Where(obj => obj.idBecaView == idView && obj.idProfile == CurrentUser().idProfileDef(CurrentCompany().idCompany))
+                .ToList();
+
             switch (tipoUI)
             {
                 case "F":
@@ -118,7 +122,7 @@ namespace Repository
                             .ThenBy(obj => obj.SubCol)
                             .ThenBy(obj => obj.SubCol_Order)
                             .ToList();
-                    UIform viewFilterUI = this.CreateFilterUI(this._mapper.Map<List<BecaViewFilterUI>, List<BecaViewUI>>(filterUI));
+                    UIform viewFilterUI = this.CreateFilterUI(this._mapper.Map<List<BecaViewFilterUI>, List<BecaViewUI>>(filterUI), profileUI);
                     return viewFilterUI;
                 case "D":
                     List<BecaViewDetailUI> detailUI = dbBecaContext.BecaViewDetailUI
@@ -130,7 +134,7 @@ namespace Repository
                             .ThenBy(obj => obj.SubCol)
                             .ThenBy(obj => obj.SubCol_Order)
                             .ToList();
-                    UIform viewDetailUI = this.CreateFilterUI(this._mapper.Map<List<BecaViewDetailUI>, List<BecaViewUI>>(detailUI));
+                    UIform viewDetailUI = this.CreateFilterUI(this._mapper.Map<List<BecaViewDetailUI>, List<BecaViewUI>>(detailUI), profileUI);
                     return viewDetailUI;
                 default: return null;
             }
@@ -138,6 +142,10 @@ namespace Repository
 
         public UIform GetViewUI(string form)
         {
+            List<BecaViewUIProfile> profileUI = dbBecaContext.BecaViewUIProfile
+                .Where(obj => obj.Form == form && obj.idProfile == CurrentUser().idProfileDef(CurrentCompany().idCompany))
+                .ToList();
+
             List<BecaViewDetailUI> detailUI = dbBecaContext.BecaViewDetailUI
                     .Where(obj => obj.Form == form)
                     .OrderBy(obj => obj.Row)
@@ -147,25 +155,28 @@ namespace Repository
                     .ThenBy(obj => obj.SubCol)
                     .ThenBy(obj => obj.SubCol_Order)
                     .ToList();
-            UIform viewDetailUI = this.CreateFilterUI(this._mapper.Map<List<BecaViewDetailUI>, List<BecaViewUI>>(detailUI));
+            UIform viewDetailUI = this.CreateFilterUI(this._mapper.Map<List<BecaViewDetailUI>, List<BecaViewUI>>(detailUI), profileUI);
             return viewDetailUI;
         }
 
-        private UIform CreateFilterUI(List<BecaViewUI> items)
+        private UIform CreateFilterUI(List<BecaViewUI> items, List<BecaViewUIProfile> profileUI)
         {
             if (items.Count == 0) return null;
+
+            //CurrentUser()
 
             UIform filter = new UIform(items[0].ViewName);
             foreach (BecaViewUI BecaCfgFormField in items)
             {
                 if (BecaCfgFormField.Row > 0 && BecaCfgFormField.Col > 0)
                 {
+                    BecaViewUIProfile fieldProfile = profileUI.Find(f => f.Field.ToLower() == BecaCfgFormField.Name.ToLower());
                     FieldConfig field = new FieldConfig();
-                    field.label = BecaCfgFormField.Title;
+                    field.label = fieldProfile != null ? fieldProfile.Title ?? BecaCfgFormField.Title : BecaCfgFormField.Title;
                     field.name = BecaCfgFormField.Name.ToLower();//.ToCamelCase();
                     field.placeholder = BecaCfgFormField.HelpShort;
-                    field.fieldType = BecaCfgFormField.FieldType;
-                    field.inputType = BecaCfgFormField.FieldInput;
+                    field.fieldType = fieldProfile != null ? fieldProfile.FieldType ?? BecaCfgFormField.FieldType : BecaCfgFormField.FieldType;
+                    field.inputType = fieldProfile != null ? fieldProfile.FieldInput ?? BecaCfgFormField.FieldInput : BecaCfgFormField.FieldInput;
                     field.format = BecaCfgFormField.Format ?? "";
                     field.reference = BecaCfgFormField.Filter_Reference;
                     field.filter_API = BecaCfgFormField.Filter_API;
@@ -174,10 +185,13 @@ namespace Repository
                     {
                         field.options = opts.Replace("[", "").Replace("]", "").Replace("'", "").Replace(" ", "").Split(",").ToArray();
                     }
-                    field.optionDisplayed = BecaCfgFormField.DropDownDisplayField?.ToLower(); //.ToCamelCase();
+                    field.optionDisplayed = (fieldProfile != null ? fieldProfile.DropDownDisplayField ?? BecaCfgFormField.DropDownDisplayField : BecaCfgFormField.DropDownDisplayField)?.ToLower(); //.ToCamelCase();
                     if (field.optionDisplayed != null) field.optionDisplayed = field.optionDisplayed.ToLowerToCamelCase();
                     //field.DropDownList = BecaCfgFormField.DropDownList;
-                    field.DropDownKeyFields = BecaCfgFormField.DropDownKeyFields?.ToLower(); // ToCamelCase();
+                    field.DropDownKeyFields = (fieldProfile != null ? fieldProfile.DropDownKeyFields ?? BecaCfgFormField.DropDownKeyFields : BecaCfgFormField.DropDownKeyFields)?.ToLower(); // ToCamelCase();
+                    field.DropDownItems = BecaCfgFormField.DropDownItems;
+                    field.DropDownListAll = fieldProfile != null ? fieldProfile.DropDownListAll : BecaCfgFormField.DropDownListAll;
+                    field.DropDownListNull = fieldProfile != null ? fieldProfile.DropDownListNull : BecaCfgFormField.DropDownListNull;
                     field.row = BecaCfgFormField.Row;
                     field.col = BecaCfgFormField.Col;
                     field.subRow = BecaCfgFormField.SubRow;
