@@ -6,6 +6,8 @@ namespace Contracts
 {
     public interface IGenericService
     {
+        int GetUserId();
+        int GetCompanyId();
         object CreateObjectFromJSON<T>(string jsonRecord) where T : class, new();
         T CreateObjectFromJObject<T>(string Form, JObject jsonRecord, bool view) where T : class, new();
         T CreateObjectFromJObject<T>(string Form, JObject jsonRecord, bool view, bool partial) where T : class, new();

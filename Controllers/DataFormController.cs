@@ -18,13 +18,14 @@ namespace BecaWebService.Controllers
     public class DataFormController : ControllerBase
     {
         private readonly IGenericService _genericService;
-        private readonly ILogger<DataFormController> _logger;
+        private readonly ILoggerManager _logger;
 
-        public DataFormController(IGenericService service, ILogger<DataFormController> logger)
+        public DataFormController(IGenericService service, ILoggerManager logger)
         {
             _logger = logger;
             _genericService = service;
         }
+
 
         private string getFormByView(int idView)
         {
@@ -35,11 +36,14 @@ namespace BecaWebService.Controllers
         //[DeflateCompression]
         public async Task<IActionResult> Post([FromBody] dataFormPostParameter data, System.Threading.CancellationToken cancel)
         {
+            string form = "";
             try
             {
-                string form = data.idView == null ? data.Form : getFormByView(data.idView.Value);
+                form = data.idView == null ? data.Form : getFormByView(data.idView.Value);
                 if ((form ?? "") == "")
                     return BadRequest("La View non ha form associate");
+
+                _logger.LogInfo($"User {_genericService.GetUserId()} - Company {_genericService.GetCompanyId()} - DataForm {form}");
 
                 List<BecaParameter> parameters = data.Parameters.parameters;
                 GenericResponse res = _genericService.GetDataByForm(form, parameters);
@@ -50,6 +54,7 @@ namespace BecaWebService.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError($"User {_genericService.GetUserId()} - Company {_genericService.GetCompanyId()} - DataForm {form} - errore: {ex.Message}");
                 return BadRequest(ex.Message);
             }
             //string Form = data["Form"].ToString();
@@ -60,11 +65,14 @@ namespace BecaWebService.Controllers
         [HttpPost("DataFormNoZip")]
         public IActionResult DataFormNoZip([FromBody] dataFormPostParameter data, System.Threading.CancellationToken cancel)
         {
+            string form = "";
             try
             {
-                string form = data.idView == null ? data.Form : getFormByView(data.idView.Value);
+                form = data.idView == null ? data.Form : getFormByView(data.idView.Value);
                 if ((form ?? "") == "")
                     return BadRequest("La View non ha form associate");
+
+                _logger.LogInfo($"User {_genericService.GetUserId()} - Company {_genericService.GetCompanyId()} - DataForm {form}");
 
                 List<BecaParameter> parameters = data.Parameters.parameters;
                 GenericResponse res = _genericService.GetDataByForm(form, parameters);
@@ -74,6 +82,7 @@ namespace BecaWebService.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError($"User {_genericService.GetUserId()} - Company {_genericService.GetCompanyId()} - DataForm {form} - errore: {ex.Message}");
                 return BadRequest(ex.Message);
             }
             //string Form = data["Form"].ToString();
@@ -84,12 +93,16 @@ namespace BecaWebService.Controllers
         [HttpPost("DataField")]
         public async Task<IActionResult> DataField([FromBody] dataFormPostParameter data, System.Threading.CancellationToken cancel)
         {
+            string form = "";
+            string FormField = "";
             try
             {
-                string form = data.idView == null ? data.Form : getFormByView(data.idView.Value);
+                form = data.idView == null ? data.Form : getFormByView(data.idView.Value);
                 if ((form ?? "") == "")
                     return BadRequest("La View non ha form associate");
-                string FormField = data.FormField;
+                FormField = data.FormField;
+
+                _logger.LogInfo($"User {_genericService.GetUserId()} - Company {_genericService.GetCompanyId()} - DataField {form} - {FormField}");
 
                 List<BecaParameter> parameters = data.Parameters.parameters;
                 GenericResponse res = _genericService.GetDataByFormField(form, FormField, parameters);
@@ -103,6 +116,7 @@ namespace BecaWebService.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError($"User {_genericService.GetUserId()} - Company {_genericService.GetCompanyId()} - DataField {form} - {FormField} - errore: {ex.Message}");
                 return BadRequest(ex.Message);
             }
         }

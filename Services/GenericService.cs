@@ -20,6 +20,10 @@ namespace BecaWebService.Services
             _logger = logger;
         }
 
+        public int GetUserId() => _genericRepository.GetLoggedUser().idUtente;
+        public int GetCompanyId() => _genericRepository.GetActiveCompany().idCompany;
+
+
         public string GetFormByView(int idView)
         {
             return _genericRepository.GetFormByView(idView);
