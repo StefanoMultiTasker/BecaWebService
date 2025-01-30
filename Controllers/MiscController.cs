@@ -62,9 +62,9 @@ namespace BecaWebService.Controllers
         [HttpPost("PrintPresenze")]
         public IActionResult PostPrintPresenze(
             [FromForm] string aaco, [FromForm] string mmco,
-            [FromForm] string cdff, [FromForm] string aact, [FromForm] string cdnn, [FromForm] string cdmt,
-            [FromForm] string ffcl, [FromForm] string codc, [FromForm] string cdc,
-            [FromForm] string nome
+            [FromForm] string? cdff = null, [FromForm] string? aact = null, [FromForm] string? cdnn = null, [FromForm] string? cdmt = null,
+            [FromForm] string? ffcl = null, [FromForm] string? codc = null, [FromForm] string? cdc = null,
+            [FromForm] string? nome = null
             )
         {
             string step = "start";

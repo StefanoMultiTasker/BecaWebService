@@ -17,8 +17,8 @@ namespace BecaWebService.Services.Custom
     {
         private readonly IGenericRepository _gRepository;
         private IWebHostEnvironment _env;
-        private readonly ILogger<MiscService> _logger;
-        public PresenzeService(IGenericRepository genRepository, IWebHostEnvironment env, ILogger<MiscService> logger)
+        private readonly ILoggerManager _logger;
+        public PresenzeService(IGenericRepository genRepository, IWebHostEnvironment env, ILoggerManager logger)
         {
             _gRepository = genRepository;
             _env = env;
@@ -140,6 +140,7 @@ namespace BecaWebService.Services.Custom
                 string nome = null)
         {
             string step = "avvio";
+            _logger.LogInfo("Cartellino: avvio (Anno/Mese: {aaco}/{mmco}, CDFF:{cdff}, AACT:{aact}, CDNN: {cdnn}, CDMT: {cdmt}, Cliente: {ffcl}/{codc}, CDC: {cdc}, Bome: {nome})");
             //Log.Information($"PrintPresenze avvio");
             //Log.Information($"PrintPresenze parameters: " +
             //    "AACO = " + aaco + ", MMCO = " +mmco +
@@ -171,21 +172,24 @@ namespace BecaWebService.Services.Custom
                 if (cdc != null) par.Add(new BecaParameter("CDC", cdc));
                 if (nome != null) par.Add(new BecaParameter("Nome", nome));
                 List<object> data = _gRepository.GetDataBySP<object>("DbDati", "spPreMeseStampaAngular", par);
-                //Log.Information($"PrintPresenze trovati {data.Count} cartellini");
+                _logger.LogInfo($"PrintPresenze trovati {data.Count} cartellini");
 
                 if (data == null || data.Count == 0) return new GenericResponse("Nessuna cartellino stampabile trovato");
 
                 string baseFolder = _gRepository.GetActiveCompany().MainFolder != "localhost" ?
                     Path.Combine(_env.ContentRootPath) :
                     Path.Combine("E:", "BecaWeb");
-                baseFolder = Path.Combine("E:", "BecaWeb");
+                _logger.LogInfo($"cerco il pdf in {baseFolder}");
+                //baseFolder = Path.Combine("E:", "BecaWeb");
                 string folderName = Path.Combine(baseFolder, "Web", "Download", _gRepository.GetActiveCompany().MainFolder);
                 string sourceName = Path.Combine(folderName, "Cartellino.pdf");
+                _logger.LogInfo($"prendo il pdf {sourceName}");
                 string tempFolder = Path.Combine(baseFolder, "Web", "Download", "_TEMP");
                 string tempName = Path.Combine(tempFolder, "Cartellino_" +
                     _gRepository.GetActiveCompany().MainFolder +
                     _gRepository.GetLoggedUser().idUtente.ToString() +
                     DateTime.Now.Ticks.ToString()) + ".pdf";
+                _logger.LogInfo($"genero il pdf {tempName}");
 
                 step = "get module " + sourceName;
                 //Log.Information($"PrintPresenze open pdf module {sourceName}");

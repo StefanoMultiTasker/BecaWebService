@@ -229,7 +229,7 @@ namespace BecaWebService.Services
         {
             try
             {
-                _logger.LogInfo("salvo il login");
+                //_logger.LogInfo("salvo il login");
                 string url = $@"http://www.geoplugin.net/json.gp?ip={IP}";
                 RestClient client = new RestClient(url);
                 RestRequest request = new RestRequest("", Method.Get);

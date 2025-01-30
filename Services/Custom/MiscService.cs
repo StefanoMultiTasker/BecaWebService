@@ -4,6 +4,7 @@ using BecaWebService.Models.Communications;
 using RestSharp;
 using Entities.Models.Custom;
 using Contracts.Custom;
+using Contracts;
 
 namespace BecaWebService.Services.Custom
 {
@@ -16,11 +17,11 @@ namespace BecaWebService.Services.Custom
         ILavorService lavorService;
         IDocumentiService documentiService;
 
-        private readonly ILogger<MiscService> _logger;
+        private readonly ILoggerManager _logger;
         public MiscService(IPresenzeService _presenzeService, ISavinoService _savinoService,
                 IPmsService _pmsService, ILavorService _lavorService,
                 IDocumentiService _documentiService,
-                ILogger<MiscService> logger)
+                ILoggerManager logger)
         {
             presenzeService = _presenzeService;
             savinoService = _savinoService;

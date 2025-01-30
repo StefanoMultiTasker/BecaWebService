@@ -21,21 +21,25 @@
     <Compile Remove="ExtensionsLib\**" />
     <Compile Remove="LoggerService\**" />
     <Compile Remove="Repository\**" />
+    <Compile Remove="Web\**" />
     <Content Remove="Contracts\**" />
     <Content Remove="Entities\**" />
     <Content Remove="ExtensionsLib\**" />
     <Content Remove="LoggerService\**" />
     <Content Remove="Repository\**" />
+    <Content Remove="Web\**" />
     <EmbeddedResource Remove="Contracts\**" />
     <EmbeddedResource Remove="Entities\**" />
     <EmbeddedResource Remove="ExtensionsLib\**" />
     <EmbeddedResource Remove="LoggerService\**" />
     <EmbeddedResource Remove="Repository\**" />
+    <EmbeddedResource Remove="Web\**" />
     <None Remove="Contracts\**" />
     <None Remove="Entities\**" />
     <None Remove="ExtensionsLib\**" />
     <None Remove="LoggerService\**" />
     <None Remove="Repository\**" />
+    <None Remove="Web\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -53,6 +57,7 @@
     <PackageReference Include="DotNetZip" Version="1.16.0" />
     <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
     <PackageReference Include="itext7" Version="9.0.0" />
+    <PackageReference Include="itext7.bouncy-castle-adapter" Version="9.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.7" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.7" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.7">
