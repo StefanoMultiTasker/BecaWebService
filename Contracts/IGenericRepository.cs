@@ -10,8 +10,8 @@ namespace Contracts
         object CreateObjectFromJSON<T>(string jsonRecord) where T : class, new();
         T CreateObjectFromJSON<T>(string Form, string jsonRecord) where T : class, new();
 
-        List<T> GetDataByForm<T>(string Form, List<BecaParameter> parameters, bool view = true, bool getChildren = true) where T : class, new();
-        List<T> GetDataByForm<T>(string Form, object record, bool view = true, bool getChildren = true) where T : class, new();
+        List<T> GetDataByForm<T>(string Form, List<BecaParameter> parameters, bool view = true, bool getChildren = true, int? pageNumber = null, int? pageSize = null) where T : class, new();
+        List<T> GetDataByForm<T>(string Form, object record, bool view = true, bool getChildren = true, int? pageNumber = null, int? pageSize = null) where T : class, new();
         List<T> GetDataBySP<T>(string dbName, string spName, List<BecaParameter> parameters) where T : class, new();
 
         Task<T> AddOrUpdateDataByForm<T>(string Form, object record) where T : class, new();

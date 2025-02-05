@@ -265,7 +265,7 @@ namespace Repository
             }
         }
 
-        public List<T> GetDataByForm<T>(string Form, List<BecaParameter> parameters, bool view = true, bool getChildren = true) where T : class, new()
+        public List<T> GetDataByForm<T>(string Form, List<BecaParameter> parameters, bool view = true, bool getChildren = true, int? pageNumber = null, int? pageSize = null) where T : class, new()
         {
             BecaForm form = _context.BecaForm
                 .FirstOrDefault(f => f.Form == Form);
@@ -277,7 +277,7 @@ namespace Repository
                     .Where(f => f.Form == Form && f.FieldType == "upload")
                     .ToList().Select(n => "Null As [" + n.Name.Replace("upl","").Trim() + "upl], Null As [" + n.Name.Replace("upl", "").Trim() + "uplName]"));
                     //.ToList().Select(n => "Null As [_" + n.Name.Trim() + "_upl_], Null As [_" + n.Name.Trim() + "_uplName_]"));
-                string sql = getFormSQL(form, view);
+                string sql = getFormSQL(form, view, false, false);
                 string sqlChk = sql;
                 string db = form.ViewName.isNullOrempty() ? form.TableNameDB : form.ViewNameDB;
 
@@ -418,6 +418,7 @@ namespace Repository
                     .Where(f => f.Form == Form)
                     .ToList();
 
+                if ((pageSize ?? 0) > 0) sql = sql.Replace("*", $"TOP({pageSize}) *");
                 List<T> res = getContext(db).ExecuteQuery<T>(Form, sql, subForms.Count > 0, pars.ToArray());
 
                 if (getChildren)
@@ -513,7 +514,7 @@ namespace Repository
             return rel;
         }
 
-        public List<T> GetDataByForm<T>(string Form, object record, bool view = true, bool getChildren = true) where T : class, new()
+        public List<T> GetDataByForm<T>(string Form, object record, bool view = true, bool getChildren = true, int? pageNumber = null, int? pageSize = null) where T : class, new()
         {
             BecaForm form = _context.BecaForm
                 .FirstOrDefault(f => f.Form == Form);
@@ -525,7 +526,7 @@ namespace Repository
                 {
                     aPar.Add(orderField.Trim(), record.GetPropertyValue(orderField.Trim()));
                 }
-                List<T> data = this.GetDataByForm<T>(Form, aPar.parameters, view, getChildren);
+                List<T> data = this.GetDataByForm<T>(Form, aPar.parameters, view, getChildren, pageNumber, pageSize);
                 return data;
             }
             else

@@ -42,11 +42,13 @@ namespace BecaWebService.Controllers
                 form = data.idView == null ? data.Form : getFormByView(data.idView.Value);
                 if ((form ?? "") == "")
                     return BadRequest("La View non ha form associate");
+                int? pageNumber = data.pageNumber;
+                int? pageSize = data.pageSize;
 
                 _logger.LogInfo($"User {_genericService.GetUserId()} - Company {_genericService.GetCompanyId()} - DataForm {form}");
 
                 List<BecaParameter> parameters = data.Parameters.parameters;
-                GenericResponse res = _genericService.GetDataByForm(form, parameters);
+                GenericResponse res = _genericService.GetDataByForm(form, parameters, pageNumber, pageSize);
                 if (!res.Success) return BadRequest(res.Message);
 
                 //return Ok(res);
@@ -583,6 +585,8 @@ namespace BecaWebService.Controllers
         public JArray? newListData { get; set; }
         public JArray? originalListData { get; set; }
         public bool lowerCase { get; set; }
+        public int? pageNumber { get; set; }
+        public int? pageSize { get; set; }
     }
 
     public class dataFormFieldsPostParameter

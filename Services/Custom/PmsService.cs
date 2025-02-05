@@ -196,8 +196,10 @@ namespace BecaWebService.Services.Custom
                 if(sw != null) sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Leggo vPMS_Processi_da_Avviare");
                 BecaParameters parameters = new BecaParameters();
                 parameters.Add("idAttivita", idAttivita);
-                parameters.Add("apl", _gRepository.GetActiveCompany().MainFolder);
-                List<object> processes = _gRepository.GetDataBySQL("MainDB", "SELECT * From vPMS_Processi_da_Avviare", parameters.parameters);
+                parameters.Add("user_process_id", user_process_id);
+                //parameters.Add("apl", _gRepository.GetActiveCompany().MainFolder);
+                //List<object> processes = _gRepository.GetDataBySQL("MainDB", "SELECT * From vPMS_Processi_da_Avviare", parameters.parameters);
+                List<object> processes = _gRepository.GetDataBySQL("MainDB", $"SELECT * From dbo.fnPMS_Processi_da_Avviare({idAttivita}, {user_process_id})", parameters.parameters);
 
                 if (processes.Count == 0)
                 {
@@ -377,6 +379,13 @@ namespace BecaWebService.Services.Custom
                 List<object> filiali = _gRepository.GetDataBySQL("DbDati", "Select * From ANTEX", parameters.parameters);
                 if (filiali.Count == 0) { return "Non trovo i dati della filiale".toResponse(); }
 
+                parameters = new BecaParameters();
+                parameters.Add("idAnagAttivita", avvio.idAnagAttivita);
+                parameters.Add("OrdineEsecuzione", 1);
+                List<object> processi = _gRepository.GetDataBySQL("MainDB", "Select * From PMS_AnagAttivitaProcessi", parameters.parameters);
+                if (processi.Count == 0) { return "Non trovo il processo di avvio".toResponse(); }
+                int processo = int.Parse(processi[0].GetPropertyString("template_process_id"));
+
                 dynamic data = new ExpandoObject();
 
                 data.lavoratore_identificativo = avvio.data.lavoratore_identificativo;
@@ -401,7 +410,7 @@ namespace BecaWebService.Services.Custom
 
                 pmsPost body = new pmsPost()
                 {
-                    template_process_id = 5,
+                    template_process_id = processo,
                     data = new List<pmsPostData> { pmsPostData }
                 };
 
@@ -459,7 +468,7 @@ namespace BecaWebService.Services.Custom
 
                         parameters = new BecaParameters();
                         parameters.Add("idAttivita", idAttivita);
-                        parameters.Add("template_process_id", 5);
+                        parameters.Add("template_process_id", processo);
                         parameters.Add("user_process_id", pmsResData.user_process_id);
                         parameters.Add("user_steps_id", "[" + string.Join(",", (pmsResData.user_step_ids ?? new List<int>())) + "]");
                         parameters.Add("link", pmsResData.link);

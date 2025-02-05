@@ -31,11 +31,11 @@ namespace BecaWebService.Services
             // return form;
         }
 
-        public GenericResponse GetDataByView(int idView, List<BecaParameter> parameters)
+        public GenericResponse GetDataByView(int idView, List<BecaParameter> parameters, int? pageNumber = null, int? pageSize = null)
         {
             try
             {
-                return GetDataByForm(GetFormByView(idView), parameters);
+                return GetDataByForm(GetFormByView(idView), parameters, pageNumber, pageSize);
             }
             catch (Exception ex)
             {
@@ -43,11 +43,11 @@ namespace BecaWebService.Services
             }
         }
 
-        public GenericResponse GetDataByForm(string Form, List<BecaParameter> parameters)
+        public GenericResponse GetDataByForm(string Form, List<BecaParameter> parameters, int? pageNumber = null, int? pageSize = null)
         {
             try
             {
-                return _genericRepository.GetDataByForm<object>(Form, parameters).toResponse();
+                return _genericRepository.GetDataByForm<object>(Form, parameters, true, true, pageNumber, pageSize).toResponse();
             }
             catch (Exception ex)
             {

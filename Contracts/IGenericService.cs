@@ -17,8 +17,8 @@ namespace Contracts
 
         string GetFormByView(int idView);
 
-        GenericResponse GetDataByView(Int32 idView, List<BecaParameter> parameters);
-        GenericResponse GetDataByForm(string Form, List<BecaParameter> parameters);
+        GenericResponse GetDataByView(Int32 idView, List<BecaParameter> parameters, int? pageNumber = null, int? pageSize = null);
+        GenericResponse GetDataByForm(string Form, List<BecaParameter> parameters, int? pageNumber = null, int? pageSize = null);
         GenericResponse GetDataBySP(string dbName, string Form, List<BecaParameter> parameters);
 
         Task<GenericResponse> AddOrUpdateDataByForm(string Form, object record);

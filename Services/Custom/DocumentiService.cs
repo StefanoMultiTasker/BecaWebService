@@ -184,7 +184,7 @@ namespace BecaWebService.Services.Custom
                 foreach (Matricola matricola in matricole)
                 {
                     DateTime dataConfronto = new DateTime(int.Parse(anno), int.Parse(mese), 1);
-                    if (string.Compare(matricola.DataInizio.ToString("yyyyMM"), $"{anno}{mese}") <= 0 && string.Compare(matricola.DataFine.ToString("yyyyMM"), $"{anno}{mese}") > 0)
+                    if (string.Compare(matricola.DataInizio.ToString("yyyyMM"), $"{anno}{mese}") <= 0 && string.Compare(matricola.DataFine.ToString("yyyyMM"), $"{anno}{mese}") >= 0)
                     {
                         List<string> files = Directory.GetFiles(pathLUL).Where(f => f.Contains(matricola.idEmploy) && f.ToLower().right(4) == ".pdf").ToList();
                         if (files.Count > 0)

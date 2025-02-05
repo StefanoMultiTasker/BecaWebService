@@ -45,6 +45,7 @@ namespace BecaWebService.Extensions
             services.AddDbContext<DbBecaContext>(options =>
             {
                 options.UseSqlServer(Configuration.GetConnectionString("SQLBeca"));
+                //o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
                 options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
             });
         }

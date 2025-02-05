@@ -51,13 +51,14 @@ namespace BecaWebService
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
             app.UseStaticFiles();
 
             app.UseCors(x => x
                 .SetIsOriginAllowed(origin => true)
                 .AllowAnyMethod()
                 .AllowAnyHeader()
+                //.AllowAnyOrigin()
                 .AllowCredentials());
 
             app.UseForwardedHeaders(new ForwardedHeadersOptions
