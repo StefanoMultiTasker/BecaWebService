@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.IO;
 using Entities.Models.Custom;
 using RestSharp;
+using Entities.Models;
 
 namespace Contracts.Custom
 {
@@ -20,6 +21,7 @@ namespace Contracts.Custom
         Task<GenericResponse> AvviaProcesso(pmsAvviaProcesso avvio);
         Task<GenericResponse> ValidaFase(int idAttivita, int user_process_id);
         Task<GenericResponse> InvalidaFasi(pmsInvalidaFasi fasi);
+        Task<GenericResponse> getFileFromPMS(string url);
     }
     public interface IPresenzeService
     {
@@ -46,7 +48,12 @@ namespace Contracts.Custom
         GenericResponse ListCUByCodFisc();
         GenericResponse LavorSendRequestMail(string subject, string text);
     }
-    public interface IMiscService : IDocumentiService, IPresenzeService, ISavinoService, IPmsService, ILavorService
+
+    public interface IPrintService
+    {
+        GenericResponse PrintModule(string modulo, List<BecaParameter> parameters);
+    }
+    public interface IMiscService : IDocumentiService, IPresenzeService, ISavinoService, IPmsService, ILavorService, IPrintService
     {
         //Task<GenericResponse> UploadPresenze(int idOrologio, string aaco, string mmco, Microsoft.AspNetCore.Http.IFormFile file);
         //Task<GenericResponse> ImportaPresenze(int idOrologio);
@@ -61,8 +68,5 @@ namespace Contracts.Custom
         //Task<bool> SavinoFirma(SavinoFirma res, StreamWriter sw);
         //Task<bool> pms(pmsJson pmsJson, string json, StreamWriter sw);
     }
-
-
-
 
 }

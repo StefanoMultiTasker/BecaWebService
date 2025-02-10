@@ -5,6 +5,7 @@ using RestSharp;
 using Entities.Models.Custom;
 using Contracts.Custom;
 using Contracts;
+using Entities.Models;
 
 namespace BecaWebService.Services.Custom
 {
@@ -16,11 +17,12 @@ namespace BecaWebService.Services.Custom
         IPmsService pmsService;
         ILavorService lavorService;
         IDocumentiService documentiService;
+        IPrintService printService;
 
         private readonly ILoggerManager _logger;
         public MiscService(IPresenzeService _presenzeService, ISavinoService _savinoService,
                 IPmsService _pmsService, ILavorService _lavorService,
-                IDocumentiService _documentiService,
+                IDocumentiService _documentiService, IPrintService _printService,
                 ILoggerManager logger)
         {
             presenzeService = _presenzeService;
@@ -28,35 +30,22 @@ namespace BecaWebService.Services.Custom
             pmsService = _pmsService;
             lavorService = _lavorService;
             documentiService = _documentiService;
+            printService= _printService;
 
             _logger = logger;
         }
 
-        private IEnumerable<Type> GetSubServiceTypes()
-        {
-            // Puoi personalizzare il filtro per includere solo i sottoservizi desiderati
-            return new[] { typeof(IPresenzeService), typeof(ISavinoService), typeof(IPmsService), typeof(ILavorService), typeof(IDocumentiService) };
-        }
-
         #region "Presenze#
-        public async Task<GenericResponse> UploadPresenze(int idOrologio, string aaco, string mmco, IFormFile file)
-        {
-            return await presenzeService.UploadPresenze(idOrologio, aaco, mmco, file);
-        }
+        public async Task<GenericResponse> UploadPresenze(int idOrologio, string aaco, string mmco, IFormFile file) => 
+            await presenzeService.UploadPresenze(idOrologio, aaco, mmco, file);
 
-        public async Task<GenericResponse> ImportaPresenze(int idOrologio)
-        {
-            return await presenzeService.ImportaPresenze(idOrologio);
-        }
+        public async Task<GenericResponse> ImportaPresenze(int idOrologio) => await presenzeService.ImportaPresenze(idOrologio);
 
         public GenericResponse PrintPresenze(
                 string aaco, string mmco,
                 string cdff = null, string aact = null, string cdnn = null, string cdmt = null,
                 string ffcl = null, string codc = null, string cdc = null,
-                string nome = null)
-        {
-            return presenzeService.PrintPresenze(aaco, mmco, cdff,aact,cdnn,cdmt,ffcl,codc,cdc,nome);
-        }
+                string nome = null) => presenzeService.PrintPresenze(aaco, mmco, cdff,aact,cdnn,cdmt,ffcl,codc,cdc,nome);
 
         #endregion
 
@@ -91,21 +80,19 @@ namespace BecaWebService.Services.Custom
         public async Task<GenericResponse> AvviaProcesso(pmsAvviaProcesso avvio) => await pmsService.AvviaProcesso(avvio);
         public async Task<GenericResponse> ValidaFase(int idAttivita, int user_process_id) => await pmsService.ValidaFase(idAttivita, user_process_id);
         public async Task<GenericResponse> InvalidaFasi(pmsInvalidaFasi fasi) => await pmsService.InvalidaFasi(fasi);
+        public async Task<GenericResponse> getFileFromPMS(string url)=> await pmsService.getFileFromPMS(url);
 
         #endregion
 
         #region "PreparaDocumenti"
 
-        public GenericResponse PreparaEbitemp(List<Matricole4Ebitemp> matricole)
-        {
-            return documentiService.PreparaEbitemp(matricole);
-        }
+        public GenericResponse PreparaEbitemp(List<Matricole4Ebitemp> matricole) => documentiService.PreparaEbitemp(matricole);
 
-        public async Task<GenericResponse> PreparaDocumenti(string PeriodoInizio, string PeriodoFine, List<string> Matricole, bool IncludeCU, string? Folder = null)
-        {
-            return await documentiService.PreparaDocumenti(PeriodoInizio, PeriodoFine, Matricole, IncludeCU, Folder);
-        }
-            #endregion
+        public async Task<GenericResponse> PreparaDocumenti(string PeriodoInizio, string PeriodoFine, List<string> Matricole, bool IncludeCU, string? Folder = null) =>
+            await documentiService.PreparaDocumenti(PeriodoInizio, PeriodoFine, Matricole, IncludeCU, Folder);
 
-        }
+        #endregion
+
+        public GenericResponse PrintModule(string modulo, List<BecaParameter> parameters) => printService.PrintModule(modulo, parameters);
     }
+}

@@ -13,6 +13,7 @@ using RestSharp;
 using System;
 using System.Diagnostics;
 using System.Dynamic;
+using System.IO;
 using static iText.IO.Image.Jpeg2000ImageData;
 
 namespace BecaWebService.Services.Custom
@@ -510,6 +511,53 @@ namespace BecaWebService.Services.Custom
             catch (Exception ex) { return ex.Message.toResponse(); }
         }
 
+        public async Task<GenericResponse> getFileFromPMS(string url)
+        {
+            try
+            {
+                string base64 = await getPMSFile(url, null);
+                // Converti la stringa Base64 in un array di byte
+                byte[] bytes = Convert.FromBase64String(base64);
+                // Determina il MIME type dai primi byte del file
+                string mimeType = GetMimeType(bytes);
+
+                // Crea un MemoryStream a partire dall'array di byte
+                MemoryStream stream = new MemoryStream(bytes);
+                    // Esempio: leggere il contenuto del MemoryStream e convertirlo in stringa
+                    using (StreamReader reader = new StreamReader(stream))
+                    {
+                        string result = reader.ReadToEnd();
+                        Console.WriteLine(result); // Output: Hello, World!
+                    }
+                return new GenericResponse(new { pdf = stream, mimeType = mimeType });
+            }
+            catch (Exception ex)
+            {
+                return new GenericResponse($"non riesco ad accedere al file: {ex.Message} "); // - {ex.InnerException.Message}
+            }
+        }
+
+        // Metodo per determinare il MIME type in base ai magic numbers
+        private string GetMimeType(byte[] fileBytes)
+        {
+            if (fileBytes.Length > 4)
+            {
+                if (fileBytes[0] == 0x25 && fileBytes[1] == 0x50 && fileBytes[2] == 0x44 && fileBytes[3] == 0x46) // %PDF
+                {
+                    return "application/pdf";
+                }
+                else if (fileBytes[0] == 0xFF && fileBytes[1] == 0xD8) // JPEG
+                {
+                    return "image/jpeg";
+                }
+                else if (fileBytes[0] == 0x89 && fileBytes[1] == 0x50 && fileBytes[2] == 0x4E && fileBytes[3] == 0x47) // PNG
+                {
+                    return "image/png";
+                }
+            }
+            return "application/octet-stream"; // Fallback per file sconosciuti
+        }
+
 
         private async Task<int> SaveError(int external_user_id, int user_process_id, string err, StreamWriter sw)
         {
@@ -522,7 +570,7 @@ namespace BecaWebService.Services.Custom
 
             return await _gRepository.ExecuteSqlCommandAsync("MainDB", sql, pars.ToArray());
         }
-        private async Task<string> getPMSFile(string fileUrl, StreamWriter sw)
+        private async Task<string> getPMSFile(string fileUrl, StreamWriter? sw)
         {
             if(sw != null) sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: scarico il file ({fileUrl}) ");
             try

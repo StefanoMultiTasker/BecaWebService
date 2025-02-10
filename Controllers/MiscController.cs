@@ -1,11 +1,16 @@
 ﻿using BecaWebService.Authorization;
 using BecaWebService.Models.Communications;
 using BecaWebService.Services;
+using Contracts;
 using Contracts.Custom;
+using Entities.Models;
 using Entities.Models.Custom;
 using ExtensionsLib;
+using iText.StyledXmlParser.Jsoup.Nodes;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Org.BouncyCastle.Tls;
 
 namespace BecaWebService.Controllers
 {
@@ -238,6 +243,25 @@ namespace BecaWebService.Controllers
             return Ok(result);
         }
 
+        [HttpPost("pmsGetFile")]
+        public async Task<IActionResult> PostpmsGetFile([FromForm] string url)
+        {
+            try
+            {
+                var result =  await _service.getFileFromPMS(url);
+                if (!result.Success)
+                    return BadRequest(result.Message);
+
+                return File(((MemoryStream)result._extraLoad.GetPropertyValue("pdf")).ToArray(), result._extraLoad.GetPropertyString("mimeType") ?? "application/octet-stream");
+            }
+            catch (Exception ex)
+            {
+                string err = $"controller error: {ex.Message}";
+                if (ex.InnerException != null) err += " - " + ex.InnerException.Message;
+                return BadRequest(err);
+            }
+        }
+
         [HttpPost("PreparaEbitemp")]
         public IActionResult PreparaDocs([FromBody] PreparaEbitemp data)
         {
@@ -273,6 +297,30 @@ namespace BecaWebService.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpPost("printModulo")]
+        public IActionResult printModulo([FromBody] printPostParameter data, System.Threading.CancellationToken cancel)
+        {
+            try
+            {
+                var result = _service.PrintModule(data.modulo, data.Parameters.parameters);
+                if (!result.Success)
+                    return BadRequest(result.Message);
+
+                return File(((MemoryStream)result._extraLoad.GetPropertyValue("pdf")).ToArray(), "application/pdf");
+            }
+            catch (Exception ex)
+            {
+                string err = $"controller error: {ex.Message}";
+                if (ex.InnerException != null) err += " - " + ex.InnerException.Message;
+                return BadRequest(err);
+            }
+        }
+    }
+    public class printPostParameter
+    {
+        public required string modulo { get; set; }
+        public required BecaParameters Parameters { get; set; }
     }
 
     //public class SavinoOTP

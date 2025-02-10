@@ -128,6 +128,7 @@ namespace BecaWebService.Extensions
             services.AddScoped<IPresenzeService, PresenzeService>();
             services.AddScoped<ISavinoService, SavinoService>();
             services.AddScoped<IMiscService, MiscService>();
+            services.AddScoped<IPrintService, PrintService>();
             //services.AddScoped<IMiscServiceBase>(provider => (IMiscServiceBase)provider.GetRequiredService<IMiscService>());
         }
 

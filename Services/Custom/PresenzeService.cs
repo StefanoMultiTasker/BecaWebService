@@ -211,8 +211,6 @@ namespace BecaWebService.Services.Custom
                         object val = o.GetPropertyValue(field.GetFieldName().ToString());
                         if (val != null)
                             field.SetValue(val.ToString());
-                        //fields.TryGetValue(field.GetFieldName().ToString(), out toSet);
-                        //toSet.SetValue(tokenizer.NextToken());
                     }
                     //Flatten fields
                     form.FlattenFields();

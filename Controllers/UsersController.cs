@@ -194,7 +194,7 @@ namespace BecaWebService.Controllers
 
             //if (result.Success == false)
             //    return Redirect(result.Message);
-            return Ok(new { RedirectTo = result.Message }); // URL della landing page
+            return Redirect(result.Message); // URL della landing page
         }
 
         // helper methods
