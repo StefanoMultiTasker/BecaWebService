@@ -18,11 +18,12 @@ namespace BecaWebService.Services.Custom
         ILavorService lavorService;
         IDocumentiService documentiService;
         IPrintService printService;
+        IMailService mailService;
 
         private readonly ILoggerManager _logger;
         public MiscService(IPresenzeService _presenzeService, ISavinoService _savinoService,
                 IPmsService _pmsService, ILavorService _lavorService,
-                IDocumentiService _documentiService, IPrintService _printService,
+                IDocumentiService _documentiService, IPrintService _printService, IMailService _mailService,
                 ILoggerManager logger)
         {
             presenzeService = _presenzeService;
@@ -30,7 +31,8 @@ namespace BecaWebService.Services.Custom
             pmsService = _pmsService;
             lavorService = _lavorService;
             documentiService = _documentiService;
-            printService= _printService;
+            printService = _printService;
+            mailService = _mailService;
 
             _logger = logger;
         }
@@ -94,5 +96,7 @@ namespace BecaWebService.Services.Custom
         #endregion
 
         public GenericResponse PrintModule(string modulo, List<BecaParameter> parameters) => printService.PrintModule(modulo, parameters);
+
+        public GenericResponse Send(SendMailOptions options) => mailService.Send(options);
     }
 }

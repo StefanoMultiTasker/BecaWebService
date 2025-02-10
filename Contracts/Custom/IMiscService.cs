@@ -53,7 +53,12 @@ namespace Contracts.Custom
     {
         GenericResponse PrintModule(string modulo, List<BecaParameter> parameters);
     }
-    public interface IMiscService : IDocumentiService, IPresenzeService, ISavinoService, IPmsService, ILavorService, IPrintService
+
+    public interface IMailService
+    {
+        GenericResponse Send(SendMailOptions options);
+    }
+    public interface IMiscService : IDocumentiService, IPresenzeService, ISavinoService, IPmsService, ILavorService, IPrintService, IMailService
     {
         //Task<GenericResponse> UploadPresenze(int idOrologio, string aaco, string mmco, Microsoft.AspNetCore.Http.IFormFile file);
         //Task<GenericResponse> ImportaPresenze(int idOrologio);

@@ -94,6 +94,7 @@ namespace BecaWebService.Extensions
             services.AddScoped<IGenericRepository, GenericRepository>();
             services.AddScoped<IGenericService, GenericService>();
             services.AddScoped<IBecaViewRepository, BecaViewRepository>();
+            services.AddScoped<IBecaRepository, BecaRepository>();
 
             services.AddScoped<IHomePageRepository, HomePageRepository>();
             services.AddScoped<IHomePageService, HomePageService>();
@@ -129,6 +130,7 @@ namespace BecaWebService.Extensions
             services.AddScoped<ISavinoService, SavinoService>();
             services.AddScoped<IMiscService, MiscService>();
             services.AddScoped<IPrintService, PrintService>();
+            services.AddScoped<IMailService, MailService>();
             //services.AddScoped<IMiscServiceBase>(provider => (IMiscServiceBase)provider.GetRequiredService<IMiscService>());
         }
 

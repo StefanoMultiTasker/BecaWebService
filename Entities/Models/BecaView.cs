@@ -90,6 +90,10 @@ namespace Entities.Models
         public int? CommandConnection { get; set; }
         public string? ConnectionName { get; set; }
         public string? Command { get; set; }
+        public string? sqlEmailFrom { get; set; }
+        public string? sqlEmailTo { get; set; }
+        public string? sqlEmailSubject { get; set; }
+        public string? sqlEmailText { get; set; }
     }
 
     public partial class BecaViewUI

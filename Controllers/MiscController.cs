@@ -316,6 +316,25 @@ namespace BecaWebService.Controllers
                 return BadRequest(err);
             }
         }
+
+        [HttpPost("sendMail")]
+        public IActionResult sendMail([FromBody] SendMailOptions data, System.Threading.CancellationToken cancel)
+        {
+            try
+            {
+                var result = _service.Send(data);
+                if (!result.Success)
+                    return BadRequest(result.Message);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                string err = $"controller error: {ex.Message}";
+                if (ex.InnerException != null) err += " - " + ex.InnerException.Message;
+                return BadRequest(err);
+            }
+        }
     }
     public class printPostParameter
     {
