@@ -10,6 +10,8 @@ namespace Entities.Models.Custom
     {
         public SendMailOptionsOrigin Sender { get; set; }
         public SendMailOptionsOrigin Dest { get; set; }
+        public SendMailOptionsOrigin CC { get; set; }
+        public SendMailOptionsOrigin CCN { get; set; }
         public SendMailOptionsOrigin Subject { get; set; }
         public SendMailOptionsOrigin Text { get; set; }
     }

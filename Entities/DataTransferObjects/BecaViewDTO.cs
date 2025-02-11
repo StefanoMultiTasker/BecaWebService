@@ -100,6 +100,7 @@ namespace Entities.DataTransferObjects
         public string? icon { get; set; }
         public string? Color { get; set; }
         public string? QuestionText { get; set; }
+        public bool isMail { get; set; }
     }
     //public partial class dtoBecaViewUI
     //{

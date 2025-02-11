@@ -90,8 +90,11 @@ namespace Entities.Models
         public int? CommandConnection { get; set; }
         public string? ConnectionName { get; set; }
         public string? Command { get; set; }
+        public string? sqlEmailOptions { get; set; }
         public string? sqlEmailFrom { get; set; }
         public string? sqlEmailTo { get; set; }
+        public string? sqlEmailCC { get; set; }
+        public string? sqlEmailCCN { get; set; }
         public string? sqlEmailSubject { get; set; }
         public string? sqlEmailText { get; set; }
     }

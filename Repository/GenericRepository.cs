@@ -791,7 +791,7 @@ namespace Repository
                 try
                 {
                     int res = 0;
-                    string[] procs = action.Command.Split(";");
+                    string[] procs = (action.Command ?? "").Split(";");
                     foreach (string proc in procs)
                     {
                         res += await ExecuteProcedure(action.ConnectionName, proc, parameters);

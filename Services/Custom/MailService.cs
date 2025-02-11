@@ -86,11 +86,13 @@ namespace BecaWebService.Services.Custom
             {
                 string attr = what switch
                 {
-                    "from" => "sqlEmailFrom",
-                    "to" => "sqlEmailTo",
-                    "subject" => "sqlEmailSubject",
-                    "text" => "sqlEmailText",
-                    _ => ""
+                    "from"      => "sqlEmailFrom",
+                    "to"        => "sqlEmailTo",
+                    "cc"        => "sqlEmailCC",
+                    "ccn"       => "sqlEmailCCN",
+                    "subject"   => "sqlEmailSubject",
+                    "text"      => "sqlEmailText",
+                    _           => ""
                 };
                 if (attr == "") return "";
                 BecaViewAction action = _becaRepository.BecaViewActions(name);
@@ -109,6 +111,8 @@ namespace BecaWebService.Services.Custom
             {
                 string sender = getMail(options.Sender, "from");
                 string dest = getMail(options.Dest, "to");
+                string cc = getMail(options.Dest, "cc");
+                string ccn = getMail(options.Dest, "ccn");
                 string subject = options.Subject.Type switch
                 {
                     "Action" => getFromAction(options.Subject.Name!, "subject"),
@@ -125,36 +129,49 @@ namespace BecaWebService.Services.Custom
                 if (subject == "") return "Non ho trovato l'oggetto della mail, controlla i parametri".toResponse();
                 if (text == "") return "Non ho trovato il testo della mail, controlla i parametri".toResponse();
 
-                MailMessage objMail = new MailMessage();
-                objMail.Sender = new MailAddress(sender, sender);
-                objMail.From = new MailAddress(sender, sender);
-                objMail.ReplyToList.Add(new MailAddress(sender));
-
-                SmtpClient objSMTP = new SmtpClient
-                {
-                    Host = "pro.eu.turbo-smtp.com",
-                    Port = 587,
-                    EnableSsl = true,
-                    DeliveryMethod = SmtpDeliveryMethod.Network,
-                    Credentials = new NetworkCredential("gruppoedp@abeaform.it", "ddHu39eX")
-                };
-
-                objMail.Subject = subject;
-                objMail.IsBodyHtml = true;
-                objMail.BodyEncoding = System.Text.Encoding.UTF8;
-                objMail.Body = text;
-                foreach (string mail in dest.Split(";"))
-                {
-                    objMail.To.Add(new MailAddress(mail));
-                }
-
-                objSMTP.Send(objMail);
+                SendMail(sender, dest, cc, ccn, subject, text);
                 return new GenericResponse(true);
             }
             catch (Exception ex)
             {
                 return ex.Message.toResponse();
             }
+        }
+
+        private void SendMail(string sender, string dest, string cc, string ccn, string subject, string text)
+        {
+            MailMessage objMail = new MailMessage();
+            objMail.Sender = new MailAddress(sender, sender);
+            objMail.From = new MailAddress(sender, sender);
+            objMail.ReplyToList.Add(new MailAddress(sender));
+
+            SmtpClient objSMTP = new SmtpClient
+            {
+                Host = "pro.eu.turbo-smtp.com",
+                Port = 587,
+                EnableSsl = true,
+                DeliveryMethod = SmtpDeliveryMethod.Network,
+                Credentials = new NetworkCredential("gruppoedp@abeaform.it", "ddHu39eX")
+            };
+
+            objMail.Subject = subject;
+            objMail.IsBodyHtml = true;
+            objMail.BodyEncoding = System.Text.Encoding.UTF8;
+            objMail.Body = text;
+            foreach (string mail in dest.Split(";"))
+            {
+                objMail.To.Add(new MailAddress(mail));
+            }
+            foreach (string mail in cc.Split(";"))
+            {
+                objMail.CC.Add(new MailAddress(mail));
+            }
+            foreach (string mail in ccn.Split(";"))
+            {
+                objMail.Bcc.Add(new MailAddress(mail));
+            }
+
+            objSMTP.Send(objMail);
         }
     }
 }

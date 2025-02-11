@@ -396,7 +396,10 @@ namespace BecaWebService.Mappings
                             )
                         );
 
-            CreateMap<BecaViewAction, dtoBecaViewActions>().ReverseMap();
+            CreateMap<BecaViewAction, dtoBecaViewActions>().ReverseMap()
+                .ForMember(dest => dest.sqlEmailFrom,
+                        opts => opts.MapFrom((src, dest) => (dest.sqlEmailFrom ?? "") != "")
+                        );
         }
 
         private void MapUI()

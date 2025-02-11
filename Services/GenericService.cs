@@ -1,10 +1,14 @@
 ﻿using BecaWebService.Controllers;
 using BecaWebService.Helpers;
 using BecaWebService.Models.Communications;
+using BecaWebService.Services.Custom;
 using Contracts;
+using Contracts.Custom;
 using Entities.Models;
+using Entities.Models.Custom;
 using ExtensionsLib;
 using Newtonsoft.Json.Linq;
+using Repository;
 using System.Reflection;
 
 namespace BecaWebService.Services
@@ -12,11 +16,15 @@ namespace BecaWebService.Services
     public class GenericService : IGenericService
     {
         private readonly IGenericRepository _genericRepository;
+        private readonly IBecaRepository _becaRepository;
+        private readonly IMailService _mailService;
         private readonly ILogger<GenericService> _logger;
 
-        public GenericService(IGenericRepository genericRepository, ILogger<GenericService> logger)
+        public GenericService(IGenericRepository genericRepository, IBecaRepository becaRepository, IMailService mailService, ILogger<GenericService> logger)
         {
             this._genericRepository = genericRepository;
+            _becaRepository = becaRepository;
+            _mailService = mailService;
             _logger = logger;
         }
 
@@ -281,8 +289,35 @@ namespace BecaWebService.Services
         {
             try
             {
-                string res = await _genericRepository.ActionByForm(idview, actionName, parameters);
-                if (res != "") return res.toResponse();
+                BecaViewAction action = _becaRepository.BecaViewActions(actionName);
+                if((action.Command ?? "") != "")
+                {
+                    string res = await _genericRepository.ActionByForm(idview, actionName, parameters);
+                    if (res != "") return res.toResponse();
+                }
+                if((action.sqlEmailOptions ?? "")!="")
+                {
+                    List<object> invii = new List<object>();
+                    if (action.sqlEmailOptions!.ToLower().Contains("select")) {
+                        invii = _genericRepository.GetDataBySQL(action.ConnectionName, action.Command, parameters);
+                    } else
+                    {
+                        invii = _genericRepository.GetDataBySP<object>(action.ConnectionName, action.sqlEmailOptions, parameters);
+                    }
+                    foreach (object invio in invii) {
+                        SendMailOptions options = new SendMailOptions()
+                        {
+                            Sender = new SendMailOptionsOrigin() { Type = "EMail", Value = invio.GetPropertyString("emailFrom") },
+                            Dest = new SendMailOptionsOrigin() { Type = "EMail", Value = invio.GetPropertyString("emailTo") },
+                            Subject = new SendMailOptionsOrigin() { Type = "*", Value = invio.GetPropertyString("emailSubject") },
+                            Text = new SendMailOptionsOrigin() { Type = "*", Value = invio.GetPropertyString("emailText") },
+                        };
+                        if (invio.HasPropertyValue("emailCC") && (invio.GetPropertyString("emailCC") ??"") != "") options.CC = new SendMailOptionsOrigin() { Type = "EMail", Value = invio.GetPropertyString("emailCC") };
+                        if (invio.HasPropertyValue("emailCCN") && (invio.GetPropertyString("emailCCN") ??"") != "") options.CCN = new SendMailOptionsOrigin() { Type = "EMail", Value = invio.GetPropertyString("emailCCN") };
+                        _mailService.Send(options);
+                    }
+                }
+
                 //if (form != "")
                 //{
                 //    List<object> data = _genericRepository.GetDataByForm<object>(form, record);
@@ -291,7 +326,7 @@ namespace BecaWebService.Services
                 //    else
                 //        return "Non trovo più il record originale, qualcosa deve essere andato male".toResponse();
                 //}
-                else return true.toResponse();
+                return true.toResponse();
             }
             catch (Exception ex) { return ex.Message.toResponse(); }
         }
