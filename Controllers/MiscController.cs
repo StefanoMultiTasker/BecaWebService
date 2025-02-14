@@ -232,6 +232,17 @@ namespace BecaWebService.Controllers
             return Ok(result);
         }
 
+        [HttpGet("pmsRiavvia/{idAttivita}/{user_process_id}")]
+        public async Task<IActionResult> pmsRiavvia(int idAttivita, int user_process_id)
+        {
+            GenericResponse result = await _service.RiavviaAttivita(idAttivita, user_process_id);
+
+            if (!result.Success)
+                return BadRequest(result.Message);
+
+            return Ok(result);
+        }
+
         [HttpPost("pmsInvalida")]
         public async Task<IActionResult> pmsInvalida([FromBody] pmsInvalidaFasi data)
         {

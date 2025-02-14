@@ -166,7 +166,7 @@ namespace BecaWebService.Services
             catch (Exception ex)
             {
                 string inner = ex.InnerException == null ? "" : ex.InnerException.Message;
-                throw new AppException($"Errore imprevisto: {ex.Message} / {inner}");
+                throw new AppException($"{ex.Message} {inner}");
             }
         }
 

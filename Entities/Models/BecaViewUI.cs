@@ -21,7 +21,7 @@
         public bool DropDownListAll { get; set; }
         public bool DropDownListNull { get; set; }
         [Optional] public string reference { get; set; }
-        public bool filter_API { get; set; }
+        public bool filterAPI { get; set; }
         public int row { get; set; }
         public int col { get; set; }
         public int subRow { get; set; }

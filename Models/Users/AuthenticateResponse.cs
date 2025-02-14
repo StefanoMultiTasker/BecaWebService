@@ -20,6 +20,8 @@ namespace BecaWebService.Models.Users
 
         [JsonIgnore] // refresh token is returned in http only cookie
         public string RefreshToken { get; set; }
+        [JsonIgnore] public string message { get; set; }
+
 
         public AuthenticateResponse(BecaUser user, string jwtToken, string refreshToken)
         {

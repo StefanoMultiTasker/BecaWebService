@@ -18,6 +18,7 @@ namespace Contracts.Custom
     public interface IPmsService
     {
         Task<bool> pms(pmsJson pmsJson, string json, StreamWriter sw);
+        Task<GenericResponse> RiavviaAttivita(int idAttivita, int user_process_id);
         Task<GenericResponse> AvviaProcesso(pmsAvviaProcesso avvio);
         Task<GenericResponse> ValidaFase(int idAttivita, int user_process_id);
         Task<GenericResponse> InvalidaFasi(pmsInvalidaFasi fasi);

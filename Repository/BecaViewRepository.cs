@@ -179,7 +179,7 @@ namespace Repository
                     field.inputType = fieldProfile != null ? fieldProfile.FieldInput ?? BecaCfgFormField.FieldInput : BecaCfgFormField.FieldInput;
                     field.format = BecaCfgFormField.Format ?? "";
                     field.reference = BecaCfgFormField.Filter_Reference;
-                    field.filter_API = BecaCfgFormField.Filter_API;
+                    field.filterAPI = BecaCfgFormField.Filter_API;
                     string opts = BecaCfgFormField.Filter_options ?? "";
                     if (opts.StartsWith("[") && opts.EndsWith("]"))
                     {

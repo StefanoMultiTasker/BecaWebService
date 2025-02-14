@@ -318,7 +318,7 @@ namespace BecaWebService.Services
                     }
                 }
 
-                //if (form != "")
+                //if (form != "" )
                 //{
                 //    List<object> data = _genericRepository.GetDataByForm<object>(form, record);
                 //    if (data.Count() > 0)

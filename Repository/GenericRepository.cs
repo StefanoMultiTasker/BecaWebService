@@ -439,12 +439,19 @@ namespace Repository
                             " From " + parent;
                         object objRelation = getContext(db).GetQueryDef<object>("", sql + " Where 0 = 1");
 
+                        List<string> orderChild = _context.BecaFormField
+                            .Where(f => f.Form == childForm.Form && f.OrderSequence != 0)
+                            .OrderBy(f => Math.Abs(f.OrderSequence))
+                            .Select(f => f.Name)
+                            .ToList();
+                        string sqlOrdChild = orderChild.Count > 0 ? $" Order By {string.Join(",", orderChild)}" : "";
+
                         sql = "Select * From (" +
                             "Select " + child + ".*" +
                             " From (" + sqlParent + ") Parent " +
                             " Inner Join " + child +
                             " On " + string.Join(" And ", level.RelationColumn.Split(",").Select(n => "Parent." + n.Trim() + " = " + child + "." + n.Trim())) +
-                            ") T";
+                            ") T" + sqlOrdChild;
                         List<object> children = this.GetDataBySQL(db, sql, pars.ToArray());
 
                         var groupJoin2 = res.GroupJoin(children,  //inner sequence

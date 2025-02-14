@@ -29,9 +29,16 @@ namespace BecaWebService.Controllers
         [HttpPost("authenticate")]
         public async Task<IActionResult> Authenticate(AuthenticateRequest model)
         {
-            var response = await _userService.Authenticate(model, ipAddress(), Request.Headers);
-            setTokenCookie(response.RefreshToken);
-            return Ok(response);
+            try
+            {
+                var response = await _userService.Authenticate(model, ipAddress(), Request.Headers);
+                setTokenCookie(response.RefreshToken);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         //[AllowAnonymous]
