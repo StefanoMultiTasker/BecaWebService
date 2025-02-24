@@ -17,13 +17,15 @@ namespace BecaWebService.Services.Custom
         IPmsService pmsService;
         ILavorService lavorService;
         IDocumentiService documentiService;
+        IMarketingService marketingService;
         IPrintService printService;
         IMailService mailService;
 
         private readonly ILoggerManager _logger;
         public MiscService(IPresenzeService _presenzeService, ISavinoService _savinoService,
                 IPmsService _pmsService, ILavorService _lavorService,
-                IDocumentiService _documentiService, IPrintService _printService, IMailService _mailService,
+                IDocumentiService _documentiService, IMarketingService _marketingService,
+                IPrintService _printService, IMailService _mailService,
                 ILoggerManager logger)
         {
             presenzeService = _presenzeService;
@@ -31,6 +33,7 @@ namespace BecaWebService.Services.Custom
             pmsService = _pmsService;
             lavorService = _lavorService;
             documentiService = _documentiService;
+            marketingService = _marketingService;
             printService = _printService;
             mailService = _mailService;
 
@@ -94,6 +97,10 @@ namespace BecaWebService.Services.Custom
         public async Task<GenericResponse> PreparaDocumenti(string PeriodoInizio, string PeriodoFine, List<string> Matricole, bool IncludeCU, string? Folder = null) =>
             await documentiService.PreparaDocumenti(PeriodoInizio, PeriodoFine, Matricole, IncludeCU, Folder);
 
+        #endregion
+
+        #region "Marketing"
+        public async Task<GenericResponse> DossierMail(DossierMail invio) => await marketingService.DossierMail(invio);
         #endregion
 
         public GenericResponse PrintModule(string modulo, List<BecaParameter> parameters) => printService.PrintModule(modulo, parameters);

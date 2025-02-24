@@ -196,7 +196,8 @@ namespace BecaWebService.Services
 
         public AuthenticateResponse LoginById(int id, string ipAddress)
         {
-            var user = _context.BecaUsers.SingleOrDefault(x => x.Companies.Any(c => c.idUtenteLoc == id));
+            int idCompany = ((Company)_httpContextAccessor.HttpContext.Items["Company"]).idCompany;
+            var user = _context.BecaUsers.SingleOrDefault(x => x.Companies.Any(c => c.idCompany == idCompany && c.idUtenteLoc == id));
 
             // validate
             if (user == null)
@@ -258,11 +259,11 @@ namespace BecaWebService.Services
 
                     // Informazioni sul browser
                     var clientInfo = deviceDetector.GetClient(); // Ottieni il client (browser, versione, ecc.)
-                    if (clientInfo != null)  login.Browser = clientInfo.Match.Name;
+                    if (clientInfo != null && clientInfo.Match!=null)  login.Browser = clientInfo.Match.Name;
 
                     // Informazioni sul sistema operativo
                     var osInfo = deviceDetector.GetOs(); // Ottieni il sistema operativo
-                    if(osInfo!= null) login.OS = $"{osInfo.Match.Name} {osInfo.Match.Platform}";
+                    if(osInfo!= null && osInfo.Match!=null ) login.OS = $"{osInfo.Match.Name} {osInfo.Match.Platform}";
 
                     // Informazioni sul dispositivo
                     var device = deviceDetector.GetDeviceName(); // Ottieni il nome del dispositivo

@@ -111,8 +111,8 @@ namespace BecaWebService.Services.Custom
             {
                 string sender = getMail(options.Sender, "from");
                 string dest = getMail(options.Dest, "to");
-                string cc = getMail(options.Dest, "cc");
-                string ccn = getMail(options.Dest, "ccn");
+                string cc = options.CC == null ? "" : getMail(options.CC, "cc");
+                string ccn = options.CCN == null ? "" : getMail(options.CCN, "ccn");
                 string subject = options.Subject.Type switch
                 {
                     "Action" => getFromAction(options.Subject.Name!, "subject"),
@@ -164,11 +164,11 @@ namespace BecaWebService.Services.Custom
             }
             foreach (string mail in cc.Split(";"))
             {
-                objMail.CC.Add(new MailAddress(mail));
+                if(mail != "") objMail.CC.Add(new MailAddress(mail));
             }
             foreach (string mail in ccn.Split(";"))
             {
-                objMail.Bcc.Add(new MailAddress(mail));
+                if (mail != "") objMail.Bcc.Add(new MailAddress(mail));
             }
 
             objSMTP.Send(objMail);

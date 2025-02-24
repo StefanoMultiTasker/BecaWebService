@@ -309,6 +309,16 @@ namespace BecaWebService.Controllers
             }
         }
 
+        [HttpPost("DossierMail")]
+        public async Task<IActionResult> DossierMail([FromBody] DossierMail invio)
+        {
+            var result = await _service.DossierMail(invio);
+            if (!result.Success)
+                return BadRequest(result.Message);
+
+            return Ok(result);
+        }
+
         [HttpPost("printModulo")]
         public IActionResult printModulo([FromBody] printPostParameter data, System.Threading.CancellationToken cancel)
         {

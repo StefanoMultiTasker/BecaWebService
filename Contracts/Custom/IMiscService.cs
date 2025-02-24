@@ -59,7 +59,12 @@ namespace Contracts.Custom
     {
         GenericResponse Send(SendMailOptions options);
     }
-    public interface IMiscService : IDocumentiService, IPresenzeService, ISavinoService, IPmsService, ILavorService, IPrintService, IMailService
+
+    public interface IMarketingService
+    {
+        Task<GenericResponse> DossierMail(DossierMail invio);
+    }
+    public interface IMiscService : IDocumentiService, IPresenzeService, ISavinoService, IPmsService, ILavorService, IMarketingService, IPrintService, IMailService
     {
         //Task<GenericResponse> UploadPresenze(int idOrologio, string aaco, string mmco, Microsoft.AspNetCore.Http.IFormFile file);
         //Task<GenericResponse> ImportaPresenze(int idOrologio);
