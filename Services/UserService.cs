@@ -88,19 +88,28 @@ namespace BecaWebService.Services
                     try
                     {
                         string pwd = getLegacyPasswordByUser(user.Companies.First(c => c.idUtenteLoc != null));
+                        _logger.LogInfo($"Logging utente migrato: username {user.UserName}, passsord digitata {model.Password}, password criptata {pwd}");
 
                         Simple3Des cry = new Simple3Des("BecaW3bC1phKey");
                         string chkPwd = cry.DecryptData(pwd);
+                        _logger.LogInfo($"Logging utente migrato: username {user.UserName}, passsword memorizzata {chkPwd}");
+
                         if (chkPwd != model.Password)
                         {
                             throw new AppException("Username o password non validi");
                         }
 
-                        user.Pwd = EncryptedString(chkPwd);
+                        string newPwd = EncryptedString(chkPwd);
+                        _logger.LogInfo($"hashing della password: {newPwd}");
+                        user.Pwd = newPwd;
 
                         _context.Entry(user).State = EntityState.Modified;
+                        _logger.LogInfo("Impostata");
                     }
-                    catch (Exception ex) { throw new AppException(ex.Message); }
+                    catch (Exception ex) {
+                        _logger.LogError($"authenticate error: {model.Username}, {ex.Message}, {(ex.InnerException == null ? ex.Source : ex.InnerException.Message)}");
+                        throw new AppException(ex.Message);
+                    }
                 }
                 else
                 {
@@ -111,8 +120,10 @@ namespace BecaWebService.Services
                 // authentication successful so generate jwt and refresh tokens
                 var jwtToken = _jwtUtils.GenerateJwtToken(user);
                 var refreshToken = _jwtUtils.GenerateRefreshToken(ipAddress);
-                user.RefreshTokens.Add(refreshToken);
+                //_logger.LogInfo($"refreshToken: {refreshToken.}");
+                //user.RefreshTokens.Add(refreshToken);
                 bool saveLogin = await this.SaveLogin(user.idUtente, ipAddress, headers);
+                _logger.LogInfo("Login data saved");
                 getFilialiByUser(ref user);
 
                 // remove old refresh tokens from user
@@ -245,7 +256,7 @@ namespace BecaWebService.Services
 
                 if (headers.ContainsKey("User-Agent"))
                 {
-                    login.UserAgent = headers["User-Agent"].ToString();
+                    login.UserAgent = headers["User-Agent"].ToString().left(255);
                     // Inizializza DeviceDetector
                     var deviceDetector = new DeviceDetector(login.UserAgent);
                     deviceDetector.Parse();
@@ -259,14 +270,14 @@ namespace BecaWebService.Services
 
                     // Informazioni sul browser
                     var clientInfo = deviceDetector.GetClient(); // Ottieni il client (browser, versione, ecc.)
-                    if (clientInfo != null && clientInfo.Match!=null)  login.Browser = clientInfo.Match.Name;
+                    if (clientInfo != null && clientInfo.Match!=null)  login.Browser = clientInfo.Match.Name.left(255);
 
                     // Informazioni sul sistema operativo
                     var osInfo = deviceDetector.GetOs(); // Ottieni il sistema operativo
-                    if(osInfo!= null && osInfo.Match!=null ) login.OS = $"{osInfo.Match.Name} {osInfo.Match.Platform}";
+                    if(osInfo!= null && osInfo.Match!=null ) login.OS = ($"{osInfo.Match.Name} {osInfo.Match.Platform}").left(255);
 
                     // Informazioni sul dispositivo
-                    var device = deviceDetector.GetDeviceName(); // Ottieni il nome del dispositivo
+                    var device = deviceDetector.GetDeviceName().left(255); // Ottieni il nome del dispositivo
                     login.Device = device;
 
                     // Controlla se il dispositivo è mobile
@@ -274,8 +285,8 @@ namespace BecaWebService.Services
                     login.Mobile = (short?)(isMobile ? 1 : 0);
                 } else
                 {
-                    if (headers.ContainsKey("sec-ch-ua")) login.Browser = headers["sec-ch-ua"].ToString();
-                    if (headers.ContainsKey("sec-ch-ua-platform")) login.OS = headers["sec-ch-ua-platform"].ToString();
+                    if (headers.ContainsKey("sec-ch-ua")) login.Browser = headers["sec-ch-ua"].ToString().left(255);
+                    if (headers.ContainsKey("sec-ch-ua-platform")) login.OS = headers["sec-ch-ua-platform"].ToString().left(255);
                     if (headers.ContainsKey("sec-ch-ua-mobile")) login.Mobile =
                             headers["sec-ch-ua-mobile"].ToString().Contains("1") ? 1 : headers["sec-ch-ua-mobile"].ToString().Contains("0") ? 0 : null;
                 }
@@ -285,9 +296,13 @@ namespace BecaWebService.Services
                     dynamic json = JsonConvert.DeserializeObject<dynamic>(res);
 
                     login.Citta = json["geoplugin_city"];
+                    login.Citta = login.Citta.left(250);
                     login.PV = json["geoplugin_regionCode"];
+                    login.PV = login.PV.left(50);
                     login.Regione = json["geoplugin_region"];
+                    login.Regione = login.Regione.left(250);
                     login.Nazione = json["geoplugin_countryName"];
+                    login.Nazione = login.Nazione.left(250);
                 }
 
                 _context.UserLogins.Add(login);

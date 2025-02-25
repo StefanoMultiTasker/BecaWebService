@@ -45,7 +45,7 @@ namespace BecaWebService.Controllers
                 int? pageNumber = data.pageNumber;
                 int? pageSize = data.pageSize;
 
-                _logger.LogInfo($"User {_genericService.GetUserId()} - Company {_genericService.GetCompanyId()} - DataForm {form}");
+                //_logger.LogInfo($"User {_genericService.GetUserId()} - Company {_genericService.GetCompanyId()} - DataForm {form}");
 
                 List<BecaParameter> parameters = data.Parameters.parameters;
                 GenericResponse res = _genericService.GetDataByForm(form, parameters, pageNumber, pageSize);
@@ -74,7 +74,7 @@ namespace BecaWebService.Controllers
                 if ((form ?? "") == "")
                     return BadRequest("La View non ha form associate");
 
-                _logger.LogInfo($"User {_genericService.GetUserId()} - Company {_genericService.GetCompanyId()} - DataForm {form}");
+                //_logger.LogInfo($"User {_genericService.GetUserId()} - Company {_genericService.GetCompanyId()} - DataForm {form}");
 
                 List<BecaParameter> parameters = data.Parameters.parameters;
                 GenericResponse res = _genericService.GetDataByForm(form, parameters);
@@ -104,7 +104,7 @@ namespace BecaWebService.Controllers
                     return BadRequest("La View non ha form associate");
                 FormField = data.FormField;
 
-                _logger.LogInfo($"User {_genericService.GetUserId()} - Company {_genericService.GetCompanyId()} - DataField {form} - {FormField}");
+                //_logger.LogInfo($"User {_genericService.GetUserId()} - Company {_genericService.GetCompanyId()} - DataField {form} - {FormField}");
 
                 List<BecaParameter> parameters = data.Parameters.parameters;
                 GenericResponse res = _genericService.GetDataByFormField(form, FormField, parameters);
@@ -241,7 +241,7 @@ namespace BecaWebService.Controllers
                     result = new GenericResponse(resultObj, resultMessage);
                 }
 
-                _logger.LogDebug($"DataFormUpdate: {form}");
+                //_logger.LogDebug($"DataFormUpdate: {form}");
 
                 if (!result.Success)
                     return BadRequest(result); //.Message);

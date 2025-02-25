@@ -23,7 +23,7 @@ namespace BecaWebService.Services.Custom
             string path = $@"E:\BecaWeb\Web\Upload\{_gRepository.GetActiveCompany().MainFolder}\CUD";
 
             BecaParameters parameters = new BecaParameters();
-            parameters.Add("idUtente", _gRepository.GetLoggedUser().idUtente);
+            parameters.Add("idUtente", _gRepository.GetLoggedUser().idUtenteLoc(_gRepository.GetActiveCompany().idCompany));
             List<object> lavor = _gRepository.GetDataBySQL("DbDati", "SELECT * From LAVOR", parameters.parameters);
             if (lavor.Count == 0) return new GenericResponse("Anagrafica non trovata");
 
@@ -41,7 +41,7 @@ namespace BecaWebService.Services.Custom
             try
             {
                 BecaParameters parameters = new BecaParameters();
-                parameters.Add("idUtente", _gRepository.GetLoggedUser().idUtente);
+                parameters.Add("idUtente", _gRepository.GetLoggedUser().idUtenteLoc(_gRepository.GetActiveCompany().idCompany));
                 List<object> lavor = _gRepository.GetDataBySQL("DbDati", "SELECT * From LAVOR", parameters.parameters);
                 if (lavor.Count == 0) return new GenericResponse("Anagrafica non trovata");
 
@@ -104,7 +104,7 @@ namespace BecaWebService.Services.Custom
             DateTime dt2 = dt1.AddMonths(1).AddDays(-1);
 
             BecaParameters parameters = new BecaParameters();
-            parameters.Add("idUtente", _gRepository.GetLoggedUser().idUtente);
+            parameters.Add("idUtente", _gRepository.GetLoggedUser().idUtenteLoc(_gRepository.GetActiveCompany().idCompany));
             List<object> lavor = _gRepository.GetDataBySQL("DbDati", "SELECT * From vCOLPE_UT Order By Fine DESC", parameters.parameters);
 
             if (lavor.Count == 0)
@@ -137,7 +137,7 @@ namespace BecaWebService.Services.Custom
         private List<string> GetFilialiUtente()
         {
             BecaParameters parameters = new BecaParameters();
-            parameters.Add("idUtente", _gRepository.GetLoggedUser().idUtente);
+            parameters.Add("idUtente", _gRepository.GetLoggedUser().idUtenteLoc(_gRepository.GetActiveCompany().idCompany));
             return _gRepository.GetDataBySQL("DbDati", "SELECT * From vCOLPE_UT_Fil", parameters.parameters)
                 .Select(F => F.GetPropertyValue("CDFF").ToString())
                 .ToList();

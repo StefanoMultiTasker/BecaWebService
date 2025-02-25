@@ -352,6 +352,11 @@ namespace Repository
                         //sql += par.name + " " + par.comparison;
                         switch (par.comparison.ToLower())
                         {
+                            case "betweenFields":
+                                sql += $"{{numP}} between {par.name.Replace(",", " And ")}";
+                                pars.Add(par.value1);
+                                numP++;
+                                break;
                             case "between":
                                 sql += par.name + " " + par.comparison;
                                 sql += " {" + numP + "} and {" + (numP + 1).ToString() + "}";
@@ -934,6 +939,12 @@ namespace Repository
                         //sql += par.name + " " + par.comparison;
                         switch (par.comparison.ToLower())
                         {
+                            case "betweenfields":
+                                sql += $"{{{numP}}} between {par.name.Replace(",", " And ")}";
+                                pars.Add(par.value1);
+                                numP++;
+                                break;
+
                             case "between":
                                 sql += par.name + " " + par.comparison;
                                 sql += " {" + numP + "} and {" + (numP + 1).ToString() + "}";

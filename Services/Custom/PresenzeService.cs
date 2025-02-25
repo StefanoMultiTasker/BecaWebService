@@ -160,7 +160,7 @@ namespace BecaWebService.Services.Custom
 
                 step = "get data";
                 List<BecaParameter> par = new List<BecaParameter>();
-                par.Add(new BecaParameter("idUtente", _gRepository.GetLoggedUser().idUtente));
+                par.Add(new BecaParameter("idUtente", _gRepository.GetLoggedUser().idUtenteLoc(_gRepository.GetActiveCompany().idCompany)));
                 par.Add(new BecaParameter("AACO", aaco));
                 par.Add(new BecaParameter("MMCO", mmco));
                 if (cdff != null) par.Add(new BecaParameter("CDFF", cdff));
@@ -187,7 +187,7 @@ namespace BecaWebService.Services.Custom
                 string tempFolder = Path.Combine(baseFolder, "Web", "Download", "_TEMP");
                 string tempName = Path.Combine(tempFolder, "Cartellino_" +
                     _gRepository.GetActiveCompany().MainFolder +
-                    _gRepository.GetLoggedUser().idUtente.ToString() +
+                    _gRepository.GetLoggedUser().idUtenteLoc(_gRepository.GetActiveCompany().idCompany).ToString() +
                     DateTime.Now.Ticks.ToString()) + ".pdf";
                 _logger.LogInfo($"genero il pdf {tempName}");
 

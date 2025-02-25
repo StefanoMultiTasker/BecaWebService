@@ -37,7 +37,8 @@ namespace BecaWebService.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                string inner = ex.InnerException == null ? "(no further details)" : $" further details: {ex.InnerException.Message}";
+                return BadRequest($"{ex.Message} {inner}");
             }
         }
 

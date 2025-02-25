@@ -40,7 +40,7 @@ namespace BecaWebService.Controllers
                     UIform childDetailUI = _repository.GetViewUI(child.form);
                     child.DetailUI= childDetailUI;
                 }
-                _logger.LogInfo($"Returned View for id {idView}.");
+                //_logger.LogInfo($"Returned View for id {idView}.");
 
                 return Ok(oView);
             }
