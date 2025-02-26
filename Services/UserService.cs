@@ -17,10 +17,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using RestSharp;
+using System.Drawing;
 using System.Net;
 using System.Net.Mail;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.Xml;
+using System.Security.Permissions;
 using System.Text;
 using static NLog.LayoutRenderers.Wrappers.ReplaceLayoutRendererWrapper;
 
@@ -47,6 +49,7 @@ namespace BecaWebService.Services
 
     public class UserService : IUserService
     {
+        private readonly FormTool _formTool;
         private DbBecaContext _context;
         //private DbMemoryContext _memoryContext;
         private IMyMemoryCache _memoryCache;
@@ -59,6 +62,7 @@ namespace BecaWebService.Services
         public UserService(IDependencies deps, DbBecaContext context, IJwtUtils jwtUtils, IOptions<AppSettings> appSettings,
             IHttpContextAccessor httpContextAccessor, ILoggerManager logger) //DbMemoryContext memoryContext,
         {
+            _formTool = deps.formTool;
             _context = context;
             _memoryCache = deps.memoryCache;
             _jwtUtils = jwtUtils;
@@ -87,11 +91,20 @@ namespace BecaWebService.Services
                     }
                     try
                     {
-                        string pwd = getLegacyPasswordByUser(user.Companies.First(c => c.idUtenteLoc != null));
+                        var legacy = getLegacyPasswordByUser(user.Companies.First(c => c.idUtenteLoc != null));
+                        string pwd = legacy.pwd;
+                        bool crypted = legacy.crypted;
                         _logger.LogInfo($"Logging utente migrato: username {user.UserName}, passsord digitata {model.Password}, password criptata {pwd}");
 
-                        Simple3Des cry = new Simple3Des("BecaW3bC1phKey");
-                        string chkPwd = cry.DecryptData(pwd);
+                        string chkPwd = "";
+                        if (crypted)
+                        {
+                            Simple3Des cry = new Simple3Des("BecaW3bC1phKey");
+                            chkPwd = cry.DecryptData(pwd);
+                        } else
+                        {
+                            chkPwd = pwd;
+                        }
                         _logger.LogInfo($"Logging utente migrato: username {user.UserName}, passsword memorizzata {chkPwd}");
 
                         if (chkPwd != model.Password)
@@ -181,7 +194,7 @@ namespace BecaWebService.Services
             }
         }
 
-        public string getLegacyPasswordByUser(UserCompany company)
+        public (string pwd, bool crypted) getLegacyPasswordByUser(UserCompany company)
         {
             Connection? cnn = _context.Companies
                 .Where(c => c.idCompany == company.idCompany)
@@ -196,13 +209,24 @@ namespace BecaWebService.Services
             string dbName = cnn.ConnectionString;
             DbDatiContext db = new DbDatiContext(null, dbName);
 
-            List<BecaUser> res = db.ExecuteQuery<BecaUser>("legacyUser", "Select Pwd From AnagrafeUtenti Where idUtente = {0}", false, (new List<object>() { company.idUtenteLoc }).ToArray());
+            List<LegacyUser> res = db.ExecuteQuery<LegacyUser>("legacyUser", "Select Pwd, pwdcry From AnagrafeUtenti Where idUtente = {0}", false, (new List<object>() { company.idUtenteLoc }).ToArray());
             if (res == null || res.Count == 0)
             {
                 throw new AppException("Utente non trovato sul DB Legacy");
             }
 
-            return res[0].GetPropertyString("Pwd");
+            if((Int16)res[0].GetPropertyValue("pwdcry") == 0)
+            {
+                Simple3Des cry = new Simple3Des("BecaW3bC1phKey");
+                string cryPwd = cry.EncryptData(res[0].GetPropertyString("Pwd"));
+                string sql = "Update AnagrafeUtenti Set PWD = {0}, pwdcry = 1 Where idUtente = {1}";
+                List<object> pars = new List<object>();
+                pars.Add(cryPwd);
+                pars.Add(company.idUtenteLoc);
+                db.ExecuteSqlCommand(sql, pars.ToArray());
+            }
+
+            return (res[0].GetPropertyString("Pwd"), (Int16)res[0].GetPropertyValue("pwdcry") == 0 ? false : true);
         }
 
         public AuthenticateResponse LoginById(int id, string ipAddress)
@@ -1156,6 +1180,12 @@ namespace BecaWebService.Services
             {
                 return new GenericResponse(ex, ex.Message);
             }
+        }
+
+        private class LegacyUser
+        {
+            public string Pwd { get; set; }
+            public Int16 pwdcry { get; set; }
         }
     }
 }
