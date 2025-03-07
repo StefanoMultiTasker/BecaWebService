@@ -362,12 +362,14 @@ namespace BecaWebService.Services.Custom
                 _logger.LogDebug($"Avvio l'attività per il soggetto {avvio.email}");
                 _logger.LogDebug("Eseguo spPMS_Avvia_Attivita");
 
+                int idUtenteAvvio = avvio.idUtenteAvvio; // _gRepository.GetLoggedUser().idUtenteLoc(_gRepository.GetActiveCompany().idCompany);
+
                 BecaParameters parameters = new BecaParameters();
                 parameters = new BecaParameters();
                 parameters.Add("idAnagAttivita", avvio.idAnagAttivita);
                 parameters.Add("apl", avvio.apl);
                 parameters.Add("cdff", avvio.cdff);
-                parameters.Add("pwdi", _gRepository.GetLoggedUser().idUtenteLoc(_gRepository.GetActiveCompany().idCompany));
+                parameters.Add("pwdi", idUtenteAvvio);
                 parameters.Add("user_email", avvio.email);
                 parameters.Add("communication_link", true);
                 parameters.Add("communication_email", true);
@@ -385,7 +387,7 @@ namespace BecaWebService.Services.Custom
                 if (apl.Count == 0) { return "Non trovo i dati dell'APL".toResponse(); }
 
                 parameters = new BecaParameters();
-                parameters.Add("cdff", avvio.cdff);
+                parameters.Add("CDFF", avvio.cdff);
                 List<object> filiali = _gRepository.GetDataBySQL("DbDati", "Select * From ANTEX", parameters.parameters);
                 if (filiali.Count == 0) { return "Non trovo i dati della filiale".toResponse(); }
 
@@ -395,11 +397,17 @@ namespace BecaWebService.Services.Custom
                 List<object> processi = _gRepository.GetDataBySQL("MainDB", "Select * From PMS_AnagAttivitaProcessi", parameters.parameters);
                 if (processi.Count == 0) { return "Non trovo il processo di avvio".toResponse(); }
                 int processo = int.Parse(processi[0].GetPropertyString("template_process_id"));
+                bool communication_link = (bool)processi[0].GetPropertyValue("communication_link");
 
                 dynamic data = new ExpandoObject();
+                var dict = (IDictionary<string, object>)data;
+                foreach (JProperty jproperty in avvio.data.Properties())
+                {
+                    dict[jproperty.Name] = jproperty.Value;
+                }
 
-                data.lavoratore_identificativo = avvio.data.lavoratore_identificativo;
-                data.cell_provvisorio = avvio.data.cell_provvisorio;
+                //data.lavoratore_identificativo = avvio.data.lavoratore_identificativo;
+                //data.cell_provvisorio = avvio.data.cell_provvisorio;
                 data.cdff = avvio.cdff;
                 data.comune_filiale = filiali[0].GetPropertyString("COFL");
                 data.aplP = apl[0].GetPropertyString("RSSL");
@@ -414,7 +422,10 @@ namespace BecaWebService.Services.Custom
                     external_user_id = idAttivita,
                     email = avvio.email,
                     apl = avvio.apl,
-                    communication = new List<string>() { "link", "email" },
+                    communication = new List<string>() {
+                        (bool)processi[0].GetPropertyValue("communication_link") ? "link" : "",
+                        (bool)processi[0].GetPropertyValue("communication_email") ? "email" : ""
+                    }.Where(c => c != "").ToList(),
                     content = data
                 };
 
@@ -483,7 +494,7 @@ namespace BecaWebService.Services.Custom
                         parameters.Add("user_steps_id", "[" + string.Join(",", (pmsResData.user_step_ids ?? new List<int>())) + "]");
                         parameters.Add("link", pmsResData.link);
                         parameters.Add("parametri_processo", sParamas);
-                        parameters.Add("PWDI", _gRepository.GetLoggedUser().idUtenteLoc(_gRepository.GetActiveCompany().idCompany));
+                        parameters.Add("PWDI", idUtenteAvvio);
                         int res2 = await _gRepository.ExecuteProcedure("MainDB", "spPMS_Avvia_Processo2", parameters.parameters);
                     }
                 }
@@ -492,7 +503,7 @@ namespace BecaWebService.Services.Custom
                     _logger.LogDebug($"La risposta è nulla");
                     return "La risposta è PMS nulla".toResponse();
                 }
-                return true.toResponse();
+                return new GenericResponse( new { link = pmsRes.response[0].link });
             }
             catch (Exception ex)
             {

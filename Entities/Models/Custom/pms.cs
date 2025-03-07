@@ -58,6 +58,7 @@ namespace Entities.Models.Custom
 
     public class pmsAvviaProcesso
     {
+        public int idUtenteAvvio { get; set; }
         public int idAnagAttivita { get; set; }
         public string apl { get; set; }
         public string cdff { get; set; }

@@ -140,6 +140,7 @@
         //public string DescCampo { get; set; }
         //public string Titolo { get; set; }
         public string? Title { get; set; }
+        public string? DefaultValue { get; set; }
         public string? FieldType { get; set; }
         //public string? TipoInput { get; set; }
         //public string? Struttura { get; set; }

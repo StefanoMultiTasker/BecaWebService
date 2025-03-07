@@ -1160,7 +1160,7 @@ namespace BecaWebService.Services
                 objMail.From = new MailAddress(owner, owner);
                 objMail.ReplyToList.Add(new MailAddress(owner));
 
-                objMail.Subject = $"TEST - Richiesta di reset delle credenziali per l'accesso a My{req.apl}";
+                objMail.Subject = $" Richiesta di reset delle credenziali per l'accesso a My{req.apl}";
                 objMail.IsBodyHtml = true;
                 objMail.BodyEncoding = System.Text.Encoding.UTF8;
                 objMail.Body = $"<p>E' stato richiesto il reset della password per un utente che non è stato possibile indentificare a sistema.</p>" +

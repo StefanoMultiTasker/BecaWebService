@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Server.IIS.Core;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -19,7 +20,7 @@ using System.Reflection;
 
 namespace Repository
 {
-    public class GenericRepository : IGenericRepository
+    public class GenericRepository : IGenericRepository, IDisposable
     {
         public string domain { get => _domain; }
         private DbBecaContext _context;
@@ -32,8 +33,10 @@ namespace Repository
         private string _domain;
 
         private Dictionary<string, DbDatiContext> _databases = new Dictionary<string, DbDatiContext>();
-
-        public GenericRepository(IDependencies deps, IHttpContextAccessor httpContextAccessor, ILoggerManager logger, IWebHostEnvironment environment) //ILogger<GenericRepository> logger)
+        private readonly IServiceScopeFactory _scopeFactory;
+        public GenericRepository(IDependencies deps, IServiceScopeFactory scopeFactory, 
+            IHttpContextAccessor httpContextAccessor, ILoggerManager logger, 
+            IWebHostEnvironment environment) //ILogger<GenericRepository> logger)
         {
             _context = deps.context;
             _currentUser = (BecaUser)httpContextAccessor.HttpContext.Items["User"];
@@ -42,10 +45,20 @@ namespace Repository
             _logger = logger;
             _environment = environment;
             _domain = httpContextAccessor.HttpContext.Request.Host.Host;
+            _scopeFactory = scopeFactory;
         }
 
         public BecaUser GetLoggedUser() => _currentUser;
         public Company GetActiveCompany() => _activeCompany;
+
+        public void Dispose()
+        {
+            foreach (var db in _databases.Values)
+            {
+                db.Dispose(); // Chiude tutte le connessioni
+            }
+            _databases.Clear();
+        }
 
         #region "Form"
 
@@ -70,6 +83,10 @@ namespace Repository
         {
             BecaForm form = _context.BecaForm
                 .FirstOrDefault(f => f.Form == Form);
+
+            List<BecaFormField> defFieds = _context.BecaFormField
+                .Where(f => f.Form == Form && f.DefaultValue != null)
+                .ToList();
 
             string tryUpload = await UploadByForm(form, record);
             if (tryUpload != "") throw new InvalidOperationException(tryUpload);
@@ -1260,10 +1277,23 @@ namespace Repository
         {
             if (dbName == "")
                 dbName = _activeCompany.Connections.FirstOrDefault(c => c.Default == true).ConnectionName;
-            if (_databases.ContainsKey(dbName)) return _databases[dbName];
+            string ctxName = $"{_activeCompany.idCompany}_{dbName}";
+            //if (_databases.ContainsKey(ctxName)) return _databases[ctxName];
 
-            DbDatiContext db = new DbDatiContext(_formTool, _activeCompany.Connections.FirstOrDefault(c => c.ConnectionName == dbName).ConnectionString);
-            _databases.Add(dbName, db);
+            //DbDatiContext db = new DbDatiContext(_formTool, _activeCompany.Connections.FirstOrDefault(c => c.ConnectionName == dbName).ConnectionString);
+            //_databases.Add(ctxName, db);
+            //return db;
+            if (_databases.ContainsKey(ctxName))
+                return _databases[ctxName];
+
+            var connectionString = _activeCompany.Connections
+                .FirstOrDefault(c => c.ConnectionName == dbName)?.ConnectionString;
+
+            var optionsBuilder = new DbContextOptionsBuilder<DbDatiContext>();
+            optionsBuilder.UseSqlServer(connectionString);
+
+            DbDatiContext db = new DbDatiContext(_formTool, connectionString);
+            _databases.Add(ctxName, db);
             return db;
         }
 

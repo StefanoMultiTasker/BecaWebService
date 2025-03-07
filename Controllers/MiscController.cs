@@ -130,6 +130,7 @@ namespace BecaWebService.Controllers
             }
         }
 
+        [AllowAnonymous]
         [HttpPost("SavinoOTP")]
         public IActionResult SavinoOTP([FromBody] SavinoOTP data)
         {
@@ -159,6 +160,7 @@ namespace BecaWebService.Controllers
             return res.Success ? (IActionResult)Ok(new { success = true }) : (IActionResult)NotFound(data);
         }
 
+        [AllowAnonymous]
         [HttpPost("SavinoFirma")]
         public async Task<IActionResult> SavinoFirma([FromBody] SavinoFirma data)
         {
@@ -189,6 +191,7 @@ namespace BecaWebService.Controllers
             return res ? (IActionResult)Ok(new { success = true }) : (IActionResult)NotFound(data);
         }
 
+        [AllowAnonymous]
         [HttpPost("pms")]
         public async Task<IActionResult> pms([FromBody] pmsJson data)
         {
@@ -210,6 +213,7 @@ namespace BecaWebService.Controllers
             return Ok();
         }
 
+        [AllowAnonymous]
         [HttpPost("pmsAvvia")]
         public async Task<IActionResult> pmsAvvia([FromBody] pmsAvviaProcesso data)
         {
