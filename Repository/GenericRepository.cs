@@ -125,6 +125,10 @@ namespace Repository
                     {
                         PropertyInfo pObj;
                         bool colExist = colsObj.TryGetValue(pTbl.Name, out pObj);
+                        if (colExist && pTbl.GetValue(record) == null && defFieds.Count(f=>f.Name.ToLower()==pTbl.Name.ToLower())>0)
+                        {
+                            record.SetPropertyValue(pTbl.Name, defFieds.FirstOrDefault(f => f.Name.ToLower() == pTbl.Name.ToLower()).DefaultValue);
+                        }
                         if (colExist && pTbl.GetValue(record) != null)
                         {
                             pars.Add(pTbl.GetValue(record));
@@ -325,14 +329,30 @@ namespace Repository
                             }
                             else
                             {
-                                pars.Add(par == "idUtente" ? _currentUser.idUtenteLoc(_activeCompany == null ? null : _activeCompany.idCompany) : null);
-                                parameters.Add(new BecaParameter()
+                                if (par == "idUtente")
                                 {
-                                    name = "idUtente",
-                                    value1 = _currentUser.idUtenteLoc(_activeCompany == null ? null : _activeCompany.idCompany),
-                                    comparison = "="
-                                });
-                                parameters.Find(p => p.name == "idUtente").used = true;
+                                    pars.Add(_currentUser.idUtenteLoc(_activeCompany == null ? null : _activeCompany.idCompany));
+                                    parameters.Add(new BecaParameter()
+                                    {
+                                        name = "idUtente",
+                                        value1 = _currentUser.idUtenteLoc(_activeCompany == null ? null : _activeCompany.idCompany),
+                                        comparison = "="
+                                    });
+                                    parameters.Find(p => p.name == "idUtente").used = true;
+                                }
+                                else if (par == "idCompany")
+                                {
+                                    pars.Add(_activeCompany == null ? null : _activeCompany.idCompany);
+                                    parameters.Add(new BecaParameter()
+                                    {
+                                        name = "idCompany",
+                                        value1 = _activeCompany == null ? null : _activeCompany.idCompany,
+                                        comparison = "="
+                                    });
+                                    parameters.Find(p => p.name == "idCompany").used = true;
+                                }
+                                else
+                                    pars.Add(null);
                             }
                         }
                         funcPar = funcPar.Replace("}{", "},{");
@@ -354,6 +374,20 @@ namespace Repository
                         {
                             name = "idUtente",
                             value1 = _currentUser.idUtenteLoc(_activeCompany == null ? null : _activeCompany.idCompany),
+                            comparison = "="
+                        });
+                    }
+                }
+
+                if (colCheck.GetType().GetProperty("idCompany") != null && form.UseDefaultParam)
+                {
+                    if (parameters == null) parameters = new List<BecaParameter>();
+                    if (parameters.Count(p => p.name.ToLower() == "idCompany") == 0)
+                    {
+                        parameters.Add(new BecaParameter()
+                        {
+                            name = "idCompany",
+                            value1 = _activeCompany == null ? null : _activeCompany.idCompany,
                             comparison = "="
                         });
                     }
@@ -889,7 +923,12 @@ namespace Repository
                             }
                             else
                             {
-                                pars.Add(par == "idUtente" ? _currentUser.idUtenteLoc(_activeCompany == null ? null : _activeCompany.idCompany) : null);
+                                if(par== "idUtente") 
+                                        pars.Add(_currentUser.idUtenteLoc(_activeCompany == null ? null : _activeCompany.idCompany));
+                                else if(par== "idCompany") 
+                                    pars.Add(_activeCompany == null ? null : _activeCompany.idCompany);
+                                else
+                                    pars.Add(null);
                             }
                         }
                         //foreach (BecaParameter par in parameters.Where(p => funcPars.Contains(p.name)))
@@ -922,6 +961,21 @@ namespace Repository
                         {
                             name = "idUtente",
                             value1 = _currentUser.idUtenteLoc(_activeCompany == null ? null : _activeCompany.idCompany),
+                            comparison = "="
+                        });
+                    }
+                }
+
+                if (((ddlPar != null && ddlPar.Contains("idCompany")) || ddl.Contains("idCompany"))
+                    && colCheck.GetType().GetProperty("idCompany") != null)
+                {
+                    if (parameters == null) parameters = new List<BecaParameter>();
+                    if (parameters.Count(p => p.name.ToLower() == "idcompany") == 0)
+                    {
+                        parameters.Add(new BecaParameter()
+                        {
+                            name = "idCompany",
+                            value1 = _activeCompany == null ? null : _activeCompany.idCompany,
                             comparison = "="
                         });
                     }
@@ -1035,6 +1089,11 @@ namespace Repository
                 {
                     ddlKeys += ",idUtente";
                     pars.Add(_currentUser.idUtenteLoc(_activeCompany == null ? null : _activeCompany.idCompany));
+                }
+                if (colCheck.GetType().GetProperty("idCompany") != null)
+                {
+                    ddlKeys += ",idCompany";
+                    pars.Add(_activeCompany == null ? null : _activeCompany.idCompany);
                 }
 
                 string sql = ddl + " Where " + key +

@@ -7,6 +7,7 @@ using RestSharp;
 using System.Net.Mail;
 using System.Net;
 using Contracts.Custom;
+using BecaWebService.Helpers;
 
 namespace BecaWebService.Services.Custom
 {
@@ -237,6 +238,52 @@ namespace BecaWebService.Services.Custom
                 sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Errore nel processo ( {ex.Message} )");
                 sw.Flush();
                 return false;
+            }
+        }
+
+        public async Task<GenericResponse> SavinoRevocaFirma(int idDoc)
+        {
+            try
+            {
+                BecaParameters parameters = new BecaParameters();
+                parameters.Add("idDoc", idDoc);
+                List<object> firme = _gRepository.GetDataBySQL("DbDati", "SELECT * From FRM_GestioneDocs", parameters.parameters);
+                if (firme == null || firme.Count == 0) return $"il documento richiesto non esiste ({idDoc})".toResponse();
+                int stato = (int)(firme[0].GetPropertyValue("statoDoc") ?? 0);
+
+                if (stato != 4)
+                {
+                    parameters = new BecaParameters();
+                    parameters.Add("idStato", stato);
+                    List<object> stati = _gRepository.GetDataBySQL("DbDati", "SELECT * From FRM_Stati", parameters.parameters);
+                    if (stati == null || stati.Count == 0) return $"il documento è in uno stato sconosciuto, non si può procedere ad annullare la firma. ({stato})".toResponse();
+
+                    return $"Lo stato del documento ({stati[0].GetPropertyString("Stato")}) non consente più l'annullamento della firma".toResponse();
+                }
+
+                int idOrdine = (int)firme[0].GetPropertyValue("idOrdineWS");
+                List<object> user = _gRepository.GetDataBySQL("DbDati", "SELECT * From vFRM_DatiWS", null);
+                string url = user[0].GetPropertyString("urlBase");
+                string token = user[0].GetPropertyString("token");
+
+                LinkResponse linkResponse = _miscServiceBase.CallWS_JSON_mode<LinkResponse>($"{url}/cancel/{idOrdine}", token, Method.Get);
+                if (!linkResponse.success)
+                {
+                    return new GenericResponse($"Non sono riuscito ad annullare l'ordine ({linkResponse.error})");
+                }
+
+                parameters = new BecaParameters();
+                parameters.Add("idDoc", idDoc); 
+                int sp = await _gRepository.ExecuteProcedure("DbDati", "spFRM_DocsAnnullaFirma", parameters.parameters);
+
+                int resDel = await _gRepository.ExecuteSqlCommandAsync("DbDati", "Delete FRM_GestioneDocs Where idDoc = {0}", parameters.parameters);
+                if (resDel == 0) return $"L'ordine è stato annullato, ma non sono riuscito ad eliminare il record".toResponse();
+
+                return new GenericResponse(true);
+            }
+            catch (Exception ex)
+            {
+                return ex.Message.toResponse();
             }
         }
     }

@@ -148,6 +148,42 @@ namespace BecaWebService.Controllers
             return await getContent(res, req.RequestList[0].lowerCase, cancel);
         }
 
+        [HttpPost("DataPack")]
+        public async Task<IActionResult> DataPack([FromBody] dataFormPostParameters req, System.Threading.CancellationToken cancel)
+        {
+            List<List<object>> res = new List<List<object>>();
+            foreach (dataFormPostParameter data in req.RequestList)
+            {
+                try
+                {
+                    string form = data.idView == null ? data.Form : getFormByView(data.idView.Value);
+                    if ((form ?? "") == "")
+                        return BadRequest("La View non ha form associate");
+                    if (data.FormField == null)
+                    {
+                        int? pageNumber = data.pageNumber;
+                        int? pageSize = data.pageSize;
+
+                        List<BecaParameter> parameters = data.Parameters.parameters;
+                        GenericResponse _res = _genericService.GetDataByForm(form, parameters, pageNumber, pageSize);
+                        res.Add(_res.Success ? _res._extraLoads : []);
+                    } else
+                    {
+                        string FormField = data.FormField;
+
+                        List<BecaParameter> parameters = data.Parameters.parameters;
+                        GenericResponse _res = _genericService.GetDataByFormField(form, FormField, parameters);
+                        res.Add(_res.Success ? _res._extraLoads : []);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest(ex.Message);
+                }
+            }
+            return await getContent(res, req.RequestList[0].lowerCase, cancel);
+        }
+
         [HttpPost("DataFormChildSelect")]
         public async Task<IActionResult> DataFormChildSelect([FromBody] dataFormChildElem data, System.Threading.CancellationToken cancel)
         {
@@ -287,17 +323,17 @@ namespace BecaWebService.Controllers
                 {
                     List<object> recordsNew = _genericService.CreateObjectsFromJArray<object>(form, data.newListData, true);
 
-                    string resultMessage = "";
+                    List<string> resultMessage = [];
                     bool resultSuccess = false;
                     List<object> resultObj = new List<object>();
                     for (int i = 0; i < recordsNew.Count; i++)
                     {
                         GenericResponse singleResult = await _genericService.AddDataByForm(form, recordsNew[i], data.force.Value);
-                        resultMessage = String.Join(";", resultMessage, singleResult.Message);
+                        resultMessage.Add(singleResult.Message);// = String.Join(";", resultMessage, singleResult.Message);
                         resultObj.Add(singleResult._extraLoad);
                         if (singleResult.Success) resultSuccess = true;
                     }
-                    result = new GenericResponse(resultObj, resultMessage);
+                    result = new GenericResponse(resultObj,String.Join(";", resultMessage.Where(m=>m!="")));
                 }
 
                 if (!result.Success)

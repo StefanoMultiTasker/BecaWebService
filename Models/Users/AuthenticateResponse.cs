@@ -15,6 +15,7 @@ namespace BecaWebService.Models.Users
         public bool isConfirmed { get; set; }
         public bool isPrivacyRead { get; set; }
         public bool isPwdChanged { get; set; }
+        public bool isExperimental { get; set; }
         public string Token { get; set; }
         public List<UserCompany> Companies { get; set; }
 
@@ -35,6 +36,7 @@ namespace BecaWebService.Models.Users
             isConfirmed = user.isConfirmed;
             isPrivacyRead = user.isPrivacyRead;
             isPwdChanged = user.isPwdChanged;
+            isExperimental = user.isExperimental;
             Token = jwtToken;
             RefreshToken = refreshToken;
             Companies = user.Companies;

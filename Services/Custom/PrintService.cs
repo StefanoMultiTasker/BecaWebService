@@ -10,10 +10,26 @@ using iText.Forms;
 using iText.IO.Source;
 using iText.Kernel.Pdf;
 using System.IO;
+using Path = System.IO.Path;
+
 using iText.Forms.Fields;
 using iText.Forms;
 using iText.IO.Source;
 using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Canvas.Parser;
+using iText.Kernel.Pdf.Layer;
+using System;
+using System.Collections.Generic;
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Canvas;
+using iText.Kernel.Pdf.Extgstate;
+using iText.Kernel.Pdf.Layer;
+using iText.Kernel.Font;
+using iText.Kernel.Geom;
+using iText.Kernel.Colors;
+using iText.Kernel.Pdf.Canvas.Parser;
+using iText.Kernel.Pdf.Canvas.Parser.Listener;
+using System.Reflection;
 
 namespace BecaWebService.Services.Custom
 {
@@ -48,11 +64,13 @@ namespace BecaWebService.Services.Custom
                 switch (sTipoModulo)
                 {
                     case "PDF":
-                        return "Tipo di stampa (PDF) non ancora implementata".toResponse();
+                        return $"Tipo di stampa ({sTipoModulo}) non ancora implementata".toResponse();
                         break;
                     case "PDF_Form":
                     case "PDF_Forms":
                         return new GenericResponse(new { pdf = printPDFForm() });
+                    case "PDF_Tags":
+                        return new GenericResponse(new { pdf = printPDFTags() });
                         break;
                     default:
                         return $"Tipo di stampa ({sTipoModulo}) non ancora implementata".toResponse();
@@ -137,12 +155,96 @@ namespace BecaWebService.Services.Custom
                 sourcePdfDocument.CopyPagesTo(1, sourcePdfDocument.GetNumberOfPages(), destPdfDocumentSmartMode, null);
                 sourcePdfDocument.Close();
                 count++;
+                sourcePdfDocument.Close();
                 //Log.Information($"PrintPresenze compiled {count}° form");
             }
             destPdfDocumentSmartMode.Close();
 
             //Log.Information($"PrintPresenze return pdf");
             return stream;
+        }
+
+        private MemoryStream printPDFTags()
+        {
+            string baseFolder = _gRepository.GetActiveCompany().MainFolder != "localhost" ?
+                Path.Combine(_env.ContentRootPath) :
+                Path.Combine("E:", "BecaWeb");
+            string folderName = Path.Combine(baseFolder, "Web", "Moduli", _gRepository!.GetActiveCompany()!.MainFolder!);
+            string sourceName = Path.Combine(folderName, fileModuleName); MemoryStream stream = new MemoryStream();
+
+            PdfDocument destPdfDocumentSmartMode = new PdfDocument(new PdfWriter(stream).SetSmartMode(true));
+
+            int count = 0;
+            foreach (object o in dtSource)
+            {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                PdfDocument sourcePdfDocument = new PdfDocument(new PdfReader(sourceName), new PdfWriter(baos));
+                //Read fields
+                //Fill out fields
+                //PdfFormField toSet;
+                foreach (PropertyInfo field in o.GetType().GetProperties())
+                {
+                    PdfReplace(sourcePdfDocument, count+1, field.Name, o.GetPropertyString(field.Name), null, 0);
+                }
+                sourcePdfDocument.Close();
+                sourcePdfDocument = new PdfDocument(new PdfReader(new MemoryStream(baos.ToArray())));
+                //Copy pages
+                sourcePdfDocument.CopyPagesTo(1, sourcePdfDocument.GetNumberOfPages(), destPdfDocumentSmartMode, null);
+                sourcePdfDocument.Close();
+                count++;
+                //Log.Information($"PrintPresenze compiled {count}° form");
+            }
+            destPdfDocumentSmartMode.Close();
+
+            //Log.Information($"PrintPresenze return pdf");
+            return stream;
+        }
+        public void PdfReplace(PdfDocument pdfDoc, int pageNum, string sFind, string sReplace, PdfFont? pdfFont, float fontSize)
+        {
+            PdfPage page = pdfDoc.GetPage(pageNum);
+
+            // Usa la strategia personalizzata per estrarre il testo con le coordinate
+            CustomLocationTextExtractionStrategy strategy = new CustomLocationTextExtractionStrategy();
+            PdfTextExtractor.GetTextFromPage(page, strategy);
+
+            List<TextLocation> lstMatches = strategy.GetTextLocations()
+                .Where(t => t.Text.Equals(sFind, StringComparison.CurrentCultureIgnoreCase))
+                .ToList();
+
+            if (lstMatches.Count == 0)
+            {
+                Console.WriteLine("Testo non trovato nella pagina.");
+                return;
+            }
+
+            PdfCanvas pdfCanvas = new PdfCanvas(page);
+            PdfLayer pdLayer = new PdfLayer("Overwrite", pdfDoc);
+            pdfCanvas.BeginLayer(pdLayer);
+
+            pdfCanvas.SetFillColor(ColorConstants.WHITE);
+
+            foreach (TextLocation match in lstMatches)
+            {
+                Rectangle rect = match.Bounds;
+
+                // Copre il testo originale con un rettangolo bianco
+                pdfCanvas.Rectangle(rect.GetX(), rect.GetY(), rect.GetWidth(), rect.GetHeight());
+                pdfCanvas.Fill();
+
+                // Imposta il nuovo stato grafico
+                PdfExtGState pgState = new PdfExtGState();
+                pdfCanvas.SetExtGState(pgState);
+                pdfCanvas.SetFillColor(ColorConstants.BLACK);
+
+                // Scrive il nuovo testo nella stessa posizione
+                pdfCanvas.BeginText();
+                if (pdfFont != null) pdfCanvas.SetFontAndSize(pdfFont, fontSize);
+                pdfCanvas.MoveText(rect.GetX(), rect.GetY());
+                pdfCanvas.ShowText(sReplace);
+                pdfCanvas.EndText();
+            }
+
+            pdfCanvas.EndLayer();
         }
     }
 }

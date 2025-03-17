@@ -29,6 +29,7 @@ namespace Entities.Models
         public bool isConfirmed { get; set; }
         public bool isPrivacyRead { get; set; }
         public bool isPwdChanged { get; set; }
+        public bool isExperimental { get; set; }
         public List<UserCompany> Companies { get; set; }
         //public string isDefault { get; set; }
         //public int idProfile { get; set; }
