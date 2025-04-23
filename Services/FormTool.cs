@@ -2,17 +2,21 @@
 using System.Data.Common;
 using System.Reflection;
 using System.Reflection.Emit;
+using Contracts;
+using Entities;
 
-namespace Entities
+namespace BecaWebService.Services
 {
     public class FormTool
     {
         private readonly IMyMemoryCache _cache;
+        private readonly ILoggerManager _logger;
 
-        public FormTool() { }
-        public FormTool(IMyMemoryCache memoryCache)
+        //public FormTool() { }
+        public FormTool(IMyMemoryCache memoryCache, ILoggerManager logger)
         {
             _cache = memoryCache;
+            _logger = logger;
         }
 
         public Type GetFormCfg(string formName, DbDataReader result, bool hasIdentity = true, bool hasChildren = false) =>
@@ -20,9 +24,10 @@ namespace Entities
 
         public Type GetFormCfg(string formName, DbDataReader result, List<string> fields, bool hasIdentity = true, bool hasChildren = false)
         {
-            string cacheKey = $"DynamicType_{formName}_{hasIdentity}_{hasChildren}";//{Guid.NewGuid()}
+            string cacheKey = $"DynamicType_{formName}_{hasIdentity}_{hasChildren}";
             return _cache.GetOrSetCache(cacheKey, () =>
             {
+                System.Diagnostics.Debug.WriteLine($"CREATO TIPO NUOVO: {cacheKey}");
                 Type generatedType = null;
                 var assemblyName = new AssemblyName();
                 assemblyName.Name = "tmpAssembly";
@@ -98,7 +103,7 @@ namespace Entities
 
                 generatedType = typeBuilder.CreateType();
                 return generatedType;
-            }, 600);
+            });
 
             //return generatedType;
         }

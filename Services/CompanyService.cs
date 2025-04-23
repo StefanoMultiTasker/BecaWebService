@@ -12,32 +12,22 @@ namespace BecaWebService.Services
 
     public class CompanyService : ICompanyService
     {
-        private DbBecaContext _context;
-        private IMyMemoryCache _memoryCache;
-        //private DbMemoryContext _memoryContext;
+        private readonly DbBecaContext _context;
+        private readonly IMyMemoryCache _memoryCache;
 
-        public CompanyService(IDependencies deps, DbBecaContext context)
+        public CompanyService(IMyMemoryCache memoryCache, DbBecaContext context)
         {
-            _memoryCache = deps.memoryCache;
+            _memoryCache = memoryCache;
             _context = context;
         }
 
         public Company GetById(int id)
         {
-            Company company = _memoryCache.GetOrSetCache<Company>($"CompanyById_{id}", () =>
+            return _memoryCache.GetOrSetCache<Company>($"CompanyById_{id}", () =>
             {
-                return _context.Companies.Find(id);
+                var company = _context.Companies.Find(id);
+                return company ?? throw new KeyNotFoundException($"Company with ID {id} not found");
             });
-
-            //Company company = _memoryContext.Companies.Find(id);
-            //if (company == null)
-            //{
-            //    company = _context.Companies.Find(id);
-            //    _memoryContext.Companies.Add(company.deepCopy());
-            //    _memoryContext.SaveChanges();
-            //}
-            if (company == null) throw new KeyNotFoundException("Company not found");
-            return company;
         }
     }
 }

@@ -35,7 +35,7 @@ namespace BecaWebService.Services
                 homeModelRow row = new homeModelRow
                 {
                     position = rowGroup.Key.rowPosition, // La posizione è la rowPosition
-                    styleClass = rowGroup.First().rowClass, // Stile della riga, presumo sia uguale per tutte le colonne nella stessa riga
+                    styleClass = rowGroup.First().rowClass ?? "", // Stile della riga, presumo sia uguale per tutte le colonne nella stessa riga
                     columns = new List<homeModelColumn>()
                 };
 
@@ -58,9 +58,10 @@ namespace BecaWebService.Services
                         redirect=item.colRedirect,
                     };
 
-                    if(item.sourceSQL != null)
+                    bool isToAdd = true;
+                    if(item.sourceSQL != null && !item.ConnectionName.isNullOrempty())
                     {
-                        List<object> testi = _genericRepository.GetDataBySQL(item.ConnectionName, item.sourceSQL, new List<BecaParameter>() );
+                        List<object> testi = _genericRepository.GetDataBySQL(item.ConnectionName ?? "", item.sourceSQL, new List<BecaParameter>() );
                         if (testi.Count > 0) {
                             switch (item.sourceType)
                             {
@@ -73,13 +74,14 @@ namespace BecaWebService.Services
                         {
                             column.content = item.colContentDefault ?? "";
                         }
-                    }
+                        if (column.content.isNullOrempty()) isToAdd = false;
+                    } 
 
-                    row.columns.Add(column);
+                    if(isToAdd) row.columns.Add(column);
                 }
 
                 // Aggiungo la riga al risultato finale
-                homePage.homeModelRow.Add(row);
+                if(row.columns.Count > 0) homePage.homeModelRow.Add(row);
             }
 
             return homePage;

@@ -8,6 +8,7 @@ using System.Net.Mail;
 using System.Net;
 using Contracts.Custom;
 using BecaWebService.Helpers;
+using BecaWebService.ExtensionsLib;
 
 namespace BecaWebService.Services.Custom
 {
@@ -29,7 +30,7 @@ namespace BecaWebService.Services.Custom
             {
                 sw.WriteLine($"APL: {_gRepository.domain}");
 
-                List<object> user = _gRepository.GetDataBySQL("DbDati", "SELECT * From vFRM_DatiWS", null);
+                List<object> user = _gRepository.GetDataBySQL("DbDati", "SELECT * From vFRM_DatiWS", []);
                 string url = user[0].GetPropertyString("urlBase");
                 string token = user[0].GetPropertyString("token");
 
@@ -37,6 +38,12 @@ namespace BecaWebService.Services.Custom
                 if (!linkResponse.success)
                 {
                     sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Non riesco ad accedere al WebService. Token: {token}, errorCode: {linkResponse.errorCode}, error: {linkResponse.error}");
+                    sw.Flush();
+                    return new GenericResponse("Erorre nel reperimento del link");
+                }
+                if (linkResponse.data == null)
+                {
+                    sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Non riesco ad accedere al WebService. Token: {token}, errorCode: {linkResponse.errorCode}, error: {linkResponse.error}, data è null");
                     sw.Flush();
                     return new GenericResponse("Erorre nel reperimento del link");
                 }
@@ -48,12 +55,13 @@ namespace BecaWebService.Services.Custom
                     sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: OTP Scaduto: otp {res.otp}, scadenza: {res.dueDate}");
                     linkResponse = _miscServiceBase.CallWS_JSON_mode<LinkResponse>(url + "/signatory/link/" + res.id.ToString(), token, Method.Get);
                     if (!linkResponse.success) return new GenericResponse("Erorre nel reperimento del link");
+                    if (linkResponse.data == null) return new GenericResponse("Erorre nel reperimento del link");
                     sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Nuovo OTP: otp {linkResponse.data.otp}");
                 }
 
                 sw.Flush();
 
-                string otp = linkResponse.data.otp;
+                string otp = linkResponse.data.otp ?? "";
                 string email = user[0].GetPropertyString("sender");
                 string nome = "";
 
@@ -128,7 +136,7 @@ namespace BecaWebService.Services.Custom
                     sw.WriteLine($"ha dato errore {ex.Message}");
                 }
 
-                List<object> user = _gRepository.GetDataBySQL("DbDati", "SELECT * From vFRM_DatiWS", null);
+                List<object> user = _gRepository.GetDataBySQL("DbDati", "SELECT * From vFRM_DatiWS", []);
                 string url = user[0].GetPropertyString("urlBase");
                 string token = user[0].GetPropertyString("token");
 
@@ -166,9 +174,11 @@ namespace BecaWebService.Services.Custom
                     GetOrderResponse order = _miscServiceBase.CallWS_JSON_mode<GetOrderResponse>(url + "/" + res.root.ToString(), token, Method.Get);
                     if (order == null) return false;
                     if (!order.success) return false;
+                    if (order.data == null) return false;
+                    if (order.data.files == null) return false;
                     sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: trovato");
 
-                    OrderFileResponse zip = order.data.files.FirstOrDefault(f => f.mimetype == "application/zip");
+                    OrderFileResponse? zip = order.data.files.FirstOrDefault(f => f.mimetype == "application/zip");
                     if (zip == null) return false;
                     //_logger.LogInformation($"Trovato lo zip nei file collegati: {zip.id}");
                     sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Trovato lo zip nei file collegati: {zip.id}");
@@ -211,7 +221,7 @@ namespace BecaWebService.Services.Custom
                     objMail.To.Add(new MailAddress(Dest));
 
                     // File in formato Base64
-                    string fileBase64 = zipFile.data.contentToBase64;
+                    string fileBase64 = zipFile.data.contentToBase64 ?? "";
                     // Decodifica della stringa Base64 in byte array
                     byte[] fileBytes = Convert.FromBase64String(fileBase64);
                     // Creazione dell'allegato
@@ -241,17 +251,21 @@ namespace BecaWebService.Services.Custom
             }
         }
 
-        public async Task<GenericResponse> SavinoRevocaFirma(int idDoc)
+        public async Task<GenericResponse> SavinoRevocaFirma(string idDocs)
         {
+            if(idDocs.isNullOrempty()) return "Nessun id specificato".toResponse();
+            string[] _idDocs = idDocs.Split(',');
+            if (_idDocs.Any(d => !d.isNumeric())) return "Uno o più id non sono validi".toResponse();
             try
             {
+
                 BecaParameters parameters = new BecaParameters();
-                parameters.Add("idDoc", idDoc);
+                parameters.Add("idDoc", int.Parse(_idDocs[0]));
                 List<object> firme = _gRepository.GetDataBySQL("DbDati", "SELECT * From FRM_GestioneDocs", parameters.parameters);
-                if (firme == null || firme.Count == 0) return $"il documento richiesto non esiste ({idDoc})".toResponse();
+                if (firme == null || firme.Count == 0) return $"il documento richiesto non esiste ({_idDocs[0]})".toResponse();
                 int stato = (int)(firme[0].GetPropertyValue("statoDoc") ?? 0);
 
-                if (stato != 4)
+                if (stato != 4 && stato != 10)
                 {
                     parameters = new BecaParameters();
                     parameters.Add("idStato", stato);
@@ -261,23 +275,27 @@ namespace BecaWebService.Services.Custom
                     return $"Lo stato del documento ({stati[0].GetPropertyString("Stato")}) non consente più l'annullamento della firma".toResponse();
                 }
 
-                int idOrdine = (int)firme[0].GetPropertyValue("idOrdineWS");
-                List<object> user = _gRepository.GetDataBySQL("DbDati", "SELECT * From vFRM_DatiWS", null);
-                string url = user[0].GetPropertyString("urlBase");
-                string token = user[0].GetPropertyString("token");
-
-                LinkResponse linkResponse = _miscServiceBase.CallWS_JSON_mode<LinkResponse>($"{url}/cancel/{idOrdine}", token, Method.Get);
-                if (!linkResponse.success)
+                if (stato != 4)
                 {
-                    return new GenericResponse($"Non sono riuscito ad annullare l'ordine ({linkResponse.error})");
+                    int idOrdine = (int)firme[0].GetPropertyValue("idOrdineWS");
+                    List<object> user = _gRepository.GetDataBySQL("DbDati", "SELECT * From vFRM_DatiWS", []);
+                    string url = user[0].GetPropertyString("urlBase");
+                    string token = user[0].GetPropertyString("token");
+
+                    LinkResponse linkResponse = _miscServiceBase.CallWS_JSON_mode<LinkResponse>($"{url}/cancel/{idOrdine}", token, Method.Post);
+                    if (!linkResponse.success)
+                    {
+                        return new GenericResponse($"Non sono riuscito ad annullare l'ordine ({linkResponse.error})");
+                    }
                 }
 
                 parameters = new BecaParameters();
-                parameters.Add("idDoc", idDoc); 
+                parameters.Add("idDocs", idDocs); 
                 int sp = await _gRepository.ExecuteProcedure("DbDati", "spFRM_DocsAnnullaFirma", parameters.parameters);
 
-                int resDel = await _gRepository.ExecuteSqlCommandAsync("DbDati", "Delete FRM_GestioneDocs Where idDoc = {0}", parameters.parameters);
-                if (resDel == 0) return $"L'ordine è stato annullato, ma non sono riuscito ad eliminare il record".toResponse();
+                //List<object> pars = parameters.parameters.Select(p => p.value1).ToList();
+                //int resDel = await _gRepository.ExecuteSqlCommandAsync("DbDati", "Delete FRM_GestioneDocs Where idDoc = {0}", [..pars]);
+                //if (resDel == 0) return $"L'ordine è stato annullato, ma non sono riuscito ad eliminare il record".toResponse();
 
                 return new GenericResponse(true);
             }

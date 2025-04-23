@@ -95,7 +95,7 @@ namespace BecaWebService.Services.Custom
                     _           => ""
                 };
                 if (attr == "") return "";
-                BecaViewAction action = _becaRepository.BecaViewActions(name);
+                BecaViewAction action = _becaRepository.BecaViewActions(name)!;
                 BecaParameters _parameters = new BecaParameters();
                 List<object> dati = _gRepository.GetDataBySQL("DbDati", action.GetPropertyString(attr), _parameters.parameters);
                 if (dati == null || dati.Count() == 0) { return $"Non ho trovato l'indirizzo che deve inviare"; }

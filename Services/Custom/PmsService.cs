@@ -18,17 +18,12 @@ using static iText.IO.Image.Jpeg2000ImageData;
 
 namespace BecaWebService.Services.Custom
 {
-    public class PmsService : IPmsService
+    public class PmsService(ISharedService miscServiceBase, IGenericRepository genRepository, ILoggerManager logger) : IPmsService
     {
-        private readonly ISharedService _miscServiceBase;
-        private readonly IGenericRepository _gRepository;
-        private readonly ILoggerManager _logger;
-        public PmsService(ISharedService miscServiceBase, IGenericRepository genRepository, ILoggerManager logger)
-        {
-            _miscServiceBase = miscServiceBase;
-            _gRepository = genRepository;
-            _logger = logger;   
-        }
+        private readonly ISharedService _miscServiceBase = miscServiceBase;
+        private readonly IGenericRepository _gRepository = genRepository;
+        private readonly ILoggerManager _logger = logger;
+
         public async Task<bool> pms(pmsJson pmsJson, string json, StreamWriter sw)
         {
             try
@@ -38,148 +33,14 @@ namespace BecaWebService.Services.Custom
                 sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: aggiorno PMS_JSON ");
                 string sql = "Update PMS_JSON Set JSON = {2} Where idAttivita = {0} And user_process_id = {1}";
 
-                List<object> pars = new List<object>();
-                pars.Add(pmsJson.external_user_id);
-                pars.Add(pmsJson.user_process_id);
-                pars.Add(json);
+                List<object> pars = [pmsJson.external_user_id, pmsJson.user_process_id, json];
 
                 GenericResponse res = await AvviaProcessoSuccessivo(pmsJson.external_user_id, pmsJson.user_process_id, sw);
 
-                _gRepository.ExecuteSqlCommand("DbDati", sql, pars.ToArray());
+                _gRepository.ExecuteSqlCommand("DbDati", sql, [.. pars]);
 
                 sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Leggo vPMS_Processi_da_Avviare");
                 return res.Success;
-
-                //BecaParameters parameters = new BecaParameters();
-                //parameters.Add("idAttivita", pmsJson.external_user_id);
-                //List<object> processes = _gRepository.GetDataBySQL("DbDati", "SELECT * From vPMS_Processi_da_Avviare", parameters.parameters);
-
-                //if (processes.Count == 0)
-                //{
-                //    sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Non ce ne sono");
-                //    return true;
-                //}
-
-                //foreach (object process in processes)
-                //{
-                //    sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Eseguo spPMS_Avvia_Processo {process.GetPropertyString("template_process_idDaAvviare")}");
-
-                //    parameters = new BecaParameters();
-                //    parameters.Add("idAttivita", pmsJson.external_user_id);
-                //    parameters.Add("template_process_id", process.GetPropertyString("template_process_idDaAvviare"));
-                //    parameters.Add("user_email", process.GetPropertyString("email"));
-                //    parameters.Add("communication_link", true);
-                //    parameters.Add("communication_email", true);
-                //    int res = await _gRepository.ExecuteProcedure("DbDati", "spPMS_Avvia_Processo", parameters.parameters);
-
-                //    sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Leggo spPMS_Parametri_e_Valori_Avvia_Processo {pmsJson.external_user_id} {process.GetPropertyString("template_process_idDaAvviare")}");
-
-                //    parameters = new BecaParameters();
-                //    parameters.Add("idAttivita", pmsJson.external_user_id);
-                //    parameters.Add("template_process_id", process.GetPropertyString("template_process_idDaAvviare"));
-
-                //    List<object> pmsParams = _gRepository.GetDataBySP<object>("DbDati", "spPMS_Parametri_e_Valori_Avvia_Processo", parameters.parameters);
-
-                //    string sParamas = "";
-                //    dynamic content = new ExpandoObject();
-                //    object param = null;
-
-                //    if (pmsParams.Count > 0)
-                //    {
-                //        param = pmsParams[0];
-                //        sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Preparo i parametri");
-
-                //        // Converte `param` in JSON
-                //        string jsonParam = JsonConvert.SerializeObject(param);
-                //        sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: {jsonParam}");
-
-                //        // Converte il JSON in un dizionario
-                //        var dictionary = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonParam);
-
-                //        // Rimuovi il campo indesiderato (ad esempio, "campoDaEscludere")
-                //        dictionary.Remove("external_user_id");
-
-                //        // Converte il dizionario in un ExpandoObject, che può essere assegnato a `content`
-                //        foreach (var kvp in dictionary)
-                //        {
-                //            if (kvp.Key == "id_card_savino")
-                //            {
-                //                ((IDictionary<string, object>)content).Add(kvp.Key, await getPMSFile(kvp.Value.ToString(), sw));
-                //            }
-                //            else
-                //            {
-                //                ((IDictionary<string, object>)content).Add(kvp.Key, kvp.Value);
-                //            }
-                //        }
-
-                //        parameters = new BecaParameters();
-                //        parameters.Add("template_process_id", process.GetPropertyString("template_process_idDaAvviare"));
-                //        List<object> pmsParamsDict = _gRepository.GetDataBySQL("DbDati", "Select * From PMS_ParamDict", parameters.parameters);
-                //        if (pmsParamsDict.Count > 0)
-                //        {
-                //            List<string> keys = pmsParamsDict[0].GetPropertyString("Keys").Split(",").Skip(5).ToList();
-                //            foreach (string key in keys)
-                //            {
-                //                sParamas += @$"""{param.GetPropertyString(key)}"", ";
-                //            }
-                //            sParamas = "[" + sParamas.left(sParamas.Length - 2) + "]";
-                //        }
-                //    }
-
-                //    pmsPostData pmsPostData = new pmsPostData();
-                //    pmsPostData.external_user_id = int.Parse(param.GetPropertyString("external_user_id"));
-                //    pmsPostData.email = process.GetPropertyString("email");
-                //    pmsPostData.apl = process.GetPropertyString("apl");
-                //    pmsPostData.communication = process.GetPropertyString("communication").Split(",").Select(c => c.Replace(@"""", "").Replace(" ", "")).ToList();
-                //    pmsPostData.content = content;
-
-                //    pmsPost body = new pmsPost();
-                //    body.template_process_id = int.Parse(process.GetPropertyString("template_process_idDaAvviare"));
-                //    body.data = new List<pmsPostData>
-                //    {
-                //        pmsPostData
-                //    };
-
-                //    string jsonbody = JsonConvert.SerializeObject(body);
-
-                //    sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Avvio il processo su PMS");
-                //    sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: {jsonbody}");
-                //    pmsPostResponse pmsRes = _miscServiceBase.CallWS_JSON_mode<pmsPostResponse>("https://api.pms.attalgroup.it/pms/processes", "", Method.Post, body);
-
-                //    string pmsResJson = JsonConvert.SerializeObject(pmsRes);
-                //    sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: La risposta è la seguente");
-                //    sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: {pmsResJson}");
-
-                //    if (pmsRes != null)
-                //    {
-                //        if (pmsRes.response == null || pmsRes.response.Count == 0)
-                //        {
-                //            sw.WriteLine("L'array response è vuoto");
-                //            await SaveError(pmsJson.external_user_id, pmsJson.user_process_id, "Response data vuoto", sw);
-                //        }
-                //        else
-                //        {
-                //            pmsPostResponseData pmsResData = pmsRes.response[0];
-                //            parameters = new BecaParameters();
-                //            parameters.Add("idAttivita", pmsResData.external_user_id);
-                //            parameters.Add("template_process_id", process.GetPropertyString("template_process_idDaAvviare"));
-                //            parameters.Add("user_process_id", pmsResData.user_process_id);
-                //            parameters.Add("user_steps_id", "[" + string.Join(",", pmsResData.user_step_ids ?? new List<int>()) + "]");
-                //            parameters.Add("link", pmsResData.link);
-                //            parameters.Add("parametri_processo", sParamas);
-                //            parameters.Add("PWDI", 1);
-
-                //            sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Eseguo spPMS_Avvia_Processo2");
-                //            res = await _gRepository.ExecuteProcedure("DbDati", "spPMS_Avvia_Processo2", parameters.parameters);
-                //        }
-                //    }
-                //    else
-                //    {
-                //        sw.WriteLine("PMS non ha risposto");
-                //        await SaveError(pmsJson.external_user_id, pmsJson.user_process_id, "Risposta non valida", sw);
-                //    }
-                //}
-                //return true;
             }
             catch (Exception ex)
             {
@@ -199,27 +60,25 @@ namespace BecaWebService.Services.Custom
             return await AvviaProcessoSuccessivo(idAttivita, user_process_id, null);
         }
 
-        private async Task<GenericResponse> AvviaProcessoSuccessivo(int idAttivita, int user_process_id, StreamWriter sw)
+        private async Task<GenericResponse> AvviaProcessoSuccessivo(int idAttivita, int user_process_id, StreamWriter? sw)
         {
             try
             {
-                if(sw != null) sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Leggo vPMS_Processi_da_Avviare");
-                BecaParameters parameters = new BecaParameters();
+                sw?.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Leggo vPMS_Processi_da_Avviare");
+                BecaParameters parameters = new();
                 parameters.Add("idAttivita", idAttivita);
                 parameters.Add("user_process_id", user_process_id);
-                //parameters.Add("apl", _gRepository.GetActiveCompany().MainFolder);
-                //List<object> processes = _gRepository.GetDataBySQL("MainDB", "SELECT * From vPMS_Processi_da_Avviare", parameters.parameters);
                 List<object> processes = _gRepository.GetDataBySQL("MainDB", $"SELECT * From dbo.fnPMS_Processi_da_Avviare({idAttivita}, {user_process_id})", parameters.parameters);
 
                 if (processes.Count == 0)
                 {
-                    if (sw != null) sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Non ce ne sono");
+                    sw?.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Non ce ne sono");
                     return new GenericResponse(true);
                 }
 
                 foreach (object process in processes)
                 {
-                    if (sw != null) sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Eseguo spPMS_Avvia_Processo {process.GetPropertyString("template_process_idDaAvviare")}");
+                    sw?.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Eseguo spPMS_Avvia_Processo {process.GetPropertyString("template_process_idDaAvviare")}");
 
                     parameters = new BecaParameters();
                     parameters.Add("idAttivita", idAttivita);
@@ -229,7 +88,7 @@ namespace BecaWebService.Services.Custom
                     parameters.Add("communication_email", true);
                     int res = await _gRepository.ExecuteProcedure("MainDB", "spPMS_Avvia_Processo", parameters.parameters);
 
-                    if (sw != null) sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Leggo spPMS_Parametri_e_Valori_Avvia_Processo {idAttivita} {process.GetPropertyString("template_process_idDaAvviare")}");
+                    sw?.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Leggo spPMS_Parametri_e_Valori_Avvia_Processo {idAttivita} {process.GetPropertyString("template_process_idDaAvviare")}");
 
                     parameters = new BecaParameters();
                     parameters.Add("idAttivita", idAttivita);
@@ -239,39 +98,39 @@ namespace BecaWebService.Services.Custom
 
                     string sParamas = "";
                     dynamic content = new ExpandoObject();
-                    object param = null;
+                    object? param = null;
 
                     if (pmsParams.Count > 0)
                     {
                         param = pmsParams[0];
-                        if (sw != null) sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Preparo i parametri");
+                        sw?.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Preparo i parametri");
 
                         // Converte `param` in JSON
                         string jsonParam = JsonConvert.SerializeObject(param);
-                        if (sw != null) sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: {jsonParam}");
+                        sw?.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: {jsonParam}");
 
                         // Converte il JSON in un dizionario
-                        var dictionary = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonParam);
+                        var dictionary = JsonConvert.DeserializeObject<Dictionary<string, object?>>(jsonParam);
 
                         // Rimuovi il campo indesiderato (ad esempio, "campoDaEscludere")
-                        dictionary.Remove("external_user_id");
+                        dictionary!.Remove("external_user_id");
 
                         // Converte il dizionario in un ExpandoObject, che può essere assegnato a `content`
                         foreach (var kvp in dictionary)
                         {
                             if (kvp.Key == "id_card_savino")
                             {
-                                ((IDictionary<string, object>)content).Add(kvp.Key, await getPMSFile(kvp.Value.ToString(), sw));
+                                ((IDictionary<string, object?>)content).Add(kvp.Key, kvp.Value == null ? null : await GetPMSFile(kvp.Value!.ToString(), sw));
                             }
                             else
                             {
-                                ((IDictionary<string, object>)content).Add(kvp.Key, kvp.Value);
+                                ((IDictionary<string, object?>)content).Add(kvp.Key, kvp.Value);
                             }
                         }
 
                         parameters = new BecaParameters();
                         parameters.Add("template_process_id", process.GetPropertyString("template_process_idDaAvviare"));
-                        List<object> pmsParamsDict = _gRepository.GetDataBySQL("MainDB", "Select * From PMS_ParamDict", parameters.parameters);
+                        List<object> pmsParamsDict = _gRepository.GetDataBySQL("MainDB", "Select * From vPMS_ParamDict", parameters.parameters);
                         if (pmsParamsDict.Count > 0)
                         {
                             List<string> keys = pmsParamsDict[0].GetPropertyString("Keys").Split(",").Skip(5).ToList();
@@ -283,35 +142,39 @@ namespace BecaWebService.Services.Custom
                         }
                     }
 
-                    pmsPostData pmsPostData = new pmsPostData();
-                    pmsPostData.external_user_id = int.Parse(param.GetPropertyString("external_user_id"));
-                    pmsPostData.email = process.GetPropertyString("email");
-                    pmsPostData.apl = process.GetPropertyString("apl");
-                    pmsPostData.communication = process.GetPropertyString("communication").Split(",").Select(c => c.Replace(@"""", "").Replace(" ", "")).ToList();
-                    pmsPostData.content = content;
-
-                    pmsPost body = new pmsPost();
-                    body.template_process_id = int.Parse(process.GetPropertyString("template_process_idDaAvviare"));
-                    body.data = new List<pmsPostData>
+                    pmsPostData pmsPostData = new()
                     {
+                        external_user_id = int.Parse(param.GetPropertyString("external_user_id")),
+                        email = process.GetPropertyString("email"),
+                        apl = process.GetPropertyString("apl"),
+                        communication = process.GetPropertyString("communication").Split(",").Select(c => c.Replace(@"""", "").Replace(" ", "")).ToList(),
+                        content = content
+                    };
+
+                    pmsPost body = new()
+                    {
+                        template_process_id = int.Parse(process.GetPropertyString("template_process_idDaAvviare")),
+                        data =
+                    [
                         pmsPostData
+                    ]
                     };
 
                     string jsonbody = JsonConvert.SerializeObject(body);
 
-                    if (sw != null) sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Avvio il processo su PMS");
-                    if (sw != null) sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: {jsonbody}");
+                    sw?.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Avvio il processo su PMS");
+                    sw?.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: {jsonbody}");
                     pmsPostResponse pmsRes = _miscServiceBase.CallWS_JSON_mode<pmsPostResponse>("https://api.pms.attalgroup.it/pms/processes", "", Method.Post, body);
 
                     string pmsResJson = JsonConvert.SerializeObject(pmsRes);
-                    if (sw != null) sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: La risposta è la seguente");
-                    if (sw != null) sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: {pmsResJson}");
+                    sw?.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: La risposta è la seguente");
+                    sw?.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: {pmsResJson}");
 
                     if (pmsRes != null)
                     {
                         if (pmsRes.response == null || pmsRes.response.Count == 0)
                         {
-                            if (sw != null) sw.WriteLine("L'array response è vuoto");
+                            sw?.WriteLine("L'array response è vuoto");
                             await SaveError(idAttivita, user_process_id, "Response data vuoto", sw);
                             return "La risposta è PMS vuota".toResponse();
                         }
@@ -328,18 +191,18 @@ namespace BecaWebService.Services.Custom
                             parameters.Add("idAttivita", pmsResData.external_user_id);
                             parameters.Add("template_process_id", process.GetPropertyString("template_process_idDaAvviare"));
                             parameters.Add("user_process_id", pmsResData.user_process_id);
-                            parameters.Add("user_steps_id", "[" + string.Join(",", pmsResData.user_step_ids ?? new List<int>()) + "]");
+                            parameters.Add("user_steps_id", "[" + string.Join(",", pmsResData.user_step_ids ?? []) + "]");
                             parameters.Add("link", pmsResData.link);
                             parameters.Add("parametri_processo", sParamas.Replace("'","''"));
                             parameters.Add("PWDI", 1);
 
-                            if (sw != null) sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Eseguo spPMS_Avvia_Processo2");
+                            sw?.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Eseguo spPMS_Avvia_Processo2");
                             res = await _gRepository.ExecuteProcedure("MainDB", "spPMS_Avvia_Processo2", parameters.parameters);
                         }
                     }
                     else
                     {
-                        if (sw != null) sw.WriteLine("PMS non ha risposto");
+                        sw?.WriteLine("PMS non ha risposto");
                         await SaveError(idAttivita, user_process_id, "Risposta non valida", sw);
                         return "La risposta è PMS non è valida".toResponse();
                     }
@@ -348,8 +211,8 @@ namespace BecaWebService.Services.Custom
             }
             catch (Exception ex)
             {
-                if (sw != null) sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Errore nel processo ( {ex.Message} )");
-                if (sw != null) sw.Flush();
+                sw?.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Errore nel processo ( {ex.Message} )");
+                sw?.Flush();
                 await SaveError(idAttivita, user_process_id, ex.Message, sw);
                 return ex.Message.toResponse();
             }
@@ -364,7 +227,7 @@ namespace BecaWebService.Services.Custom
 
                 int idUtenteAvvio = avvio.idUtenteAvvio; // _gRepository.GetLoggedUser().idUtenteLoc(_gRepository.GetActiveCompany().idCompany);
 
-                BecaParameters parameters = new BecaParameters();
+                BecaParameters parameters = new();
                 parameters = new BecaParameters();
                 parameters.Add("idAnagAttivita", avvio.idAnagAttivita);
                 parameters.Add("apl", avvio.apl);
@@ -383,7 +246,7 @@ namespace BecaWebService.Services.Custom
 
                 _logger.LogDebug("Avvio PMS");
 
-                List<object> apl = _gRepository.GetDataBySQL("DbDati", "Select * From ANSDA", null);
+                List<object> apl = _gRepository.GetDataBySQL("DbDati", "Select * From ANSDA", []);
                 if (apl.Count == 0) { return "Non trovo i dati dell'APL".toResponse(); }
 
                 parameters = new BecaParameters();
@@ -400,24 +263,39 @@ namespace BecaWebService.Services.Custom
                 bool communication_link = (bool)processi[0].GetPropertyValue("communication_link");
 
                 dynamic data = new ExpandoObject();
-                var dict = (IDictionary<string, object>)data;
-                foreach (JProperty jproperty in avvio.data.Properties())
+                var dict = (IDictionary<string, object?>)data;
+                parameters = new BecaParameters();
+                parameters.Add("template_process_id", processo);
+                List<object> parametri = _gRepository.GetDataBySQL("MainDB", "Select * From vPMS_ParamDict", parameters.parameters);
+                if (parametri == null || parametri.Count == 0) { return "Non trovo il parametri di avvio".toResponse(); }
+
+                var propsDict = ((IEnumerable<JProperty>)avvio.data.Properties())
+                    .ToDictionary(p => p.Name, p => p.Value);
+                foreach (string k in parametri[0].GetPropertyString("Keys").Split(",").Skip(5))
                 {
-                    dict[jproperty.Name] = jproperty.Value;
+                    if (propsDict.TryGetValue(k, out var jsonValue))
+                    {
+                        dict[k] = ((Newtonsoft.Json.Linq.JValue)jsonValue).Value;
+                    }
+                    else
+                    {
+                        switch (k)
+                        {
+                            case "cdff":                    dict[k] = avvio.cdff; break;
+                            case "comune_filiale":          dict[k] = filiali[0].GetPropertyString("COFL"); break;
+                            case "aplP":                    dict[k] = apl[0].GetPropertyString("RSSL"); break;
+                            case "piva_apl":                dict[k] = apl[0].GetPropertyString("PISL"); break;
+                            case "comune_sede_legale":      dict[k] = apl[0].GetPropertyString("COSL"); break;
+                            case "indirizzo_sede_legale":   dict[k] = apl[0].GetPropertyString("INSL"); break;
+                            case "ora_adesso":              dict[k] = DateTime.Now.ToString("HH:mm:ss"); break;
+                            case "data_odierna":            dict[k] = DateTime.Today.ToString("dd/MM/yyyy"); break;
+                            case "anno_corrente":           dict[k] = DateTime.Today.ToString("yyyy"); break;
+                            default:                        break;
+                        }
+                    }
                 }
 
-                //data.lavoratore_identificativo = avvio.data.lavoratore_identificativo;
-                //data.cell_provvisorio = avvio.data.cell_provvisorio;
-                data.cdff = avvio.cdff;
-                data.comune_filiale = filiali[0].GetPropertyString("COFL");
-                data.aplP = apl[0].GetPropertyString("RSSL");
-                data.piva_apl = apl[0].GetPropertyString("PISL");
-                data.comune_sede_legale = apl[0].GetPropertyString("COSL");
-                data.indirizzo_sede_legale = apl[0].GetPropertyString("INSL");
-                data.data_odierna = DateTime.Today.ToString("dd/MM/yyyy");
-                data.anno_corrente = DateTime.Today.ToString("yyyy");
-
-                pmsPostData pmsPostData = new pmsPostData()
+                pmsPostData pmsPostData = new()
                 {
                     external_user_id = idAttivita,
                     email = avvio.email,
@@ -429,10 +307,10 @@ namespace BecaWebService.Services.Custom
                     content = data
                 };
 
-                pmsPost body = new pmsPost()
+                pmsPost body = new()
                 {
                     template_process_id = processo,
-                    data = new List<pmsPostData> { pmsPostData }
+                    data = [pmsPostData]
                 };
 
                 string jsonbody = JsonConvert.SerializeObject(body);
@@ -459,28 +337,11 @@ namespace BecaWebService.Services.Custom
                     else
                     {
                         pmsPostResponseData pmsResData = pmsRes.response[0];
-
-                        //var rowDictionary = data as JObject;
-                        //string sParamas = "";
-
-                        //if (rowDictionary != null)
-                        //{
-                        //    // Seleziona le proprietà a partire dall'ottava in avanti
-                        //    var columnValues = rowDictionary
-                        //                        .Properties().Where(p => p.Name.ToLower() != "email") // Ottieni le proprietà dell'oggetto JObject
-                        //                                      //.Skip(7) // Salta le prime 7 proprietà
-                        //                        .Select(prop => @"""" + (prop.Value?.ToString() ?? "NULL") + @""""); // Trasforma i valori in stringa, usando "NULL" se il valore è null
-
-                        //    sParamas = "[" + string.Join(", ", columnValues) + "]";
-
-                        //    // Log o utilizzo del risultato
-                        //    Console.WriteLine(sParamas);
-                        //}
                         var rowDictionary = (IDictionary<string, object>)data;
 
                         // Seleziona le colonne partendo dall'ottava in avanti
                         var columnValues = rowDictionary
-                                            .Where(p => p.Key.ToLower() != "email")
+                                            //.Where(p => p.Key.ToLower() != "email")
                                             .Select(kvp => @"""" + (kvp.Value?.ToString() ?? "NULL") + @"""");  // Trasforma i valori in stringa, usando "NULL" se il valore è null
 
                         string sParamas = "[" + string.Join(", ", columnValues) + "]";
@@ -491,7 +352,7 @@ namespace BecaWebService.Services.Custom
                         parameters.Add("idAttivita", idAttivita);
                         parameters.Add("template_process_id", processo);
                         parameters.Add("user_process_id", pmsResData.user_process_id);
-                        parameters.Add("user_steps_id", "[" + string.Join(",", (pmsResData.user_step_ids ?? new List<int>())) + "]");
+                        parameters.Add("user_steps_id", "[" + string.Join(",", (pmsResData.user_step_ids ?? [])) + "]");
                         parameters.Add("link", pmsResData.link);
                         parameters.Add("parametri_processo", sParamas);
                         parameters.Add("PWDI", idUtenteAvvio);
@@ -503,7 +364,7 @@ namespace BecaWebService.Services.Custom
                     _logger.LogDebug($"La risposta è nulla");
                     return "La risposta è PMS nulla".toResponse();
                 }
-                return new GenericResponse( new { link = pmsRes.response[0].link });
+                return new GenericResponse( new { pmsRes.response[0].link });
             }
             catch (Exception ex)
             {
@@ -515,13 +376,13 @@ namespace BecaWebService.Services.Custom
         public async Task<GenericResponse> InvalidaFasi(pmsInvalidaFasi fasi)
         {
             try {
-                pmsInvalidaFasiJson pmsInvalidaFasiJson = new pmsInvalidaFasiJson()
+                pmsInvalidaFasiJson pmsInvalidaFasiJson = new()
                 {
-                    data = new List<pmsInvalidaFasi> { fasi }
+                    data = [fasi]
                 };
                 var pmsRes = _miscServiceBase.CallWS_JSON_mode<pmsPostResponse>("https://api.pms.attalgroup.it/pms/processes/update-user-processes", "", Method.Post, pmsInvalidaFasiJson);
 
-                BecaParameters parameters = new BecaParameters();
+                BecaParameters parameters = new();
                 parameters.Add("user_process_id", fasi.user_process_id);
                 parameters.Add("user_process_status", "Reinviato all'utente");
                 int res2 = await _gRepository.ExecuteProcedure("MainDB", "spPMS_Processo_aggiorna_stato", parameters.parameters);
@@ -535,21 +396,21 @@ namespace BecaWebService.Services.Custom
         {
             try
             {
-                string base64 = await getPMSFile(url, null);
+                string base64 = await GetPMSFile(url, null);
                 // Converti la stringa Base64 in un array di byte
                 byte[] bytes = Convert.FromBase64String(base64);
                 // Determina il MIME type dai primi byte del file
                 string mimeType = GetMimeType(bytes);
 
                 // Crea un MemoryStream a partire dall'array di byte
-                MemoryStream stream = new MemoryStream(bytes);
+                MemoryStream stream = new(bytes);
                     // Esempio: leggere il contenuto del MemoryStream e convertirlo in stringa
-                    using (StreamReader reader = new StreamReader(stream))
+                    using (StreamReader reader = new(stream))
                     {
                         string result = reader.ReadToEnd();
                         Console.WriteLine(result); // Output: Hello, World!
                     }
-                return new GenericResponse(new { pdf = stream, mimeType = mimeType });
+                return new GenericResponse(new { pdf = stream, mimeType });
             }
             catch (Exception ex)
             {
@@ -558,7 +419,7 @@ namespace BecaWebService.Services.Custom
         }
 
         // Metodo per determinare il MIME type in base ai magic numbers
-        private string GetMimeType(byte[] fileBytes)
+        private static string GetMimeType(byte[] fileBytes)
         {
             if (fileBytes.Length > 4)
             {
@@ -579,34 +440,31 @@ namespace BecaWebService.Services.Custom
         }
 
 
-        private async Task<int> SaveError(int external_user_id, int user_process_id, string err, StreamWriter sw)
+        private async Task<int> SaveError(int external_user_id, int user_process_id, string err, StreamWriter? sw)
         {
-            if (sw != null) sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Scrivo l'errore: {err} ");
+            sw?.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Scrivo l'errore: {err} ");
             string sql = "Insert Into PMS_Errori (external_user_id, user_process_id) Values ({0}, {1})";
 
-            List<object> pars = new List<object>();
-            pars.Add(external_user_id);
-            pars.Add(user_process_id);
+            List<object> pars = [external_user_id, user_process_id];
 
-            return await _gRepository.ExecuteSqlCommandAsync("MainDB", sql, pars.ToArray());
+            return await _gRepository.ExecuteSqlCommandAsync("MainDB", sql, [.. pars]);
         }
-        private async Task<string> getPMSFile(string fileUrl, StreamWriter? sw)
+        private static async Task<string> GetPMSFile(string? fileUrl, StreamWriter? sw)
         {
-            if(sw != null) sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: scarico il file ({fileUrl}) ");
+            if ((fileUrl ?? "") == "") return "";
+            sw?.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: scarico il file ({fileUrl}) ");
             try
             {
-                using (HttpClient client = new HttpClient())
-                {
-                    // Scarica il file
-                    byte[] fileBytes = await client.GetByteArrayAsync(fileUrl);
-                    // Converte l'array di byte in una stringa Base64
-                    string fileBase64 = Convert.ToBase64String(fileBytes);
-                    return fileBase64;
-                }
+                using HttpClient client = new();
+                // Scarica il file
+                byte[] fileBytes = await client.GetByteArrayAsync(fileUrl);
+                // Converte l'array di byte in una stringa Base64
+                string fileBase64 = Convert.ToBase64String(fileBytes);
+                return fileBase64;
             }
             catch (Exception ex)
             {
-                if (sw != null) sw.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: non riesco a scaricare il file ({ex.Message}) ");
+                sw?.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: non riesco a scaricare il file ({ex.Message}) ");
                 return "";
             }
         }

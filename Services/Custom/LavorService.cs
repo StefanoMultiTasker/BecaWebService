@@ -6,6 +6,7 @@ using ExtensionsLib;
 using System.Net.Mail;
 using System.Net;
 using Contracts.Custom;
+using BecaWebService.Helpers;
 
 namespace BecaWebService.Services.Custom
 {
@@ -20,14 +21,17 @@ namespace BecaWebService.Services.Custom
         }
         public GenericResponse ListCUByCodFisc()
         {
-            string path = $@"E:\BecaWeb\Web\Upload\{_gRepository.GetActiveCompany().MainFolder}\CUD";
+            if (_gRepository.GetLoggedUser() == null) return "Non sei loggato".toResponse();
+            if (_gRepository.GetActiveCompany() == null) return "Non hai specificato la company".toResponse();
+
+            string path = $@"E:\BecaWeb\Web\Upload\{_gRepository.GetActiveCompany()!.MainFolder!}\CUD";
 
             BecaParameters parameters = new BecaParameters();
-            parameters.Add("idUtente", _gRepository.GetLoggedUser().idUtenteLoc(_gRepository.GetActiveCompany().idCompany));
+            parameters.Add("idUtente", _gRepository.GetLoggedUser()!.idUtenteLoc(_gRepository.GetActiveCompany()!.idCompany));
             List<object> lavor = _gRepository.GetDataBySQL("DbDati", "SELECT * From LAVOR", parameters.parameters);
             if (lavor.Count == 0) return new GenericResponse("Anagrafica non trovata");
 
-            string CF = lavor[0].GetPropertyValue("CFIL").ToString();
+            string CF = lavor[0].GetPropertyValue("CFIL").ToString() ?? "";
             if (CF == null || CF == "") return new GenericResponse("Anagrafica senza Codice Fiscale");
 
             return new GenericResponse(
@@ -40,19 +44,22 @@ namespace BecaWebService.Services.Custom
         {
             try
             {
+                if (_gRepository.GetLoggedUser() == null) return "Non sei loggato".toResponse();
+                if (_gRepository.GetActiveCompany() == null) return "Non hai specificato la company".toResponse();
+
                 BecaParameters parameters = new BecaParameters();
-                parameters.Add("idUtente", _gRepository.GetLoggedUser().idUtenteLoc(_gRepository.GetActiveCompany().idCompany));
+                parameters.Add("idUtente", _gRepository.GetLoggedUser()!.idUtenteLoc(_gRepository.GetActiveCompany()!.idCompany));
                 List<object> lavor = _gRepository.GetDataBySQL("DbDati", "SELECT * From LAVOR", parameters.parameters);
                 if (lavor.Count == 0) return new GenericResponse("Anagrafica non trovata");
 
-                string cognome = lavor[0].GetPropertyValue("CGNL").ToString();
-                string nome = lavor[0].GetPropertyValue("NOML").ToString();
-                string nomeC = lavor[0].GetPropertyValue("CGNL").ToString() + " " + lavor[0].GetPropertyValue("NOML").ToString();
-                string CF = lavor[0].GetPropertyValue("CFIL").ToString();
+                string cognome = lavor[0].GetPropertyValue("CGNL").ToString() ?? "";
+                string nome = lavor[0].GetPropertyValue("NOML").ToString() ?? "";
+                string nomeC = cognome + " " + nome;
+                string CF = lavor[0].GetPropertyValue("CFIL").ToString() ?? "";
                 List<MatricolaLav> Matricole = GetMatricolaUtente();
                 string matricole = string.Join(", ", Matricole.Select(m => m.Matricola));
                 string clienti = string.Join(", ", Matricole.Select(m => m.Cliente));
-                string filiale = Matricole[0].Filiale;
+                string filiale = Matricole[0].Filiale ?? "";
                 string filiali = string.Join(", ", GetFilialiUtente().Where(F => F != filiale));
 
                 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
@@ -61,8 +68,8 @@ namespace BecaWebService.Services.Custom
                     Host = "192.168.0.5",
                     Port = 25
                 };
-                string owner = _gRepository.GetLoggedUser().email.ToString().Split(";")[0];
-                string sender = $"info.bw@{_gRepository.GetActiveCompany().MainFolder}.it";
+                string owner = ((_gRepository.GetLoggedUser()!.email ?? "").ToString() ?? "").Split(";")[0];
+                string sender = $"info.bw@{_gRepository.GetActiveCompany()!.MainFolder}.it";
                 MailMessage objMail = new MailMessage();
                 objMail.Sender = new MailAddress(sender, owner);
                 objMail.From = new MailAddress(sender, owner);
@@ -75,14 +82,14 @@ namespace BecaWebService.Services.Custom
                     $"Nome: {nome}<br>" +
                     $"Codice Fiscale: {CF}<br>" +
                     $"E-Mail: {owner}<br>" +
-                    $"Tel.: {_gRepository.GetLoggedUser().Phone}<br>" +
+                    $"Tel.: {_gRepository.GetLoggedUser()!.Phone}<br>" +
                     $"Filiale: {filiale}<br>" +
                     $"Matricola/e: {matricole}<br>" +
                     $"Cliente/i: {clienti}<br>" +
                     $"Altre filiali: ({filiali})<br>" +
                     $"Data richiesta: {DateTime.Today.ToLongDateString()} {DateTime.Now.ToLongTimeString()}<br><br><br>" +
                     $"Richiesta: {text}";
-                objMail.To.Add(new MailAddress($"lavoratori@{_gRepository.GetActiveCompany().MainFolder}.it"));
+                objMail.To.Add(new MailAddress($"lavoratori@{_gRepository.GetActiveCompany()!.MainFolder}.it"));
                 if (subject == "Test Sviluppo")
                 {
                     objMail.Body = "Questa è una prova<br><br>" + objMail.Body;
@@ -104,7 +111,7 @@ namespace BecaWebService.Services.Custom
             DateTime dt2 = dt1.AddMonths(1).AddDays(-1);
 
             BecaParameters parameters = new BecaParameters();
-            parameters.Add("idUtente", _gRepository.GetLoggedUser().idUtenteLoc(_gRepository.GetActiveCompany().idCompany));
+            parameters.Add("idUtente", _gRepository.GetLoggedUser()!.idUtenteLoc(_gRepository.GetActiveCompany()!.idCompany));
             List<object> lavor = _gRepository.GetDataBySQL("DbDati", "SELECT * From vCOLPE_UT Order By Fine DESC", parameters.parameters);
 
             if (lavor.Count == 0)
@@ -116,18 +123,18 @@ namespace BecaWebService.Services.Custom
             List<MatricolaLav> matricole = matricoleAtt
                 .Select(l => new MatricolaLav
                 {
-                    Matricola = l.GetPropertyValue("MATR").ToString(),
-                    Cliente = l.GetPropertyValue("RSCL").ToString(),
-                    Filiale = l.GetPropertyValue("CDFF").ToString()
+                    Matricola = l.GetPropertyValue("MATR").ToString() ?? "",
+                    Cliente = l.GetPropertyValue("RSCL").ToString() ?? "",
+                    Filiale = l.GetPropertyValue("CDFF").ToString() ?? ""
                 })
                 .ToList();
 
             if (matricole.Count == 0)
                 return new List<MatricolaLav>(new MatricolaLav[] {
                     new MatricolaLav {
-                        Matricola = lavor[0].GetPropertyValue("MATR").ToString(),
-                        Cliente = lavor[0].GetPropertyValue("RSCL").ToString(),
-                        Filiale = lavor[0].GetPropertyValue("CDFF").ToString()
+                        Matricola = lavor[0].GetPropertyValue("MATR").ToString() ?? "",
+                        Cliente = lavor[0].GetPropertyValue("RSCL").ToString() ?? "",
+                        Filiale = lavor[0].GetPropertyValue("CDFF").ToString() ?? ""
                     }
                 });
             else
@@ -137,17 +144,17 @@ namespace BecaWebService.Services.Custom
         private List<string> GetFilialiUtente()
         {
             BecaParameters parameters = new BecaParameters();
-            parameters.Add("idUtente", _gRepository.GetLoggedUser().idUtenteLoc(_gRepository.GetActiveCompany().idCompany));
-            return _gRepository.GetDataBySQL("DbDati", "SELECT * From vCOLPE_UT_Fil", parameters.parameters)
-                .Select(F => F.GetPropertyValue("CDFF").ToString())
+            parameters.Add("idUtente", _gRepository.GetLoggedUser()!.idUtenteLoc(_gRepository.GetActiveCompany()!.idCompany));
+            return _gRepository.GetDataBySQL("DbDati", "SELECT * From vCOLPE_UT_Fil", parameters!.parameters!)
+                .Select(F => F.GetPropertyValue("CDFF").ToString() ?? "")
                 .ToList();
         }
 
         private class MatricolaLav
         {
-            public string Matricola { get; set; }
-            public string Cliente { get; set; }
-            public string Filiale { get; set; }
+            public string? Matricola { get; set; }
+            public string? Cliente { get; set; }
+            public string? Filiale { get; set; }
         }
     }
 }

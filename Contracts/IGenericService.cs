@@ -1,25 +1,26 @@
 ﻿using BecaWebService.Models.Communications;
+using Entities.Communications;
 using Entities.Models;
+using Microsoft.Data.SqlClient;
 using Newtonsoft.Json.Linq;
 
 namespace Contracts
 {
     public interface IGenericService
     {
-        int GetUserId();
-        int GetCompanyId();
-        object CreateObjectFromJSON<T>(string jsonRecord) where T : class, new();
+        int? GetUserId();
+        int? GetCompanyId();
+        object? CreateObjectFromJSON<T>(string jsonRecord) where T : class, new();
         T CreateObjectFromJObject<T>(string Form, JObject jsonRecord, bool view) where T : class, new();
         T CreateObjectFromJObject<T>(string Form, JObject jsonRecord, bool view, bool partial) where T : class, new();
         List<T> CreateObjectsFromJArray<T>(string Form, JArray jsonRecord, bool view) where T : class, new();
         List<T> CreateObjectsFromJArray<T>(string Form, JArray jsonRecord, bool view, bool partial) where T : class, new();
-        T CreateObjectFromJSON<T>(string Form, string jsonRecord) where T : class, new();
-
+        T? CreateObjectFromJSON<T>(string Form, string jsonRecord) where T : class, new();
         string GetFormByView(int idView);
 
-        GenericResponse GetDataByView(Int32 idView, List<BecaParameter> parameters, int? pageNumber = null, int? pageSize = null);
-        GenericResponse GetDataByForm(string Form, List<BecaParameter> parameters, int? pageNumber = null, int? pageSize = null);
-        GenericResponse GetDataBySP(string dbName, string Form, List<BecaParameter> parameters);
+        GenericResponse GetDataByView(Int32 idView, List<BecaParameter> parameters, int? pageNumber = null, int? pageSize = null, bool lowerCase = false);
+        GenericResponse GetDataByForm(string Form, List<BecaParameter> parameters, int? pageNumber = null, int? pageSize = null, bool lowerCase = false);
+        //GenericResponse GetDataBySP(string dbName, string Form, List<BecaParameter> parameters);
 
         Task<GenericResponse> AddOrUpdateDataByForm(string Form, object record);
 
@@ -36,16 +37,19 @@ namespace Contracts
         Task<GenericResponse> ActionByForm(int idview, string form, string actionName, object record);
         Task<GenericResponse> ActionByForm(int idview, string form, string actionName, List<BecaParameter> parameters);
 
-        GenericResponse GetDataByViewField(Int32 idView, string field, List<BecaParameter> parameters);
-        GenericResponse GetDataByFormField(string Form, string field, List<BecaParameter> parameters);
+        GenericResponse GetDataByViewField(Int32 idView, string field, List<BecaParameter> parameters, bool lowerCase);
+        GenericResponse GetDataByFormField(string Form, string field, List<BecaParameter> parameters, bool lowerCase);
 
-        GenericResponse GetDataByFormChildSelect(string Form, string childForm, short sqlNumber, object parent);
+        GenericResponse GetDataByFormChildSelect(string Form, string childForm, short sqlNumber, object parent, bool lowerCase);
 
         GenericResponse GetDataBySQL(string dbName, string sql, List<BecaParameter> parameters);
         GenericResponse GetDataByFormLevel(string Form, int subLevel, List<BecaParameter> parameters);
 
-        object GetPanelsByForm(string Form, List<BecaParameter> parameters);
+        object? GetPanelsByForm(string Form, List<BecaParameter> parameters);
         ViewChart GetGraphByFormField(string Form, string field, List<BecaParameter> parameters);
         Task<GenericResponse> ExecCommand(string dbName, string procName, List<BecaParameter> parameters);
+
+        Task<GenericResponse> GetDataPackAsync(DataFormPostParameters req, bool lowerCase);
+        Task<GenericResponse> DataFormSaveAsync(DataFormPostParameter data, DataFormSaveActions action, bool lowerCase);
     }
 }

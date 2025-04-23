@@ -48,7 +48,7 @@ namespace Entities.Models
         [JsonIgnore]
         public List<RefreshToken> RefreshTokens { get; set; }
 
-        public int idUtenteLoc(int? idCompany) => idCompany == null ? idUtente : Companies.FirstOrDefault(C => C.idCompany == idCompany).idUtenteLoc;
+        public int? idUtenteLoc(int? idCompany) => idCompany == null ? idUtente : Companies.FirstOrDefault(C => C.idCompany == idCompany).idUtenteLoc;
         public int? idProfileDef(int idCompany) {
             UserCompany? comp = Companies.First(C => C.idCompany == idCompany);
             if (comp == null) return null;
@@ -79,7 +79,7 @@ namespace Entities.Models
     public partial class UserCompany
     {
         [JsonIgnore] public int idUtente { get; set; }
-        public int idUtenteLoc { get; set; }
+        public int? idUtenteLoc { get; set; }
         public bool isDefault { get; set; }
         //[NotMapped] public bool IsDefault { get => isDefault != 0; set => isDefault = value ? 1 : 0; }
         [Key] public int idCompany { get; set; }

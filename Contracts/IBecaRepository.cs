@@ -10,6 +10,6 @@ namespace Contracts
     public interface IBecaRepository
     {
         List<Company> Companies(int? idCompany = null, string? name = null);
-        BecaViewAction BecaViewActions(string name);
+        BecaViewAction? BecaViewActions(string name);
     }
 }

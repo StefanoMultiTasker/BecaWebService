@@ -26,6 +26,9 @@ namespace BecaWebService.Services.Custom
 
         public async Task<GenericResponse> DossierMail(DossierMail invio)
         {
+            if (_gRepository.GetLoggedUser() == null) return "Non sei loggato".toResponse();
+            if (_gRepository.GetActiveCompany() == null) return "Non hai specificato la company".toResponse();
+
             try
             {
                 if ((invio.destinatari == null || invio.destinatari.Count == 0) && invio.codRS == null)
@@ -41,25 +44,27 @@ namespace BecaWebService.Services.Custom
                     foreach (DossierMailDestinatari destinatario in invio.destinatari!.Where(d => d.ffcl != null))
                     {
                         list += (list == "" ? "" : ";").ToString() + destinatario.eMail;
-                        int idUser = _gRepository.GetLoggedUser().idUtenteLoc(_gRepository.GetActiveCompany().idCompany);
-                        List<object> azione = new List<object>();
-                        azione.Add(destinatario.ffcl);
-                        azione.Add(destinatario.codc);
-                        azione.Add(invio.cdff);
-                        azione.Add(idUser);
-                        azione.Add(invio.azione);
-                        azione.Add(invio.azione);
-                        azione.Add(DateTime.Now);
-                        azione.Add(DateTime.Now);
-                        azione.Add(invio.oggetto);
-                        azione.Add("E");
-                        azione.Add(invio.idDossier);
-                        azione.Add(idUser);
+                        int idUser = _gRepository.GetLoggedUser()!.idUtenteLoc(_gRepository.GetActiveCompany()!.idCompany) ?? 1;
+                        List<object> azione =
+                        [
+                            destinatario.ffcl ?? "",
+                            destinatario.codc ?? "",
+                            invio.cdff,
+                            idUser,
+                            invio.azione,
+                            invio.azione,
+                            DateTime.Now,
+                            DateTime.Now,
+                            invio.oggetto,
+                            "E",
+                            invio.idDossier,
+                            idUser,
+                        ];
                         try
                         {
                             string sql = "Insert Into MK_ATTIVITA (FFCL, CODC, CDFF, OPERAT, Azione, Contatto, DataProgrammata, DataEsecuzione, Oggetto, Stato, idDossier, PWDI) " +
                                 "Values (" +
-                                string.Join(", ", Enumerable.Range(0, 12).Select(i => $"{{{i}}}")) + 
+                                string.Join(", ", Enumerable.Range(0, 12).Select(i => $"{{{i}}}")) +
                                 ")";
                             int res = await _gRepository.ExecuteSqlCommandAsync("DbDati", sql, azione.ToArray());
                             //object azioneNew = await _gRepository.AddDataByForm<object>("Marketing", azione);
@@ -73,12 +78,14 @@ namespace BecaWebService.Services.Custom
                 }
                 else
                 {
-                    List<object> parameters = new List<object>();
-                    parameters.Add(invio.codRS.left(3));
-                    parameters.Add(invio.codRS!.Substring(3, 4));
-                    parameters.Add(invio.codRS.right(4));
-                    parameters.Add(invio.idDossier);
-                    parameters.Add(DateTime.Now);
+                    List<object> parameters =
+                    [
+                        invio.codRS.left(3),
+                        invio.codRS!.Substring(3, 4),
+                        invio.codRS.right(4),
+                        invio.idDossier,
+                        DateTime.Now,
+                    ];
                     string sql = "Update CONTR_Selezione_CV " +
                         "Set dtInvioIns = {4} " +
                         "Where CDFF = {0} And AACT = {1} And CDNN = {2} " +
@@ -86,21 +93,24 @@ namespace BecaWebService.Services.Custom
                     bool res = await _gRepository.ExecuteSqlCommandAsync("DbDati", sql, parameters.ToArray()) > 0 ? true : false;
                 }
                 list = "";
-                foreach (DossierMailDestinatari destinatario in invio.destinatari)
+                if (invio.destinatari != null)
                 {
-                    list += (list == "" ? "" : ";").ToString() + destinatario.eMail;
+                    foreach (DossierMailDestinatari destinatario in invio.destinatari)
+                    {
+                        list += (list == "" ? "" : ";").ToString() + destinatario.eMail;
+                    }
+
+                    //int maxLen = 1500;
+                    string err = "";
+                    //while (list.Length > maxLen)
+                    foreach (string email in list.Split(";"))
+                    {
+                        GenericResponse res1 = this.SendDossier(invio, email);
+                        if (!res1.Success) err += (err.Length == 0 ? "" : System.Environment.NewLine) + res1.Message;
+                    }
+                    if (err != "") return new GenericResponse(err);
                 }
 
-                //int maxLen = 1500;
-                string err = "";
-                //while (list.Length > maxLen)
-                foreach (string email in list.Split(";"))
-                {
-                    GenericResponse res1 = this.SendDossier(invio, email);
-                    if (!res1.Success) err += (err.Length == 0 ? "" : System.Environment.NewLine) + res1.Message;
-                }
-
-                if (err != "") return new GenericResponse(err);
                 return new GenericResponse(invio);
             }
             catch (Exception ex)

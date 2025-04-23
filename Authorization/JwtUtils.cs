@@ -56,7 +56,7 @@ namespace BecaWebService.Authorization
             {
                 Subject = new ClaimsIdentity(new Claim[]{
                     new Claim(ClaimTypes.Name, user.UserName),
-                    new Claim(ClaimTypes.NameIdentifier, user.idUtenteLoc(idCompany).ToString()),
+                    new Claim(ClaimTypes.NameIdentifier, user.idUtenteLoc(idCompany).ToString() ?? ""),
                     new Claim(ClaimTypes.Role, idProfile.ToString()),
                     new Claim(ClaimTypes.GroupSid, profile.Flags ?? ""),
                     new Claim(ClaimTypes.PrimarySid, company.MainFolder ?? "")
@@ -105,10 +105,10 @@ namespace BecaWebService.Authorization
 
         public RefreshToken GenerateRefreshToken(string ipAddress)
         {
-            // generate token that is valid for 7 days
-            using var rngCryptoServiceProvider = new RNGCryptoServiceProvider();
+            // Genera un token valido per 7 giorni
             var randomBytes = new byte[64];
-            rngCryptoServiceProvider.GetBytes(randomBytes);
+            RandomNumberGenerator.Fill(randomBytes); // Metodo statico consigliato
+
             var refreshToken = new RefreshToken
             {
                 Token = Convert.ToBase64String(randomBytes),

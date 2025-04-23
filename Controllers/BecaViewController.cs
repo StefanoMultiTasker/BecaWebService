@@ -30,14 +30,16 @@ namespace BecaWebService.Controllers
         {
             try
             {
-                BecaView dbView = _repository.GetViewByID(idView);
+                BecaView? dbView = _repository.GetViewByID(idView);
+                if (dbView == null) return BadRequest("View non configurata");
+
                 dtoBecaView oView = _mapper.Map<BecaView, dtoBecaView>(dbView);
-                UIform viewFilterUI = _repository.GetViewUI(idView, "F");
-                UIform viewDetailUI = _repository.GetViewUI(idView, "D");
+                UIform? viewFilterUI = _repository.GetViewUI(idView, "F");
+                UIform? viewDetailUI = _repository.GetViewUI(idView, "D");
                 oView.FilterUI = viewFilterUI;
                 oView.DetailUI = viewDetailUI;
                 foreach(dtoBecaViewChild child in oView.ViewDefinition.childrenForm) { 
-                    UIform childDetailUI = _repository.GetViewUI(child.form);
+                    UIform? childDetailUI = _repository.GetViewUI(child.form);
                     child.DetailUI= childDetailUI;
                 }
                 //_logger.LogInfo($"Returned View for id {idView}.");

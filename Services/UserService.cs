@@ -59,12 +59,12 @@ namespace BecaWebService.Services
         private readonly ILoggerManager _logger;
 
         const Int16 resetValidity = 30;
-        public UserService(IDependencies deps, DbBecaContext context, IJwtUtils jwtUtils, IOptions<AppSettings> appSettings,
+        public UserService(FormTool formTool, IMyMemoryCache memoryCache, DbBecaContext context, IJwtUtils jwtUtils, IOptions<AppSettings> appSettings,
             IHttpContextAccessor httpContextAccessor, ILoggerManager logger) //DbMemoryContext memoryContext,
         {
-            _formTool = deps.formTool;
+            _formTool = formTool;
             _context = context;
-            _memoryCache = deps.memoryCache;
+            _memoryCache = memoryCache;
             _jwtUtils = jwtUtils;
             _appSettings = appSettings.Value;
             this._httpContextAccessor = httpContextAccessor;
@@ -101,7 +101,8 @@ namespace BecaWebService.Services
                         {
                             Simple3Des cry = new Simple3Des("BecaW3bC1phKey");
                             chkPwd = cry.DecryptData(pwd);
-                        } else
+                        }
+                        else
                         {
                             chkPwd = pwd;
                         }
@@ -119,7 +120,8 @@ namespace BecaWebService.Services
                         _context.Entry(user).State = EntityState.Modified;
                         _logger.LogInfo("Impostata");
                     }
-                    catch (Exception ex) {
+                    catch (Exception ex)
+                    {
                         _logger.LogError($"authenticate error: {model.Username}, {ex.Message}, {(ex.InnerException == null ? ex.Source : ex.InnerException.Message)}");
                         throw new AppException(ex.Message);
                     }
@@ -196,6 +198,8 @@ namespace BecaWebService.Services
 
         public (string pwd, bool crypted) getLegacyPasswordByUser(UserCompany company)
         {
+            if (company.idUtenteLoc == null) return ("", false);
+
             Connection? cnn = _context.Companies
                 .Where(c => c.idCompany == company.idCompany)
                 .SelectMany(c => c.Connections)
@@ -209,13 +213,14 @@ namespace BecaWebService.Services
             string dbName = cnn.ConnectionString;
             DbDatiContext db = new DbDatiContext(null, dbName);
 
-            List<LegacyUser> res = db.ExecuteQuery<LegacyUser>("legacyUser", "Select Pwd, pwdcry From AnagrafeUtenti Where idUtente = {0}", false, (new List<object>() { company.idUtenteLoc }).ToArray());
+            List<LegacyUser> res = db.ExecuteQuery<LegacyUser>("legacyUser", "Select Pwd, pwdcry From AnagrafeUtenti Where idUtente = {0}", false, 
+                PropertyNaming.AsIs, (new List<object>() { company.idUtenteLoc }).ToArray());
             if (res == null || res.Count == 0)
             {
                 throw new AppException("Utente non trovato sul DB Legacy");
             }
 
-            if((Int16)res[0].GetPropertyValue("pwdcry") == 0)
+            if ((Int16)res[0].GetPropertyValue("pwdcry") == 0)
             {
                 Simple3Des cry = new Simple3Des("BecaW3bC1phKey");
                 string cryPwd = cry.EncryptData(res[0].GetPropertyString("Pwd"));
@@ -231,7 +236,14 @@ namespace BecaWebService.Services
 
         public AuthenticateResponse LoginById(int id, string ipAddress)
         {
-            int idCompany = ((Company)_httpContextAccessor.HttpContext.Items["Company"]).idCompany;
+            if (_httpContextAccessor.HttpContext == null)
+                throw new AppException("Problem nel gestire la request");
+
+            if (!_httpContextAccessor.HttpContext.Items.ContainsKey("Company"))
+                throw new AppException("Manca la Company negli Header della request");
+
+            Company cpy = (Company)_httpContextAccessor.HttpContext.Items["Company"]!;
+            int idCompany = cpy.idCompany;
             var user = _context.BecaUsers.SingleOrDefault(x => x.Companies.Any(c => c.idCompany == idCompany && c.idUtenteLoc == id));
 
             // validate
@@ -267,11 +279,11 @@ namespace BecaWebService.Services
             {
                 //_logger.LogInfo("salvo il login");
                 string url = $@"http://www.geoplugin.net/json.gp?ip={IP}";
-                RestClient client = new RestClient(url);
+                using RestClient client = new RestClient(url);
                 RestRequest request = new RestRequest("", Method.Get);
                 request.Timeout = TimeSpan.FromMinutes(10);
                 RestResponse response = await client.ExecuteAsync(request);
-                string res = response.Content;
+                string? res = response.Content;
 
                 UserLogin login = new UserLogin();
                 login.idUtente = idUtente;
@@ -294,11 +306,11 @@ namespace BecaWebService.Services
 
                     // Informazioni sul browser
                     var clientInfo = deviceDetector.GetClient(); // Ottieni il client (browser, versione, ecc.)
-                    if (clientInfo != null && clientInfo.Match!=null)  login.Browser = clientInfo.Match.Name.left(255);
+                    if (clientInfo != null && clientInfo.Match != null) login.Browser = clientInfo.Match.Name.left(255);
 
                     // Informazioni sul sistema operativo
                     var osInfo = deviceDetector.GetOs(); // Ottieni il sistema operativo
-                    if(osInfo!= null && osInfo.Match!=null ) login.OS = ($"{osInfo.Match.Name} {osInfo.Match.Platform}").left(255);
+                    if (osInfo != null && osInfo.Match != null) login.OS = ($"{osInfo.Match.Name} {osInfo.Match.Platform}").left(255);
 
                     // Informazioni sul dispositivo
                     var device = deviceDetector.GetDeviceName().left(255); // Ottieni il nome del dispositivo
@@ -307,7 +319,8 @@ namespace BecaWebService.Services
                     // Controlla se il dispositivo è mobile
                     bool isMobile = deviceDetector.IsMobile();
                     login.Mobile = (short?)(isMobile ? 1 : 0);
-                } else
+                }
+                else
                 {
                     if (headers.ContainsKey("sec-ch-ua")) login.Browser = headers["sec-ch-ua"].ToString().left(255);
                     if (headers.ContainsKey("sec-ch-ua-platform")) login.OS = headers["sec-ch-ua-platform"].ToString().left(255);
@@ -317,16 +330,18 @@ namespace BecaWebService.Services
 
                 if (res != null)
                 {
-                    dynamic json = JsonConvert.DeserializeObject<dynamic>(res);
-
-                    login.Citta = json["geoplugin_city"];
-                    login.Citta = login.Citta.left(250);
-                    login.PV = json["geoplugin_regionCode"];
-                    login.PV = login.PV.left(50);
-                    login.Regione = json["geoplugin_region"];
-                    login.Regione = login.Regione.left(250);
-                    login.Nazione = json["geoplugin_countryName"];
-                    login.Nazione = login.Nazione.left(250);
+                    dynamic? json = JsonConvert.DeserializeObject<dynamic>(res);
+                    if (json != null)
+                    {
+                        login.Citta = json["geoplugin_city"];
+                        login.Citta = login.Citta.left(250);
+                        login.PV = json["geoplugin_regionCode"];
+                        login.PV = login.PV.left(50);
+                        login.Regione = json["geoplugin_region"];
+                        login.Regione = login.Regione.left(250);
+                        login.Nazione = json["geoplugin_countryName"];
+                        login.Nazione = login.Nazione.left(250);
+                    }
                 }
 
                 _context.UserLogins.Add(login);
@@ -394,20 +409,11 @@ namespace BecaWebService.Services
 
         public BecaUser GetById(int id)
         {
-            var user = _memoryCache.GetOrSetCache($"UserById_{id}", () =>
+            return _memoryCache.GetOrSetCache($"UserById_{id}", () =>
             {
-                return _context.BecaUsers.Find(id);
+                var u = _context.BecaUsers.Find(id);
+                return u ?? throw new KeyNotFoundException($"User not found");
             });
-
-            //var user = _memoryContext.Users.Find(id);
-            //if (user == null)
-            //{
-            //    user = _context.BecaUsers.Find(id);
-            //    _memoryContext.Users.Add(user);
-            //    _memoryContext.SaveChanges();
-            //}
-            if (user == null) throw new KeyNotFoundException("User not found");
-            return user;
         }
 
         public UserMenuResponse GetMenuByUser(int idUtente)
@@ -460,7 +466,7 @@ namespace BecaWebService.Services
         {
             if (!rawUserMenu.Any(m => m.idItem == parentItem && m.idCompany == idCompany))
             {
-                BasicMenu rawMenu = _context.RawMenu.FirstOrDefault(m => m.idItem == parentItem);
+                BasicMenu rawMenu = _context.RawMenu.FirstOrDefault(m => m.idItem == parentItem)!;
                 UserMenu newMenu = new UserMenu(rawMenu);
                 newMenu.idUtente = rawUserMenu[0].idUtente;
                 newMenu.UserName = rawUserMenu[0].UserName;
@@ -627,7 +633,7 @@ namespace BecaWebService.Services
         {
             if (!rawUserMenu.Any(m => m.idItem == parentItem))
             {
-                BasicMenu rawMenu = _context.RawMenu.FirstOrDefault(m => m.idItem == parentItem);
+                BasicMenu rawMenu = _context.RawMenu.FirstOrDefault(m => m.idItem == parentItem)!;
                 ProfileMenu newMenu = new ProfileMenu(rawMenu);
                 newMenu.idCompany = rawUserMenu[0].idCompany;
                 newMenu.idProfile = rawUserMenu[0].idProfile;
@@ -694,8 +700,6 @@ namespace BecaWebService.Services
                     .OrderByDescending(c => c.Default)
                     .FirstOrDefault();
                 if (cnn == null) return;
-                string dbName = cnn.ConnectionString;
-                DbDatiContext db = new DbDatiContext(null, dbName);
 
                 UserProfile? profile = company.Profiles
                     .Where(c => c.isDefault == true)
@@ -704,34 +708,48 @@ namespace BecaWebService.Services
 
                 string sql = "";
                 List<object> pars = new List<object>();
-                if (company.hasBusinessUnit)
+
+                string dbName = cnn.ConnectionString;
+                using (DbDatiContext db = new DbDatiContext(null, dbName))
                 {
-                    switch (profile.Flags)
+                    if (company.hasBusinessUnit)
                     {
-                        case "C":
-                            sql = "Select * From v4Beca_FilialiClienti Where idUtente = {0}";
-                            pars.Add(user.idUtenteLoc(_company.idCompany));
-                            company.BusinessUnits1 = new List<UserBusinessUnit>();
-                            break;
-                        case "I":
-                            sql = "Select * From v4Beca_FilialiLavoratori Where idUtente = {0}";
-                            pars.Add(user.idUtenteLoc(_company.idCompany));
-                            company.BusinessUnits1 = new List<UserBusinessUnit>();
-                            break;
-                        case "F":
-                            sql = "Select * From v4Beca_FilialiUtenti Where idUtente = {0}";
-                            pars.Add(user.idUtenteLoc(_company.idCompany));
-                            company.BusinessUnits1 = db.ExecuteQuery<UserBusinessUnit>("_UserBusinessUnit", sql, false, pars.ToArray());
-                            break;
-                        default:
-                            sql = "Select * From v4Beca_FilialiSede";
-                            company.BusinessUnits1 = db.ExecuteQuery<UserBusinessUnit>("_UserBusinessUnit", sql, false, pars.ToArray());
-                            break;
+                        switch (profile.Flags)
+                        {
+                            case "C":
+                                sql = "Select * From v4Beca_FilialiClienti Where idUtente = {0}";
+                                if (user.idUtenteLoc != null && user.idUtenteLoc(_company.idCompany) != null)
+                                {
+                                    pars.Add(user.idUtenteLoc(_company.idCompany)!);
+                                }
+                                company.BusinessUnits1 = new List<UserBusinessUnit>();
+                                break;
+                            case "I":
+                                sql = "Select * From v4Beca_FilialiLavoratori Where idUtente = {0}";
+                                if (user.idUtenteLoc != null && user.idUtenteLoc(_company.idCompany) != null)
+                                {
+                                    pars.Add(user.idUtenteLoc(_company.idCompany)!);
+                                }
+                                company.BusinessUnits1 = new List<UserBusinessUnit>();
+                                break;
+                            case "F":
+                                sql = "Select * From v4Beca_FilialiUtenti Where idUtente = {0}";
+                                if (user.idUtenteLoc != null && user.idUtenteLoc(_company.idCompany) != null)
+                                {
+                                    pars.Add(user.idUtenteLoc(_company.idCompany)!);
+                                }
+                                company.BusinessUnits1 = db.ExecuteQuery<UserBusinessUnit>("_UserBusinessUnit", sql, false, PropertyNaming.AsIs, pars.ToArray());
+                                break;
+                            default:
+                                sql = "Select * From v4Beca_FilialiSede";
+                                company.BusinessUnits1 = db.ExecuteQuery<UserBusinessUnit>("_UserBusinessUnit", sql, false, PropertyNaming.AsIs, pars.ToArray());
+                                break;
+                        }
                     }
-                }
-                else
-                {
-                    company.BusinessUnits1 = new List<UserBusinessUnit>();
+                    else
+                    {
+                        company.BusinessUnits1 = new List<UserBusinessUnit>();
+                    }
                 }
             }
         }
@@ -770,14 +788,17 @@ namespace BecaWebService.Services
             {
                 var childToken = user.RefreshTokens.SingleOrDefault(x => x.Token == refreshToken.ReplacedByToken);
                 //var childToken = new RefreshToken();
-                if (childToken.IsActive)
-                    revokeRefreshToken(childToken, ipAddress, reason);
-                else
-                    revokeDescendantRefreshTokens(childToken, user, ipAddress, reason);
+                if (childToken != null)
+                {
+                    if (childToken.IsActive)
+                        revokeRefreshToken(childToken, ipAddress, reason);
+                    else
+                        revokeDescendantRefreshTokens(childToken, user, ipAddress, reason);
+                }
             }
         }
 
-        private void revokeRefreshToken(RefreshToken token, string ipAddress, string reason = null, string replacedByToken = null)
+        private void revokeRefreshToken(RefreshToken token, string ipAddress, string? reason = null, string? replacedByToken = null)
         {
             token.Revoked = DateTime.UtcNow;
             token.RevokedByIp = ipAddress;
@@ -808,7 +829,6 @@ namespace BecaWebService.Services
 
         public async Task<GenericResponse> GenerateUserName(BecaUserDTO userDto)
         {
-            bool userOk = false;
             int count = 1;
             int nameChars = 1;
             string extraNumber = "";
@@ -816,20 +836,21 @@ namespace BecaWebService.Services
 
             if ((userDto.firstName ?? "") == "" || (userDto.lastName ?? "") == "") return new GenericResponse("Inserire nome e congome");
 
-            int safeCount = 100 + userDto.firstName.Length;
+            string nome = userDto.firstName ?? "";
+            int safeCount = 100 + nome.Length;
 
             while (count < safeCount)
             {
-                if (count > userDto.firstName.Length) extraNumber = (count - userDto.firstName.Length).ToString();
-                userName = $"{userDto.firstName.ToLower().left(nameChars)}{extraNumber}.{userDto.lastName.ToLower()}";
-                int check = _context.BecaUsers.Count(u => u.UserName == userName);
+                if (count > nome.Length) extraNumber = (count - nome.Length).ToString();
+                userName = $"{nome.ToLower().left(nameChars)}{extraNumber}.{(userDto.lastName ?? "").ToLower()}";
+                int check = await _context.BecaUsers.CountAsync(u => u.UserName == userName);
                 if (check == 0)
                 {
                     userDto.userName = userName;
                     return new GenericResponse(userDto);
                 }
                 count++;
-                if (count <= userDto.firstName.Length) nameChars++;
+                if (count <= nome.Length) nameChars++;
             }
             return new GenericResponse("Non sono riuscito a generare uno username adeguato");
         }
@@ -837,13 +858,13 @@ namespace BecaWebService.Services
         public async Task<GenericResponse> AddOrUpdateUserAsync(BecaUserDTO userDto)
         {
             //BecaUserEntity user;
-            BecaUser user;
+            BecaUser? user;
 
             if (userDto.idUtente.HasValue)
             {
                 // Update
                 user = await _context.BecaUsers.FindAsync(userDto.idUtente!.Value);
-                if (user == null) return null;
+                if (user == null) return "Utente non trovato".toResponse();
 
                 if (user.UserName != userDto.userName)
                 {
@@ -890,9 +911,12 @@ namespace BecaWebService.Services
 
         public async Task<GenericResponse> changePassword(string pwd)
         {
+            if (_httpContextAccessor.HttpContext == null) return "La request pare non essere corretta".toResponse();
+            if (!_httpContextAccessor.HttpContext.Items.ContainsKey("User")) return "Non autorizzato".toResponse();
             try
             {
-                BecaUser? tokenUser = (BecaUser)_httpContextAccessor.HttpContext.Items["User"];
+
+                BecaUser? tokenUser = (BecaUser)_httpContextAccessor.HttpContext.Items["User"]!;
                 if (tokenUser == null) return new GenericResponse("Token non valido");
 
                 BecaUser? user = await _context.BecaUsers.FindAsync(tokenUser.idUtente);
@@ -1184,7 +1208,7 @@ namespace BecaWebService.Services
 
         private class LegacyUser
         {
-            public string Pwd { get; set; }
+            public string? Pwd { get; set; }
             public Int16 pwdcry { get; set; }
         }
     }

@@ -304,27 +304,27 @@ namespace BecaWebService.Mappings
                         )
                 .ForPath(dest => dest.ViewDefinition.ChartDefinition.viewAxisXData,
                         opts => opts.MapFrom(
-                            src => src.viewAxisXData.Split(",", StringSplitOptions.RemoveEmptyEntries).ToList<string>()
+                            src => (src.viewAxisXData ?? "").Split(",", StringSplitOptions.RemoveEmptyEntries).ToList<string>()
                             )
                         )
                 .ForPath(dest => dest.ViewDefinition.ChartDefinition.viewAxisXFilters,
                         opts => opts.MapFrom(
-                            src => src.viewAxisXFilters.Split(",", StringSplitOptions.RemoveEmptyEntries).ToList<string>()
+                            src => (src.viewAxisXFilters ?? "").Split(",", StringSplitOptions.RemoveEmptyEntries).ToList<string>()
                             )
                         )
                 .ForPath(dest => dest.ViewDefinition.ChartDefinition.viewAxisXActions,
                         opts => opts.MapFrom(
-                            src => src.viewAxisXActions.Split(",", StringSplitOptions.RemoveEmptyEntries).ToList<string>()
+                            src => (src.viewAxisXActions ?? "").Split(",", StringSplitOptions.RemoveEmptyEntries).ToList<string>()
                             )
                         )
                 .ForPath(dest => dest.ViewDefinition.ChartDefinition.viewAxisXZoomIf,
                         opts => opts.MapFrom(
-                            src => src.viewAxisXZoomIf.Split(",", StringSplitOptions.RemoveEmptyEntries).ToList<string>()
+                            src => (src.viewAxisXZoomIf ?? "").Split(",", StringSplitOptions.RemoveEmptyEntries).ToList<string>()
                             )
                         )
                 .ForPath(dest => dest.ViewDefinition.ChartDefinition.viewAxisXZoomTo,
                         opts => opts.MapFrom(
-                            src => src.viewAxisXZoomTo.Split(",", StringSplitOptions.RemoveEmptyEntries).ToList<string>()
+                            src => (src.viewAxisXZoomTo ?? "").Split(",", StringSplitOptions.RemoveEmptyEntries).ToList<string>()
                             )
                         )
                 .ForPath(dest => dest.ViewDefinition.ChartDefinition.viewAxisXStep,
@@ -387,7 +387,7 @@ namespace BecaWebService.Mappings
                         )
                 .ForMember(dest => dest.FromValue,
                         opts => opts.MapFrom(
-                            src => src.DropDownDisplayField == null ? null : src.DropDownDisplayField.ToString().Split(",", StringSplitOptions.RemoveEmptyEntries).FirstOrDefault().ToLower()
+                            src => src.DropDownDisplayField == null ? null : src.DropDownDisplayField.ToString().Split(",", StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()!.ToLower()
                             )
                         )
                 .ForMember(dest => dest.Format,

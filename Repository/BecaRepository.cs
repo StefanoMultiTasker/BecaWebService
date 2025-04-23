@@ -18,9 +18,9 @@ namespace Repository
         private DbBecaContext _context;
         private ILoggerManager _logger;
 
-        public BecaRepository(IDependencies deps, ILoggerManager logger) //ILogger<GenericRepository> logger)
+        public BecaRepository(DbBecaContext context, ILoggerManager logger) //ILogger<GenericRepository> logger)
         {
-            _context = deps.context;
+            _context = context;
             _logger = logger;
         }
 
@@ -33,7 +33,7 @@ namespace Repository
             return query.ToList();
         }
 
-        public BecaViewAction BecaViewActions(string name) { 
+        public BecaViewAction? BecaViewActions(string name) { 
             return _context.BecaViewActions.FirstOrDefault(a => a.ActionName == name);
         }
     }

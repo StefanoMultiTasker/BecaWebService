@@ -17,11 +17,11 @@ namespace Repository
         private DbBecaContext _context;
         private BecaUser _currentUser;
         private Company _activeCompany;
-        public HomePageRepository(IDependencies deps, IHttpContextAccessor httpContextAccessor)
+        public HomePageRepository(DbBecaContext context, IHttpContextAccessor httpContextAccessor)
         {
-            _context = deps.context;
-            _currentUser = (BecaUser)httpContextAccessor.HttpContext.Items["User"];
-            _activeCompany = (Company)httpContextAccessor.HttpContext.Items["Company"];
+            _context = context;
+            _currentUser = (BecaUser)httpContextAccessor.HttpContext!.Items["User"]!;
+            _activeCompany = (Company)httpContextAccessor.HttpContext.Items["Company"]!;
         }
 
         public List<BecaHomePage> GetHomePageByUser()

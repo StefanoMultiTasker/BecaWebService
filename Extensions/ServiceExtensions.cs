@@ -52,18 +52,22 @@ namespace BecaWebService.Extensions
 
         public static void ConfigureAuth(this IServiceCollection services, IConfiguration Configuration)
         {
-            var key = Encoding.ASCII.GetBytes(Configuration.GetSection("AppSettings:Token").Value);
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
+            string? appToken = Configuration.GetSection("AppSettings:Token").Value;
+            if (appToken != null)
             {
-                //options.SaveToken = true;
-                options.TokenValidationParameters = new TokenValidationParameters
+                var key = Encoding.ASCII.GetBytes(appToken);
+                services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
                 {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = false,
-                    ValidateAudience = false
-                };
-            });
+                    //options.SaveToken = true;
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(key),
+                        ValidateIssuer = false,
+                        ValidateAudience = false
+                    };
+                });
+            }
 
         }
 
@@ -74,12 +78,12 @@ namespace BecaWebService.Extensions
 
         public static void ConfigureRepositoryWrapper(this IServiceCollection services)
         {
-            services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
+            //services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
         }
 
         public static void ConfigureMyCache(this IServiceCollection services)
         {
-            services.AddSingleton<MyMemoryCache>();
+            services.AddSingleton<IMyMemoryCache, MyMemoryCache>();
         }
 
         public static void ConfigureDI(this IServiceCollection services)
@@ -88,9 +92,10 @@ namespace BecaWebService.Extensions
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<ICompanyService, CompanyService>();
 
-            services.AddScoped<IDependencies, Dependencies>();
+            //services.AddScoped<IDependencies, Dependencies>();
             //services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
-            services.AddSingleton<FormTool>();
+            services.AddScoped<FormTool>();
+            //services.AddScoped<ISqlConnectionExtendedFactory, SqlConnectionExtendedFactory>();
             services.AddScoped<IGenericRepository, GenericRepository>();
             services.AddScoped<IGenericService, GenericService>();
             services.AddScoped<IBecaViewRepository, BecaViewRepository>();
@@ -106,22 +111,6 @@ namespace BecaWebService.Extensions
 
         public static void ConfigureDICustom(this IServiceCollection services)
         {
-            //var assembly = typeof(MiscService).Assembly;
-
-            //var subServiceTypes = assembly.GetTypes()
-            //    .Where(t => t.IsClass && !t.IsAbstract && (t.Namespace ?? "").Contains("Custom"))
-            //    .Select(t => new
-            //    {
-            //        Interface = t.GetInterfaces()
-            //            .FirstOrDefault(i => i.Namespace != null && i.Namespace.Contains("Custom")), // Filtra per namespace
-            //        Implementation = t
-            //    })
-            //    .Where(x => x.Interface != null); // Filtra solo classi che implementano un'interfaccia
-
-            //foreach (var subService in subServiceTypes)
-            //{
-            //    services.AddScoped(subService.Interface, subService.Implementation);
-            //}
             services.AddScoped<ISharedService, SharedService>();
             services.AddScoped<IDocumentiService, DocumentiService>();
             services.AddScoped<ILavorService, LavorService>();
@@ -132,7 +121,6 @@ namespace BecaWebService.Extensions
             services.AddScoped<IMiscService, MiscService>();
             services.AddScoped<IPrintService, PrintService>();
             services.AddScoped<IMailService, MailService>();
-            //services.AddScoped<IMiscServiceBase>(provider => (IMiscServiceBase)provider.GetRequiredService<IMiscService>());
         }
 
         public static void ConfigureJSON(this IServiceCollection services)

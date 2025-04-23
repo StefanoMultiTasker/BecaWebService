@@ -76,6 +76,7 @@ namespace BecaWebService.ExtensionsLib
         public static string coalesce(this string str) => str ?? "";
 
         public static bool isNullOrempty(this string str) => str == null || str == "";
+        public static bool isNumeric(this string str) => int.TryParse(str, out _);
 
         public static string left(this string str, int chars) =>
             String.Concat(str.ToCharArray().Take(chars));

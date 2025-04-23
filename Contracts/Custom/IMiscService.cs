@@ -13,7 +13,7 @@ namespace Contracts.Custom
 {
     public interface ISharedService
     {
-        T CallWS_JSON_mode<T>(string url, string token, Method method = Method.Get, object body = null);
+        T CallWS_JSON_mode<T>(string url, string token, Method method = Method.Get, object? body = null);
     }
     public interface IPmsService
     {
@@ -30,18 +30,19 @@ namespace Contracts.Custom
         Task<GenericResponse> ImportaPresenze(int idOrologio);
         GenericResponse PrintPresenze(
             string aaco, string mmco,
-            string cdff = null, string aact = null, string cdnn = null, string cdmt = null,
-            string ffcl = null, string codc = null, string cdc = null,
-            string nome = null);
+            string? cdff = null, string? aact = null, string? cdnn = null, string? cdmt = null,
+            string? ffcl = null, string? codc = null, string? cdc = null,
+            string? nome = null);
     }
     public interface ISavinoService
     {
         GenericResponse SavinoOTP(SavinoOTP res, StreamWriter sw);
         Task<bool> SavinoFirma(SavinoFirma res, StreamWriter sw);
+        Task<GenericResponse> SavinoRevocaFirma(string idDocs);
     }
     public interface IDocumentiService
     {
-        Task<GenericResponse> PreparaDocumenti(string PeriodoInizio, string PeriodoFine, List<string> Matricole, bool IncludeCU, string Folder = null);
+        Task<GenericResponse> PreparaDocumenti(string PeriodoInizio, string PeriodoFine, List<string> Matricole, bool IncludeCU, string? Folder = null);
         GenericResponse PreparaEbitemp(List<Matricole4Ebitemp> matricole);
     }
     public interface ILavorService

@@ -3,8 +3,8 @@
     public class GenericResponse : BaseResponse
     {
         public bool _result { get; private set; }
-        public object _extraLoad { get; set; }
-        public List<object> _extraLoads { get; set; }
+        public object? _extraLoad { get; set; }
+        public List<object?> _extraLoads { get; set; }
 
         private GenericResponse(bool success, string message, bool result) : base(success, message)
         {
@@ -37,6 +37,8 @@
         /// <param name="message">Error message.</param>
         /// <returns>Response.</returns>
         public GenericResponse(string message) : this(false, message, false)
+        { }
+        public GenericResponse(bool result, string message) : this(result, message, result)
         { }
     }
 }

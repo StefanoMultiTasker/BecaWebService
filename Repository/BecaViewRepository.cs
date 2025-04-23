@@ -2,6 +2,7 @@
 using BecaWebService.ExtensionsLib;
 using Contracts;
 using Entities;
+using Entities.Contexts;
 using Entities.DataTransferObjects;
 using Entities.Models;
 using Microsoft.AspNetCore.Http;
@@ -10,79 +11,46 @@ using Microsoft.EntityFrameworkCore.Design;
 
 namespace Repository
 {
-    public class BecaViewRepository : RepositoryBase<BecaView>, IBecaViewRepository
+    public class BecaViewRepository(DbBecaContext context, IHttpContextAccessor httpContextAccessor, IMapper mapper) : IBecaViewRepository
     {
-        private readonly IMapper _mapper;
+        private readonly DbBecaContext dbBecaContext = context;
+        private readonly BecaUser _currentUser= (BecaUser)httpContextAccessor.HttpContext!.Items["User"]!;
+        private readonly Company _currentCompany = (Company)httpContextAccessor.HttpContext.Items["Company"]!;
+        private readonly IMapper _mapper = mapper;
 
-        public BecaViewRepository(IDependencies deps, IHttpContextAccessor httpContextAccessor)
-               : base(deps, httpContextAccessor)
-        {
-            _mapper = deps.mapper;
-        }
+        private BecaUser CurrentUser() => _currentUser;
+        private Company CurrentCompany() => _currentCompany;
 
         //public async Task<BecaView> GetViewByID(int idView)
-        public BecaView GetViewByID(int idView)
+        public BecaView? GetViewByID(int idView)
         {
-            BecaView view = dbBecaContext.BecaView
+            BecaView? view = dbBecaContext.BecaView
                         .SingleOrDefault(view => view.idBecaView == idView);
-            //.Include(data => data.BecaViewData)
-            //.Include(filters => filters.BecaViewFilters)
-            //.Include(filterValues => filterValues.BecaViewFilterValues)
+            List<BecaViewData> cols = [.. dbBecaContext.BecaViewData.Where(view => view.idBecaView == idView)];
 
-            List<BecaViewData> cols = dbBecaContext.BecaViewData
-                        .Where(view => view.idBecaView == idView)
-                        .ToList();
+            if (view == null || cols.Count == 0) return null;
+
             this.SetCustomizedCols(idView, ref cols);
-            List<BecaViewFilters> vFilters = dbBecaContext.BecaViewFilters
-                        .Where(view => view.idBecaView == idView)
-                        .ToList();
-            List<BecaViewFilterValues> vFilterVals = dbBecaContext.BecaViewFilterValues
-                        .Where(view => view.idBecaView == idView)
-                        .ToList();
-
-            //List<BecaViewChild> children = from c in dbBecaContext.BecaViewChildren
-            //                               join d in dbBecaContext.BecaViewChildData
-            //                               on c.childForm equals d.form;
-
-            List<BecaViewChild> children = dbBecaContext.BecaViewChildren
+            List<BecaViewFilters> vFilters = [.. dbBecaContext.BecaViewFilters.Where(view => view.idBecaView == idView)];
+            List<BecaViewFilterValues> vFilterVals = [.. dbBecaContext.BecaViewFilterValues.Where(view => view.idBecaView == idView)];
+            List<BecaViewChild> children = [.. dbBecaContext.BecaViewChildren
                         .Include(c => c.BecaFormChildData)
-                        .Where(view => view.idBecaView == idView)
-                        .ToList();
+                        .Where(view => view.idBecaView == idView)];
 
             view.BecaViewData = cols;
             view.BecaViewFilters = vFilters;
             view.BecaViewFilterValues = vFilterVals;
             view.BecaViewChildren = children;
 
-            List<BecaViewPanels> panels = dbBecaContext.BecaViewPanels
+            List<BecaViewPanels> panels = [.. dbBecaContext.BecaViewPanels
                     .Where(panel => panel.idBecaView == idView)
                     .Include(filters => filters.BecaPanelFilters)
                     .Include(formula => formula.IdFormulaNavigation)
                         .ThenInclude(data => data.BecaFormulaData)
-                            .ThenInclude(dfilters => dfilters.BecaFormulaDataFilters)
-                    .ToList();
-            //List<BecaViewPanels> panels = dbdatiContext.BecaViewPanels
-            //        .Where(panel => panel.idBecaView == idView)
-            //            .Include(filters => filters.BecaPanelFilters)
-            //            .Include(formula => formula.IdFormulaNavigation)
-            //        .ToList();
-            //foreach(BecaViewPanels panel in panels)
-            //{
-
-            //}
-            //List<BecaFormulaDataFilters> dFilters = dbdatiContext.BecaFormulaDataFilters
-            //            .Where(view => view.idBecaView == idView)
-            //            .ToList();
-
-
-            //            .ThenInclude(data => data.BecaFormulaData)
-            //                .ThenInclude(dfilters => dfilters.BecaFormulaDataFilters)
-            //        .ToList();
+                            .ThenInclude(dfilters => dfilters.BecaFormulaDataFilters)];
             view.BecaViewPanels = panels;
 
-            List<BecaViewAction> actions = dbBecaContext.BecaViewActions
-                 .Where(action => action.idBecaView == idView)
-                 .ToList();
+            List<BecaViewAction> actions = [.. dbBecaContext.BecaViewActions.Where(action => action.idBecaView == idView)];
             view.Actions = actions;
 
             return view;
@@ -92,103 +60,102 @@ namespace Repository
         {
             int idUtente = CurrentUser().idUtente;
             int idCompany = CurrentCompany().idCompany;
-            List<BecaViewDataUser> customCols = dbBecaContext.BecaViewDataUser
+            List<BecaViewDataUser> customCols = [.. dbBecaContext.BecaViewDataUser
                         .Where(view => view.idBecaView == idView &&
                             view.idUtente == idUtente &&
-                            view.idCompany == idCompany)
-                        .ToList();
+                            view.idCompany == idCompany)];
             foreach (BecaViewDataUser customCol in customCols)
             {
-                BecaViewData col = cols.FirstOrDefault(c => c.Field == customCol.field);
+                BecaViewData? col = cols.FirstOrDefault(c => c.Field == customCol.field);
                 if (col != null) col.isGridVisible = customCol.isGridVisible;
             }
         }
 
-        public UIform GetViewUI(int idView, string tipoUI)
+        public UIform? GetViewUI(int idView, string tipoUI)
         {
-            List<BecaViewUIProfile> profileUI = dbBecaContext.BecaViewUIProfile
-                .Where(obj => obj.idBecaView == idView && obj.idProfile == CurrentUser().idProfileDef(CurrentCompany().idCompany))
-                .ToList();
+            List<BecaViewUIProfile> profileUI = [.. dbBecaContext.BecaViewUIProfile
+                .Where(obj => obj.idBecaView == idView && obj.idProfile == CurrentUser().idProfileDef(CurrentCompany().idCompany))];
 
             switch (tipoUI)
             {
                 case "F":
-                    List<BecaViewFilterUI> filterUI = dbBecaContext.BecaViewFilterUI
+                    List<BecaViewFilterUI> filterUI = [.. dbBecaContext.BecaViewFilterUI
                             .Where(obj => obj.idBecaView == idView)
                             .OrderBy(obj => obj.Row)
                             .ThenBy(obj => obj.Col)
                             .ThenBy(obj => obj.Col_Order)
                             .ThenBy(obj => obj.SubRow)
                             .ThenBy(obj => obj.SubCol)
-                            .ThenBy(obj => obj.SubCol_Order)
-                            .ToList();
-                    UIform viewFilterUI = this.CreateFilterUI(this._mapper.Map<List<BecaViewFilterUI>, List<BecaViewUI>>(filterUI), profileUI);
+                            .ThenBy(obj => obj.SubCol_Order)];
+                    if (filterUI == null || filterUI.Count == 0) return null;
+                    UIform? viewFilterUI = CreateFormSectionUI(this._mapper.Map<List<BecaViewFilterUI>, List<BecaViewUI>>(filterUI), profileUI);
                     return viewFilterUI;
                 case "D":
-                    List<BecaViewDetailUI> detailUI = dbBecaContext.BecaViewDetailUI
+                    List<BecaViewDetailUI> detailUI = [.. dbBecaContext.BecaViewDetailUI
                             .Where(obj => obj.idBecaView == idView)
                             .OrderBy(obj => obj.Row)
                             .ThenBy(obj => obj.Col)
                             .ThenBy(obj => obj.Col_Order)
                             .ThenBy(obj => obj.SubRow)
                             .ThenBy(obj => obj.SubCol)
-                            .ThenBy(obj => obj.SubCol_Order)
-                            .ToList();
-                    UIform viewDetailUI = this.CreateFilterUI(this._mapper.Map<List<BecaViewDetailUI>, List<BecaViewUI>>(detailUI), profileUI);
+                            .ThenBy(obj => obj.SubCol_Order)];
+                    if (detailUI == null || detailUI.Count == 0) return null;
+                    UIform? viewDetailUI = CreateFormSectionUI(this._mapper.Map<List<BecaViewDetailUI>, List<BecaViewUI>>(detailUI), profileUI);
                     return viewDetailUI;
                 default: return null;
             }
         }
 
-        public UIform GetViewUI(string form)
+        public UIform? GetViewUI(string form)
         {
-            List<BecaViewUIProfile> profileUI = dbBecaContext.BecaViewUIProfile
-                .Where(obj => obj.Form == form && obj.idProfile == CurrentUser().idProfileDef(CurrentCompany().idCompany))
-                .ToList();
+            List<BecaViewUIProfile> profileUI = [.. dbBecaContext.BecaViewUIProfile
+                .Where(obj => obj.Form == form && obj.idProfile == CurrentUser().idProfileDef(CurrentCompany().idCompany))];
 
-            List<BecaViewDetailUI> detailUI = dbBecaContext.BecaViewDetailUI
+            List<BecaViewDetailUI> detailUI = [.. dbBecaContext.BecaViewDetailUI
                     .Where(obj => obj.Form == form)
                     .OrderBy(obj => obj.Row)
                     .ThenBy(obj => obj.Col)
                     .ThenBy(obj => obj.Col_Order)
                     .ThenBy(obj => obj.SubRow)
                     .ThenBy(obj => obj.SubCol)
-                    .ThenBy(obj => obj.SubCol_Order)
-                    .ToList();
-            UIform viewDetailUI = this.CreateFilterUI(this._mapper.Map<List<BecaViewDetailUI>, List<BecaViewUI>>(detailUI), profileUI);
+                    .ThenBy(obj => obj.SubCol_Order)];
+            if (detailUI == null || detailUI.Count == 0) return null;
+            UIform? viewDetailUI = CreateFormSectionUI(this._mapper.Map<List<BecaViewDetailUI>, List<BecaViewUI>>(detailUI), profileUI);
             return viewDetailUI;
         }
 
-        private UIform CreateFilterUI(List<BecaViewUI> items, List<BecaViewUIProfile> profileUI)
+        private static UIform? CreateFormSectionUI(List<BecaViewUI> items, List<BecaViewUIProfile> profileUI)
         {
-            if (items.Count == 0) return null;
-
-            //CurrentUser()
-
-            UIform filter = new UIform(items[0].ViewName);
+            UIform filter = new(items[0].ViewName ?? "");
             foreach (BecaViewUI BecaCfgFormField in items)
             {
                 if (BecaCfgFormField.Row > 0 && BecaCfgFormField.Col > 0)
                 {
-                    BecaViewUIProfile fieldProfile = profileUI.Find(f => f.Field.ToLower() == BecaCfgFormField.Name.ToLower());
-                    FieldConfig field = new FieldConfig();
-                    field.label = fieldProfile != null ? fieldProfile.Title ?? BecaCfgFormField.Title : BecaCfgFormField.Title;
-                    field.name = BecaCfgFormField.Name.ToLower();//.ToCamelCase();
-                    field.placeholder = BecaCfgFormField.HelpShort;
-                    field.fieldType = fieldProfile != null ? fieldProfile.FieldType ?? BecaCfgFormField.FieldType : BecaCfgFormField.FieldType;
-                    field.inputType = fieldProfile != null ? fieldProfile.FieldInput ?? BecaCfgFormField.FieldInput : BecaCfgFormField.FieldInput;
-                    field.format = BecaCfgFormField.Format ?? "";
-                    field.reference = BecaCfgFormField.Filter_Reference;
-                    field.filterAPI = BecaCfgFormField.Filter_API;
-                    string opts = BecaCfgFormField.Filter_options ?? "";
-                    if (opts.StartsWith("[") && opts.EndsWith("]"))
+                    BecaViewUIProfile? fieldProfile = profileUI.Find(f => f.Field.Equals(BecaCfgFormField.Name, StringComparison.CurrentCultureIgnoreCase));
+                    FieldConfig field = new()
                     {
-                        field.options = opts.Replace("[", "").Replace("]", "").Replace("'", "").Replace(" ", "").Split(",").ToArray();
+                        label = fieldProfile != null ? fieldProfile.Title ?? BecaCfgFormField.Title ?? "" : BecaCfgFormField.Title ?? "",
+                        name = BecaCfgFormField.Name.ToLower(),//.ToCamelCase();
+                        placeholder = BecaCfgFormField.HelpShort ?? "",
+                        fieldType = fieldProfile != null ? fieldProfile.FieldType ?? BecaCfgFormField.FieldType ?? "" : BecaCfgFormField.FieldType ?? "",
+                        inputType = fieldProfile != null ? fieldProfile.FieldInput ?? BecaCfgFormField.FieldInput ?? "" : BecaCfgFormField.FieldInput ?? "",
+                        format = BecaCfgFormField.Format ?? "",
+                        reference = BecaCfgFormField.Filter_Reference,
+                        filterAPI = BecaCfgFormField.Filter_API
+                    };
+                    string opts = BecaCfgFormField.Filter_options ?? "";
+                    if (opts.StartsWith('[') && opts.EndsWith(']'))
+                    {
+                        field.options = [.. opts.Replace("[", "").Replace("]", "").Replace("'", "").Replace(" ", "").Split(",")];
                     }
-                    field.optionDisplayed = (fieldProfile != null ? fieldProfile.DropDownDisplayField ?? BecaCfgFormField.DropDownDisplayField : BecaCfgFormField.DropDownDisplayField)?.ToLower(); //.ToCamelCase();
+                    field.optionDisplayed = (fieldProfile != null 
+                        ? fieldProfile.DropDownDisplayField ?? BecaCfgFormField.DropDownDisplayField 
+                        : BecaCfgFormField.DropDownDisplayField)?.ToLower(); //.ToCamelCase();
                     if (field.optionDisplayed != null) field.optionDisplayed = field.optionDisplayed.ToLowerToCamelCase();
                     //field.DropDownList = BecaCfgFormField.DropDownList;
-                    field.DropDownKeyFields = (fieldProfile != null ? fieldProfile.DropDownKeyFields ?? BecaCfgFormField.DropDownKeyFields : BecaCfgFormField.DropDownKeyFields)?.ToLower(); // ToCamelCase();
+                    field.DropDownKeyFields = (fieldProfile != null 
+                        ? fieldProfile.DropDownKeyFields ?? BecaCfgFormField.DropDownKeyFields 
+                        : BecaCfgFormField.DropDownKeyFields)?.ToLower(); // ToCamelCase();
                     field.DropDownItems = BecaCfgFormField.DropDownItems;
                     field.DropDownListAll = fieldProfile != null ? fieldProfile.DropDownListAll : BecaCfgFormField.DropDownListAll;
                     field.DropDownListNull = fieldProfile != null ? fieldProfile.DropDownListNull : BecaCfgFormField.DropDownListNull;
@@ -203,29 +170,6 @@ namespace Repository
                     field.required = BecaCfgFormField.Required;
 
                     filter.fields.Add(field);
-                    //UIrow row = filter.rows.GetRow(BecaCfgFormField.Row, true);
-                    //if (BecaCfgFormField.SubRow > 0 && BecaCfgFormField.SubCol > 0)
-                    //{
-                    //    UIcol col = row.GetCol(BecaCfgFormField.Col, true);
-                    //    col.size = BecaCfgFormField.ColSize;
-
-                    //    if (col.rows == null) col.rows = new UIrows();
-                    //    UIrow subRow = col.rows.GetRow(BecaCfgFormField.SubRow, true);
-                    //    UIcol subCol = new UIcol();
-                    //    subCol.num = BecaCfgFormField.Col;
-                    //    subCol.size = BecaCfgFormField.SubColSize;
-                    //    subCol.content = field;
-                    //    subRow.cols.Add(subCol);
-                    //}
-                    //else
-                    //{
-                    //    UIcol col = new UIcol();
-                    //    col.num = BecaCfgFormField.Col;
-                    //    col.size = BecaCfgFormField.ColSize;
-                    //    col.content = field;
-
-                    //    row.AddCol(col);
-                    //}
                 }
             }
             return filter;
@@ -233,19 +177,19 @@ namespace Repository
 
         public bool CustomizeColumnsByUser(int idView, List<dtoBecaData> cols)
         {
-            List<BecaViewDataUser> customCols = new List<BecaViewDataUser>();
-            List<BecaViewData> viewCols = dbBecaContext.BecaViewData
-                        .Where(view => view.idBecaView == idView)
-                        .ToList();
+            List<BecaViewDataUser> customCols = [];
+            List<BecaViewData> viewCols = [.. dbBecaContext.BecaViewData.Where(view => view.idBecaView == idView)];
             foreach (dtoBecaData col in cols)
             {
                 if (col.isGridVisible)
                 {
-                    BecaViewDataUser customCol = new BecaViewDataUser();
-                    customCol.idBecaView = idView;
+                    BecaViewDataUser customCol = new()
+                    {
+                        idBecaView = idView
+                    };
                     foreach (BecaViewData viewCol in viewCols)
                     {
-                        if (viewCol.Field.ToLower() == col.Name.ToLower())
+                        if (viewCol.Field.Equals(col.Name, StringComparison.CurrentCultureIgnoreCase))
                         {
                             customCol.field = viewCol.Field;
                             break;
@@ -259,11 +203,10 @@ namespace Repository
             }
             try
             {
-                List<BecaViewDataUser> userData = dbBecaContext.BecaViewDataUser
+                List<BecaViewDataUser> userData = [.. dbBecaContext.BecaViewDataUser
                             .Where(view => view.idBecaView == idView &&
                                 view.idUtente == CurrentUser().idUtente &&
-                                view.idCompany == CurrentCompany().idCompany)
-                            .ToList();
+                                view.idCompany == CurrentCompany().idCompany)];
                 dbBecaContext.RemoveRange(userData);
                 dbBecaContext.SaveChanges();
             }

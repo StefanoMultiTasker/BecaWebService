@@ -23,13 +23,15 @@ namespace Repository
         {
             this.dbBecaContext = deps.context;
             //urrentUser = deps.memoryContext.Users.Find(httpContextAccessor.HttpContext.Items["User"]);
-            _currentUser = (BecaUser)httpContextAccessor.HttpContext.Items["User"];
-            _currentCompany = (Company)httpContextAccessor.HttpContext.Items["Company"];
+            _currentUser = (BecaUser)httpContextAccessor.HttpContext!.Items["User"]!;
+            _currentCompany = (Company)httpContextAccessor.HttpContext.Items["Company"]!;
         }
 
         public RepositoryBase(DbBecaContext repositoryContext, IHttpContextAccessor httpContextAccessor)
         {
             this.dbBecaContext = repositoryContext;
+            _currentUser = (BecaUser)httpContextAccessor.HttpContext!.Items["User"]!;
+            _currentCompany = (Company)httpContextAccessor.HttpContext.Items["Company"]!;
             //this.Settings();
         }
 

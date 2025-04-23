@@ -14,13 +14,13 @@
         [Optional] public string inputType { get; set; }
         [Optional] public string? format { get; set; }
         [Optional] public string[] options { get; set; }
-        [Optional] public string optionDisplayed { get; set; }
+        [Optional] public string? optionDisplayed { get; set; }
         [Optional] public string DropDownList { get; set; }
-        [Optional] public string DropDownKeyFields { get; set; }
+        [Optional] public string? DropDownKeyFields { get; set; }
         public int DropDownItems { get; set; }
         public bool DropDownListAll { get; set; }
         public bool DropDownListNull { get; set; }
-        [Optional] public string reference { get; set; }
+        [Optional] public string? reference { get; set; }
         public bool filterAPI { get; set; }
         public int row { get; set; }
         public int col { get; set; }

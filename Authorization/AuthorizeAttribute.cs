@@ -15,7 +15,7 @@ namespace BecaWebService.Authorization
                 return;
 
             // authorization
-            var user = (BecaUser)context.HttpContext.Items["User"];
+            var user = context.HttpContext.Items.ContainsKey("User") ? (BecaUser)context.HttpContext.Items["User"]! : null;
             if (user == null)
                 context.Result = new JsonResult(new { message = "Unauthorized" }) { StatusCode = StatusCodes.Status401Unauthorized };
         }

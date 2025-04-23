@@ -21,8 +21,8 @@ namespace Entities.DataTransferObjects
         public IList<dtoBecaFilter> Filters { get; set; }
         public IList<dtoBecaFilterValue> FilterValues { get; set; }
         public IList<dtoBecaViewActions> Actions { get; set; }
-        public UIform FilterUI { get; set; }
-        public UIform DetailUI { get; set; }
+        public UIform? FilterUI { get; set; }
+        public UIform? DetailUI { get; set; }
     }
 
     public class dtoBecaViewDefinition
@@ -234,7 +234,7 @@ namespace Entities.DataTransferObjects
         public bool EditRecord { get; set; }
         public bool DeleteRecord { get; set; }
         public ICollection<dtoBecaData> ChildFields { get; set; }
-        public UIform DetailUI { get; set; }
+        public UIform? DetailUI { get; set; }
 
         public dtoBecaViewChild()
         {

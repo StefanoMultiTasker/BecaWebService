@@ -191,6 +191,17 @@ namespace BecaWebService.Controllers
             return res ? (IActionResult)Ok(new { success = true }) : (IActionResult)NotFound(data);
         }
 
+        [HttpGet("SavinoRevoca/{id}")]
+        public async Task<IActionResult> SavinoRevoca(string id)
+        {
+            GenericResponse result = await _service.SavinoRevocaFirma(id);
+
+            if (!result.Success)
+                return BadRequest(result.Message);
+
+            return Ok(result);
+        }
+
         [AllowAnonymous]
         [HttpPost("pms")]
         public async Task<IActionResult> pms([FromBody] pmsJson data)
@@ -298,6 +309,7 @@ namespace BecaWebService.Controllers
         [HttpPost("PreparaDocs")]
         public async Task<IActionResult> PreparaDocs([FromBody] PreparaDocs data)
         {
+            if (data.Matricole == null) return BadRequest("Non hai fornito le matricole");
             try
             {
                 var result = await _service.PreparaDocumenti($"{data.AnnoInizio}{data.MeseInizio}", $"{data.AnnoFine}{data.MeseFine}",data.Matricole, data.IncludeCU, data.folder);

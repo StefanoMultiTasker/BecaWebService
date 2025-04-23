@@ -16,25 +16,25 @@
 
     }
 
-    public class UserMenuArea
-    {
-        public UserMenuArea() => Panels = new List<UserMenuPanel>();
-        public int idArea { get; set; }
-        public string Area { get; set; }
-        public string? IconType { get; set; }
-        public string? Icon { get; set; }
-        public List<UserMenuPanel> Panels { get; set; }
-    }
+    //public class UserMenuArea
+    //{
+    //    public UserMenuArea() => Panels = new List<UserMenuPanel>();
+    //    public int idArea { get; set; }
+    //    public string Area { get; set; }
+    //    public string? IconType { get; set; }
+    //    public string? Icon { get; set; }
+    //    public List<UserMenuPanel> Panels { get; set; }
+    //}
 
-    public class UserMenuPanel
-    {
-        public UserMenuPanel() => Menu = new List<UserMenuItem>();
-        public int idPanel { get; set; }
-        public string Panel { get; set; }
-        public string? IconType { get; set; }
-        public string? Icon { get; set; }
-        public List<UserMenuItem> Menu { get; set; }
-    }
+    //public class UserMenuPanel
+    //{
+    //    public UserMenuPanel() => Menu = new List<UserMenuItem>();
+    //    public int idPanel { get; set; }
+    //    public string Panel { get; set; }
+    //    public string? IconType { get; set; }
+    //    public string? Icon { get; set; }
+    //    public List<UserMenuItem> Menu { get; set; }
+    //}
 
     public class UserMenuItem
     {
@@ -43,8 +43,8 @@
         public int idItem { get; set; }
         public int? ParentItem { get; set; }
         public bool isContainer { get; set; }
-        public string Caption { get; set; }
-        public string DescMenuItem { get; set; }
+        public string? Caption { get; set; }
+        public string? DescMenuItem { get; set; }
         public string? IconType { get; set; }
         public string? Icon { get; set; }
         public int idGroup { get; set; }

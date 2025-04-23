@@ -7,11 +7,11 @@ namespace BecaWebService.Models.Users
     {
         public int idUtente { get; set; }
         public string Username { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public string Title { get; set; }
-        public string email { get; set; }
-        public string Phone { get; set; }
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+        public string? Title { get; set; }
+        public string? email { get; set; }
+        public string? Phone { get; set; }
         public bool isConfirmed { get; set; }
         public bool isPrivacyRead { get; set; }
         public bool isPwdChanged { get; set; }
@@ -21,7 +21,7 @@ namespace BecaWebService.Models.Users
 
         [JsonIgnore] // refresh token is returned in http only cookie
         public string RefreshToken { get; set; }
-        [JsonIgnore] public string message { get; set; }
+        [JsonIgnore] public string? message { get; set; }
 
 
         public AuthenticateResponse(BecaUser user, string jwtToken, string refreshToken)

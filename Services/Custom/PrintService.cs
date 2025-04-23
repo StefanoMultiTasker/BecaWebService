@@ -9,26 +9,15 @@ using iText.Forms.Fields;
 using iText.Forms;
 using iText.IO.Source;
 using iText.Kernel.Pdf;
-using System.IO;
 using Path = System.IO.Path;
 
-using iText.Forms.Fields;
-using iText.Forms;
-using iText.IO.Source;
-using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
 using iText.Kernel.Pdf.Layer;
-using System;
-using System.Collections.Generic;
-using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas;
 using iText.Kernel.Pdf.Extgstate;
-using iText.Kernel.Pdf.Layer;
 using iText.Kernel.Font;
 using iText.Kernel.Geom;
 using iText.Kernel.Colors;
-using iText.Kernel.Pdf.Canvas.Parser;
-using iText.Kernel.Pdf.Canvas.Parser.Listener;
 using System.Reflection;
 
 namespace BecaWebService.Services.Custom
@@ -39,14 +28,9 @@ namespace BecaWebService.Services.Custom
         private readonly ILoggerManager _logger;
         private IWebHostEnvironment _env;
 
-        private string fileModuleName;
-        private string sTipoModulo;
-        private List<object> dtSource;
-        private bool bAutoName;
-        private string autoName;
-        private string autoPath;
-        private string autoZip;
-        private decimal MB4Zip;
+        private string fileModuleName = "";
+        private string sTipoModulo = "";
+        private List<object> dtSource = [];
         public PrintService(IGenericRepository genRepository, IWebHostEnvironment env, ILoggerManager logger)
         {
             _gRepository = genRepository;
@@ -65,18 +49,14 @@ namespace BecaWebService.Services.Custom
                 {
                     case "PDF":
                         return $"Tipo di stampa ({sTipoModulo}) non ancora implementata".toResponse();
-                        break;
                     case "PDF_Form":
                     case "PDF_Forms":
                         return new GenericResponse(new { pdf = printPDFForm() });
                     case "PDF_Tags":
                         return new GenericResponse(new { pdf = printPDFTags() });
-                        break;
                     default:
                         return $"Tipo di stampa ({sTipoModulo}) non ancora implementata".toResponse();
-                        break;
                 }
-                return new GenericResponse(true);
             }
             catch (Exception ex) { return ex.Message.toResponse(); }
         }
@@ -123,7 +103,7 @@ namespace BecaWebService.Services.Custom
 
         private MemoryStream printPDFForm()
         {
-            string baseFolder = _gRepository.GetActiveCompany().MainFolder != "localhost" ?
+            string baseFolder = _gRepository.GetActiveCompany()!.MainFolder != "localhost" ?
                 Path.Combine(_env.ContentRootPath) :
                 Path.Combine("E:", "BecaWeb");
             string folderName = Path.Combine(baseFolder, "Web", "Moduli", _gRepository!.GetActiveCompany()!.MainFolder!);
@@ -166,7 +146,7 @@ namespace BecaWebService.Services.Custom
 
         private MemoryStream printPDFTags()
         {
-            string baseFolder = _gRepository.GetActiveCompany().MainFolder != "localhost" ?
+            string baseFolder = _gRepository.GetActiveCompany()!.MainFolder != "localhost" ?
                 Path.Combine(_env.ContentRootPath) :
                 Path.Combine("E:", "BecaWeb");
             string folderName = Path.Combine(baseFolder, "Web", "Moduli", _gRepository!.GetActiveCompany()!.MainFolder!);

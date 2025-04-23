@@ -12,18 +12,11 @@ namespace BecaWebService.Controllers
     [Authorize]
     [ApiController]
     [Route("[controller]")]
-    public class UsersController : ControllerBase
+    public class UsersController(IUserService userService, IHomePageService homePageService, ILoggerManager logger) : ControllerBase
     {
-        private IUserService _userService;
-        private IHomePageService _homePageService;
-        private readonly ILoggerManager _logger;
-
-        public UsersController(IUserService userService, IHomePageService homePageService, ILoggerManager logger)
-        {
-            _userService = userService;
-            _homePageService = homePageService;
-            _logger = logger;
-        }
+        private readonly IUserService _userService = userService;
+        private readonly IHomePageService _homePageService = homePageService;
+        private readonly ILoggerManager _logger = logger;
 
         [AllowAnonymous]
         [HttpPost("authenticate")]
@@ -31,8 +24,8 @@ namespace BecaWebService.Controllers
         {
             try
             {
-                var response = await _userService.Authenticate(model, ipAddress(), Request.Headers);
-                setTokenCookie(response.RefreshToken);
+                var response = await _userService.Authenticate(model, IpAddress(), Request.Headers);
+                SetTokenCookie(response.RefreshToken);
                 return Ok(response);
             }
             catch (Exception ex)
@@ -46,8 +39,8 @@ namespace BecaWebService.Controllers
         [HttpGet("LoginById/{id}")]
         public IActionResult LoginById(int id)
         {
-            var response = _userService.LoginById(id, ipAddress());
-            setTokenCookie(response.RefreshToken);
+            var response = _userService.LoginById(id, IpAddress());
+            SetTokenCookie(response.RefreshToken);
             return Ok(response);
         }
 
@@ -56,8 +49,10 @@ namespace BecaWebService.Controllers
         public IActionResult RefreshToken()
         {
             var refreshToken = Request.Cookies["refreshToken"];
-            var response = _userService.RefreshToken(refreshToken, ipAddress());
-            setTokenCookie(response.RefreshToken);
+            if (refreshToken == null) return BadRequest("Autorizzazione negata");
+
+            var response = _userService.RefreshToken(refreshToken, IpAddress());
+            SetTokenCookie(response.RefreshToken);
             return Ok(response);
         }
 
@@ -70,7 +65,7 @@ namespace BecaWebService.Controllers
             if (string.IsNullOrEmpty(token))
                 return BadRequest(new { message = "Token is required" });
 
-            _userService.RevokeToken(token, ipAddress());
+            _userService.RevokeToken(token, IpAddress());
             return Ok(new { message = "Token revoked" });
         }
 
@@ -154,7 +149,7 @@ namespace BecaWebService.Controllers
         }
 
         [HttpPost("changePassword")]
-        public async Task<IActionResult> changePassword([FromBody] string pwd)
+        public async Task<IActionResult> ChangePassword([FromBody] string pwd)
         {
             GenericResponse result = await _userService.changePassword(pwd);
 
@@ -177,7 +172,7 @@ namespace BecaWebService.Controllers
 
         [AllowAnonymous]
         [HttpPost("requestResetPassword")]
-        public async Task<IActionResult> requestResetPassword(UserResetRequest req)
+        public async Task<IActionResult> RequestResetPassword(UserResetRequest req)
         {
             _logger.LogDebug($"requestResetPassword");
 
@@ -186,7 +181,7 @@ namespace BecaWebService.Controllers
             _logger.LogDebug($"Request received from domain: {domain}");
 
             var result = await _userService.RequestResetPassword(req, domain);
-            _logger.LogDebug($"res: {result.Message}, {result.Success.ToString()}");
+            _logger.LogDebug($"res: {result.Message}, {result.Success}");
 
             if (result.Success == false) 
                 return BadRequest(result.Message);
@@ -196,7 +191,7 @@ namespace BecaWebService.Controllers
 
         [AllowAnonymous]
         [HttpGet("reset/{token}")]
-        public async Task<IActionResult> reset(string token)
+        public async Task<IActionResult> Reset(string token)
         {
             var result = await _userService.ResetPassword(token);
 
@@ -207,7 +202,7 @@ namespace BecaWebService.Controllers
 
         // helper methods
 
-        private void setTokenCookie(string token)
+        private void SetTokenCookie(string token)
         {
             // append cookie with refresh token to the http response
             var cookieOptions = new CookieOptions
@@ -218,15 +213,15 @@ namespace BecaWebService.Controllers
             Response.Cookies.Append("refreshToken", token, cookieOptions);
         }
 
-        private string ipAddress()
+        private string IpAddress()
         {
             // get source ip address for the current request
-            if (Request.Headers.ContainsKey("X-Real-IP"))
-                return Request.Headers["X-Real-IP"];
-            if (Request.Headers.ContainsKey("X-Forwarded-For"))
-                return Request.Headers["X-Forwarded-For"];
+            if (Request.Headers.TryGetValue("X-Real-IP", out Microsoft.Extensions.Primitives.StringValues value1))
+                return value1.ToString();
+            if (Request.Headers.TryGetValue("X-Forwarded-For", out Microsoft.Extensions.Primitives.StringValues value2))
+                return value2.ToString();
             
-            return HttpContext.Connection.RemoteIpAddress.MapToIPv4().ToString();
+            return HttpContext.Connection.RemoteIpAddress == null ? "" : HttpContext.Connection.RemoteIpAddress.MapToIPv4().ToString();
         }
     }
 }

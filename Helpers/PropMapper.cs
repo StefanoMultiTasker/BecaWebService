@@ -30,7 +30,7 @@ namespace BecaWebService.Helpers
         private static Func<TInput, TOutput> CreateCloner()
         {
             //check if type has parameterless constructor - just in case
-            if (typeof(TOutput).GetConstructor(Type.EmptyTypes) == null) return ((x) => default(TOutput));
+            if (typeof(TOutput).GetConstructor(Type.EmptyTypes) == null) return ((x) => default(TOutput)!);
 
             var input = Expression.Parameter(typeof(TInput), "input");
 
@@ -67,7 +67,7 @@ namespace BecaWebService.Helpers
 
         public static TOutput From(TInput input)
         {
-            if (input == null) return default(TOutput);
+            if (input == null) return default(TOutput)!;
             return _cloner(input);
         }
 

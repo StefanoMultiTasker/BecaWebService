@@ -48,9 +48,9 @@ namespace BecaWebService.Services.Custom
 
         public GenericResponse PrintPresenze(
                 string aaco, string mmco,
-                string cdff = null, string aact = null, string cdnn = null, string cdmt = null,
-                string ffcl = null, string codc = null, string cdc = null,
-                string nome = null) => presenzeService.PrintPresenze(aaco, mmco, cdff,aact,cdnn,cdmt,ffcl,codc,cdc,nome);
+                string? cdff = null, string? aact = null, string? cdnn = null, string? cdmt = null,
+                string? ffcl = null, string? codc = null, string? cdc = null,
+                string? nome = null) => presenzeService.PrintPresenze(aaco, mmco, cdff,aact,cdnn,cdmt,ffcl,codc,cdc,nome);
 
         #endregion
 
@@ -77,6 +77,7 @@ namespace BecaWebService.Services.Custom
         {
             return await savinoService.SavinoFirma(res, sw);
         }
+        public async Task<GenericResponse> SavinoRevocaFirma(string idDocs) => await savinoService.SavinoRevocaFirma(idDocs);
 
         #endregion
 

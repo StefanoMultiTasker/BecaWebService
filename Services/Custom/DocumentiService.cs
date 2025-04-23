@@ -14,36 +14,32 @@ using System.IO.Compression;
 
 namespace BecaWebService.Services.Custom
 {
-    public class DocumentiService : IDocumentiService
+    public class DocumentiService(IGenericRepository genRepository, IWebHostEnvironment env, IConfiguration Configuration, ILogger<MiscService> logger) : IDocumentiService
     {
-        private readonly IGenericRepository _gRepository;
-        private IWebHostEnvironment _env;
-        private IConfiguration _cfg;
-        private readonly ILogger<MiscService> _logger;
-        public DocumentiService(IGenericRepository genRepository, IWebHostEnvironment env, IConfiguration Configuration, ILogger<MiscService> logger)
-        {
-            _gRepository = genRepository;
-            _env = env;
-            _cfg = Configuration;
-            _logger = logger;
-        }
+        private readonly IGenericRepository _gRepository = genRepository;
+        private readonly IWebHostEnvironment _env = env;
+        private readonly IConfiguration _cfg = Configuration;
+        private readonly ILogger<MiscService> _logger = logger;
 
         public GenericResponse PreparaEbitemp(List<Matricole4Ebitemp> matricole)
         {
+            if (_gRepository.GetLoggedUser() == null) return "Non sei loggato".toResponse();
+            if (_gRepository.GetActiveCompany() == null) return "Non hai specificato la company".toResponse();
+
             if (matricole == null || matricole.Count == 0) { return "nessuna matricola fornita".toResponse();  }
             try
             {
                 string section = _env.IsDevelopment() ? "AppSettingsCustomLocal" : "AppSettingsCustom";
                 string _pathSource = _cfg.GetSection($"{section}:IspezioniPathCedolini").Value ?? "";
                 string _pathDest = (_cfg.GetSection($"{section}:PathEbitemp").Value ?? "")
-                        .Replace("#soc#", _gRepository.GetActiveCompany().MainFolder);
-                List<Matricole4Ebitemp> errori = new List<Matricole4Ebitemp>();
-                List<string> files = new List<string>();
+                        .Replace("#soc#", _gRepository.GetActiveCompany()!.MainFolder);
+                List<Matricole4Ebitemp> errori = [];
+                List<string> files = [];
 
                 foreach (Matricole4Ebitemp matricola in matricole)
                 {
                     string pathSource = Path.Combine(
-                        _pathSource.Replace("#soc#", _gRepository.GetActiveCompany().MainFolder),
+                        _pathSource.Replace("#soc#", _gRepository.GetActiveCompany()!.MainFolder),
                         $"{matricola.anno}_{matricola.mese}",
                         $"{matricola.matricola}.pdf");
                     string pathDest = _pathDest
@@ -78,7 +74,7 @@ namespace BecaWebService.Services.Custom
                         errori.Add(matricola);
                     }
                 }
-                EbitempResponse res = new EbitempResponse() { 
+                EbitempResponse res = new() { 
                     pathDest = _pathDest,
                     errori = errori,
                     files = files
@@ -89,14 +85,17 @@ namespace BecaWebService.Services.Custom
         }
         public async Task<GenericResponse> PreparaDocumenti(string PeriodoInizio, string PeriodoFine, List<string> Matricole, bool IncludeCU, string? Folder = null)
         {
-            if (Matricole == null || Matricole.Count() == 0) return new GenericResponse("Non sono ancora state indicate le matricole");
+            if (_gRepository.GetLoggedUser() == null) return "Non sei loggato".toResponse();
+            if (_gRepository.GetActiveCompany() == null) return "Non hai specificato la company".toResponse();
+
+            if (Matricole == null || Matricole.Count == 0) return new GenericResponse("Non sono ancora state indicate le matricole");
             if (PeriodoInizio.isNullOrempty() || PeriodoFine.isNullOrempty()) return new GenericResponse("Non sono stati forniti i periodi di inizio e/o fine");
             if (DateTime.TryParseExact($"{PeriodoInizio}01", "yyyyMMdd", new CultureInfo("it-IT"), DateTimeStyles.None, out DateTime dateValueI) == false)
                 return new GenericResponse("Il periodo di partenza (anno e mese) non è valido");
             if (DateTime.TryParseExact($"{PeriodoFine}01", "yyyyMMdd", new CultureInfo("it-IT"), DateTimeStyles.None, out DateTime dateValueF) == false)
                 return new GenericResponse("Il periodo di fine (anno e mese) non è valido");
 
-            BecaParameters parameters = new BecaParameters();
+            BecaParameters parameters = new();
             parameters.Add("matricole", string.Join(",", Matricole));
 
             try
@@ -110,16 +109,16 @@ namespace BecaWebService.Services.Custom
             try
             {
                 List<object> list = _gRepository.GetDataBySQL("DbDati", "Select * From Matricole4Doc Order By IDEMPLOY", (new BecaParameters()).parameters);
-                if (list == null || list.Count() == 0) return new GenericResponse("Problemi durante la lettura dei dati");
-                matricole = convertToClass(list);
+                if (list == null || list.Count == 0) return new GenericResponse("Problemi durante la lettura dei dati");
+                matricole = ConvertToClass(list);
             }
             catch (Exception ex) { return new GenericResponse($"Problemi durante la lettura dei dati: {ex.Message}"); }
 
             string section = _env.IsDevelopment() ? "AppSettingsCustomLocal" : "AppSettingsCustom";
             string pathDest = _cfg.GetSection($"{section}:IspezioniPathDest").Value ?? "";
-            string pathCedo = (_cfg.GetSection($"{section}:IspezioniPathCedolini").Value ?? "").Replace("#soc#", _gRepository.GetActiveCompany().MainFolder);
-            string pathLUL = (_cfg.GetSection($"{section}:IspezioniPathLUL").Value ?? "").Replace("#soc#", _gRepository.GetActiveCompany().MainFolder);
-            string pathCU = (_cfg.GetSection($"{section}:IspezioniPathCU").Value ?? "").Replace("#soc#", _gRepository.GetActiveCompany().MainFolder);
+            string pathCedo = (_cfg.GetSection($"{section}:IspezioniPathCedolini").Value ?? "").Replace("#soc#", _gRepository.GetActiveCompany()!.MainFolder);
+            string pathLUL = (_cfg.GetSection($"{section}:IspezioniPathLUL").Value ?? "").Replace("#soc#", _gRepository.GetActiveCompany()!.MainFolder);
+            string pathCU = (_cfg.GetSection($"{section}:IspezioniPathCU").Value ?? "").Replace("#soc#", _gRepository.GetActiveCompany()!.MainFolder);
 
             if (pathDest.isNullOrempty() || !Directory.Exists(pathCU)) return new GenericResponse($"Problemi nell'accesso alla cartella di destinazione ({pathDest})");
 
@@ -144,7 +143,7 @@ namespace BecaWebService.Services.Custom
                 result += CopyFiles(pathDest, pathCedo, pathLUL, pathCU, IncludeCU, periodo.left(4), periodo.right(2), matricole);
             }
 
-            DocumentiResponse response = new DocumentiResponse()
+            DocumentiResponse response = new()
             {
                 zip = GetDirectoryAsBase64(pathDest),
                 message = result != "" ? $"Problemi durante la copia dei file: {result}" : result,
@@ -153,7 +152,7 @@ namespace BecaWebService.Services.Custom
             return response.toResponse();
         }
 
-        private List<Matricola> convertToClass(List<object> matricole)
+        private static List<Matricola> ConvertToClass(List<object> matricole)
         {
             return matricole.Select(item => new Matricola()
             {
@@ -165,7 +164,7 @@ namespace BecaWebService.Services.Custom
             }).ToList();
         }
 
-        private string CopyFiles(string pathDest, string pathCedo, string pathLUL, string pathCU, bool IncludeCU, string anno, string mese, List<Matricola> matricole)
+        private static string CopyFiles(string pathDest, string pathCedo, string pathLUL, string pathCU, bool IncludeCU, string anno, string mese, List<Matricola> matricole)
         {
             string periodoTFR = DateTime.ParseExact($"{anno}{mese}", "yyyyMM", null).AddMonths(1).ToString("yyyyMM");
             string pathTFR = Path.Combine(pathLUL, periodoTFR.left(4), periodoTFR.right(2));
@@ -183,7 +182,7 @@ namespace BecaWebService.Services.Custom
             {
                 foreach (Matricola matricola in matricole)
                 {
-                    DateTime dataConfronto = new DateTime(int.Parse(anno), int.Parse(mese), 1);
+                    DateTime dataConfronto = new(int.Parse(anno), int.Parse(mese), 1);
                     if (string.Compare(matricola.DataInizio.ToString("yyyyMM"), $"{anno}{mese}") <= 0 && string.Compare(matricola.DataFine.ToString("yyyyMM"), $"{anno}{mese}") >= 0)
                     {
                         List<string> files = Directory.GetFiles(pathLUL).Where(f => f.Contains(matricola.idEmploy) && f.ToLower().right(4) == ".pdf").ToList();
@@ -244,29 +243,25 @@ namespace BecaWebService.Services.Custom
         }
         static string GetDirectoryAsBase64(string directoryPath)
         {
-            using (var memoryStream = new MemoryStream())
+            using var memoryStream = new MemoryStream();
+            // Crea uno zip in memoria
+            using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
             {
-                // Crea uno zip in memoria
-                using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
+                foreach (var filePath in Directory.GetFiles(directoryPath, "*", SearchOption.AllDirectories))
                 {
-                    foreach (var filePath in Directory.GetFiles(directoryPath, "*", SearchOption.AllDirectories))
-                    {
-                        // Percorso relativo per il file all'interno dello zip
-                        string relativePath = Path.GetRelativePath(directoryPath, filePath);
+                    // Percorso relativo per il file all'interno dello zip
+                    string relativePath = Path.GetRelativePath(directoryPath, filePath);
 
-                        // Aggiungi il file allo zip
-                        var entry = archive.CreateEntry(relativePath);
-                        using (var entryStream = entry.Open())
-                        using (var fileStream = File.OpenRead(filePath))
-                        {
-                            fileStream.CopyTo(entryStream);
-                        }
-                    }
+                    // Aggiungi il file allo zip
+                    var entry = archive.CreateEntry(relativePath);
+                    using var entryStream = entry.Open();
+                    using var fileStream = File.OpenRead(filePath);
+                    fileStream.CopyTo(entryStream);
                 }
-
-                // Converti lo zip in Base64
-                return Convert.ToBase64String(memoryStream.ToArray());
             }
+
+            // Converti lo zip in Base64
+            return Convert.ToBase64String(memoryStream.ToArray());
         }
         private class Matricola
         {

@@ -10,6 +10,7 @@ using RestSharp;
 using Contracts;
 using Entities.Models.Custom;
 using Contracts.Custom;
+using BecaWebService.Helpers;
 
 namespace BecaWebService.Services.Custom
 {
@@ -34,22 +35,22 @@ namespace BecaWebService.Services.Custom
                 if (orologi.Count == 0) return new GenericResponse("Orologio non trovato");
 
                 object orologio = orologi[0];
-                string tipo = orologio.GetPropertyValue("Tipo").ToString();
+                string tipo = orologio.GetPropertyValue("Tipo").ToString() ?? "";
                 string folderName = "";
                 string fileName = "";
                 switch (tipo)
                 {
                     case "1":
-                        folderName = orologio.GetPropertyValue("PathFile").ToString();
-                        fileName = orologio.GetPropertyValue("FileName").ToString();
+                        folderName = orologio.GetPropertyValue("PathFile").ToString() ?? "";
+                        fileName = orologio.GetPropertyValue("FileName").ToString() ?? "";
                         if (fileName.Contains(";"))
                         {
-                            fileName = fileName.ToLower().Split(";").FirstOrDefault(n => file.FileName.ToLower().Contains(n) || n.Contains(file.FileName.ToLower()));
+                            fileName = fileName.ToLower().Split(";").FirstOrDefault(n => file.FileName.ToLower().Contains(n) || n.Contains(file.FileName.ToLower())) ?? "";
                             break;
                         }
                         break;
                     case "2":
-                        folderName = orologio.GetPropertyValue("PathFile").ToString();
+                        folderName = orologio.GetPropertyValue("PathFile").ToString() ?? "";
                         fileName = orologio.GetPropertyValue("FFCL").ToString() +
                             orologio.GetPropertyValue("CODC").ToString() +
                             orologio.GetPropertyValue("idOrologio").ToString() +
@@ -94,12 +95,16 @@ namespace BecaWebService.Services.Custom
             }
             catch (Exception ex)
             {
-                return new GenericResponse($"{ex.InnerException.Message}");
+                string _extra = ex.InnerException == null ? "" : ex.InnerException.Message;
+                return new GenericResponse($"{ex.Message} {_extra}");
             }
         }
 
         public async Task<GenericResponse> ImportaPresenze(int idOrologio)
         {
+            if (_gRepository.GetLoggedUser() == null) return "Non sei loggato".toResponse();
+            if (_gRepository.GetActiveCompany() == null) return "Non hai specificato la company".toResponse();
+
             try
             {
                 BecaParameters parameters = new BecaParameters();
@@ -108,8 +113,8 @@ namespace BecaWebService.Services.Custom
                 if (orologi.Count == 0) return new GenericResponse("Orologio non trovato");
 
                 object orologio = orologi[0];
-                string fileName = orologio.GetPropertyValue("QWFileName").ToString();
-                string apl = _gRepository.GetActiveCompany().MainFolder;
+                string fileName = orologio.GetPropertyValue("QWFileName").ToString() ?? "";
+                string apl = (_gRepository.GetActiveCompany()!.MainFolder ?? "");
 
                 string url = $@"http://192.168.0.146/RunServerApp/api/qv?apl={apl}&name={fileName}.qvw";
                 RestClient client = new RestClient(url);
@@ -121,6 +126,7 @@ namespace BecaWebService.Services.Custom
                 //string body = $"'timestamp':'1635344504','token':'eac70bffb22d9c2aeb82b4544e7bb8f8','candidate':'{TalentumEmail}'";
                 //request.AddJsonBody("{" + body.Replace("'", @"""") + "}");
                 RestResponse response = await client.ExecuteAsync(request);
+                if (response == null || response.Content == null) return "Non sono riuscito ad avviare il QlikView per l'importazione".toResponse();
                 string res = response.Content;
                 if (res.left(3) == "\"ok")
                     return new GenericResponse(true);
@@ -135,10 +141,13 @@ namespace BecaWebService.Services.Custom
 
         public GenericResponse PrintPresenze(
                 string aaco, string mmco,
-                string cdff = null, string aact = null, string cdnn = null, string cdmt = null,
-                string ffcl = null, string codc = null, string cdc = null,
-                string nome = null)
+                string? cdff = null, string? aact = null, string? cdnn = null, string? cdmt = null,
+                string? ffcl = null, string? codc = null, string? cdc = null,
+                string? nome = null)
         {
+            if (_gRepository.GetLoggedUser() == null) return "Non sei loggato".toResponse();
+            if (_gRepository.GetActiveCompany() == null) return "Non hai specificato la company".toResponse();
+
             string step = "avvio";
             _logger.LogInfo("Cartellino: avvio (Anno/Mese: {aaco}/{mmco}, CDFF:{cdff}, AACT:{aact}, CDNN: {cdnn}, CDMT: {cdmt}, Cliente: {ffcl}/{codc}, CDC: {cdc}, Bome: {nome})");
             //Log.Information($"PrintPresenze avvio");
@@ -160,7 +169,7 @@ namespace BecaWebService.Services.Custom
 
                 step = "get data";
                 List<BecaParameter> par = new List<BecaParameter>();
-                par.Add(new BecaParameter("idUtente", _gRepository.GetLoggedUser().idUtenteLoc(_gRepository.GetActiveCompany().idCompany)));
+                par.Add(new BecaParameter("idUtente", _gRepository.GetLoggedUser()!.idUtenteLoc(_gRepository.GetActiveCompany()!.idCompany)));
                 par.Add(new BecaParameter("AACO", aaco));
                 par.Add(new BecaParameter("MMCO", mmco));
                 if (cdff != null) par.Add(new BecaParameter("CDFF", cdff));
@@ -176,18 +185,18 @@ namespace BecaWebService.Services.Custom
 
                 if (data == null || data.Count == 0) return new GenericResponse("Nessuna cartellino stampabile trovato");
 
-                string baseFolder = _gRepository.GetActiveCompany().MainFolder != "localhost" ?
+                string baseFolder = _gRepository.GetActiveCompany()!.MainFolder != "localhost" ?
                     Path.Combine(_env.ContentRootPath) :
                     Path.Combine("E:", "BecaWeb");
                 _logger.LogInfo($"cerco il pdf in {baseFolder}");
                 //baseFolder = Path.Combine("E:", "BecaWeb");
-                string folderName = Path.Combine(baseFolder, "Web", "Download", _gRepository.GetActiveCompany().MainFolder);
+                string folderName = Path.Combine(baseFolder, "Web", "Download", _gRepository.GetActiveCompany()!.MainFolder!);
                 string sourceName = Path.Combine(folderName, "Cartellino.pdf");
                 _logger.LogInfo($"prendo il pdf {sourceName}");
                 string tempFolder = Path.Combine(baseFolder, "Web", "Download", "_TEMP");
                 string tempName = Path.Combine(tempFolder, "Cartellino_" +
-                    _gRepository.GetActiveCompany().MainFolder +
-                    _gRepository.GetLoggedUser().idUtenteLoc(_gRepository.GetActiveCompany().idCompany).ToString() +
+                    _gRepository.GetActiveCompany()!.MainFolder +
+                    _gRepository.GetLoggedUser()!.idUtenteLoc(_gRepository.GetActiveCompany()!.idCompany).ToString() +
                     DateTime.Now.Ticks.ToString()) + ".pdf";
                 _logger.LogInfo($"genero il pdf {tempName}");
 
@@ -236,7 +245,7 @@ namespace BecaWebService.Services.Custom
 
         private void ClearTemp()
         {
-            string baseFolder = _gRepository.GetActiveCompany().MainFolder != "localhost" ?
+            string baseFolder = _gRepository.GetActiveCompany()!.MainFolder != "localhost" ?
                     Path.Combine(_env.ContentRootPath) :
                     Path.Combine("E:", "BecaWeb");
             string tempFolder = Path.Combine(baseFolder, "Web", "Download", "_TEMP");

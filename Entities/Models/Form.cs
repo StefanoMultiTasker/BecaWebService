@@ -6,7 +6,7 @@
 
         public BecaParameters() { this.parameters = new List<BecaParameter>(); }
 
-        public BecaParameter Add(string name, object val)
+        public BecaParameter Add(string name, object? val)
         {
             BecaParameter par = new BecaParameter(name, val);
             if (this.parameters == null) this.parameters = new List<BecaParameter>();
@@ -44,8 +44,8 @@
         public bool? used { get; set; } = false;
 
         public BecaParameter() { }
-        public BecaParameter(string name, object value1) { this.name = name; this.value1 = value1; this.comparison = "="; }
-        public BecaParameter(string name, object value1, object value2) { this.name = name; this.value1 = value1; this.value2 = value2; this.comparison = "between"; }
+        public BecaParameter(string name, object? value1) { this.name = name; this.value1 = value1; this.comparison = "="; }
+        public BecaParameter(string name, object? value1, object? value2) { this.name = name; this.value1 = value1; this.value2 = value2; this.comparison = "between"; }
     }
 
     public class BecaViewForm
@@ -69,6 +69,7 @@
         public string TableName { get; set; }
         public string? ViewNameDB { get; set; }
         public string? ViewName { get; set; }
+        public byte[]? HashKey { get; set; }
         public string? PrimaryKey { get; set; }
         public bool ForceInsertOnUpdate { get; set; }
         public string? SelectProcedureName { get; set; }
@@ -88,6 +89,7 @@
             string tbl = view ? ((this.ViewName == null || this.ViewName.ToString() == "" ? this.TableName : this.ViewName)) : this.TableName;
             return tbl.Contains(";") ? tbl.Split(";").First() : tbl;
         }
+        public string SchemaHashString => HashKey == null ? "" : BitConverter.ToString(HashKey).Replace("-", "");
     }
 
 
@@ -149,6 +151,7 @@
         public string? DropDownListDB { get; set; }
         public string? DropDownList { get; set; }
         //public string? Parametri { get; set; }
+        public byte[]? HashKey { get; set; }
         public string? Parameters { get; set; }
         public bool ParametersReq { get; set; }
         public short OrderSequence { get; set; }
@@ -178,6 +181,8 @@
         //public int MisuraAltezzaDetails { get; set; }
         //public bool Obbligatorio { get; set; }
         //public bool Modificabile { get; set; }
+        public string SchemaHashString => HashKey == null ? "" : BitConverter.ToString(HashKey).Replace("-", "");
+
     }
 
     public class BecaFormFieldLevel
