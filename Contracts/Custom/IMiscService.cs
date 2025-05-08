@@ -8,6 +8,7 @@ using System.IO;
 using Entities.Models.Custom;
 using RestSharp;
 using Entities.Models;
+using Microsoft.AspNetCore.Http;
 
 namespace Contracts.Custom
 {
@@ -47,6 +48,7 @@ namespace Contracts.Custom
     }
     public interface ILavorService
     {
+        Task<GenericResponse> UploadCU(string CF, string anno, IFormFile file);
         GenericResponse ListCUByCodFisc();
         GenericResponse LavorSendRequestMail(string subject, string text);
     }

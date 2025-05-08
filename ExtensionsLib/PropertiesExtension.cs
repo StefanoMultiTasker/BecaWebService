@@ -67,7 +67,7 @@ namespace ExtensionsLib
             var prop = type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
                            .FirstOrDefault(p => string.Equals(p.Name, propertyName, StringComparison.OrdinalIgnoreCase));
             if (prop == null) return null;
-            return prop.GetValue(@this).ToString() ?? "";
+            return prop.GetValue(@this) == null ? "" : prop.GetValue(@this).ToString() ?? "";
         }
 
         public static string GetPropertyStringByPos<T>(this T @this, Int16 propertyPosition) where T : class, new()

@@ -20,7 +20,8 @@ namespace Entities
 
         public Type GetFormCfg(string formName, DbDataReader result, List<string> fields, bool hasIdentity = true, bool hasChildren = false)
         {
-            string cacheKey = $"DynamicType_{formName}_{hasIdentity}_{hasChildren}";//{Guid.NewGuid()}
+            string fieldsList = fields == null || fields.Count == 0 ? "" : "_" + string.Join("-", fields);
+            string cacheKey = $"DynamicType_{formName}_{hasIdentity}_{hasChildren}{fieldsList}";//{Guid.NewGuid()}
             return _cache.GetOrSetCache(cacheKey, () =>
             {
                 Type generatedType = null;

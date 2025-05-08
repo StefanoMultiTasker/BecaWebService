@@ -58,9 +58,9 @@ namespace Contracts
 
         Task<List<T>> GetDataBySPAsync<T>(SqlConnection cnn, string spName, List<BecaParameter> parameters, PropertyNaming namingStrategy = PropertyNaming.AsIs) where T : class, new();
 
-        Task<T?> AddDataByFormAsync<T>(SqlConnection connection, BecaForm form, List<BecaFormField> fields, object record) where T : class, new();
+        Task<T?> AddDataByFormAsync<T>(SqlConnection connection, BecaForm form, List<BecaFormField> fields, object record, bool GetRecordAfterInsert) where T : class, new();
         Task<(T? data, string message)> UpdateDataByFormAsync<T>(SqlConnection connection, BecaForm form, List<BecaFormField> fields,
-            object recordOld, object recordNew) where T : class, new();
+            object recordOld, object recordNew, bool GetRecordAfterInsert) where T : class, new();
 
         BecaUser? GetLoggedUser();
         Company? GetActiveCompany();

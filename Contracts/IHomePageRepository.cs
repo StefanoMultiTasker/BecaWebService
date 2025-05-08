@@ -10,5 +10,7 @@ namespace Contracts
     public interface IHomePageRepository
     {
         public List<BecaHomePage> GetHomePageByUser();
+        List<BecaHomeBuild> GetHomeBuildByUser(int[] idProfiles);
+        BecaHomeBuild? GetHomeBrick(int idHomeBrick, int[] idProfiles);
     }
 }

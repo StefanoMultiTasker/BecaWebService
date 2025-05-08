@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Repository
 {
-    public class HomePageRepository: IHomePageRepository
+    public class HomePageRepository : IHomePageRepository
     {
         private DbBecaContext _context;
         private BecaUser _currentUser;
@@ -27,6 +27,20 @@ namespace Repository
         public List<BecaHomePage> GetHomePageByUser()
         {
             return _context.BecaHomePages.Where(m => m.idProfile == _currentUser.idProfileDef(_activeCompany.idCompany)).ToList();
+        }
+
+        public List<BecaHomeBuild> GetHomeBuildByUser(int[] idProfiles)
+        {
+            idProfiles = [_currentUser.idProfileDef(_activeCompany.idCompany).Value];
+            return [.. _context.BecaHomeBuild
+                .Where(m => idProfiles.Contains(m.idProfile))
+                .GroupBy(m => m.idHomeBrick)
+                .Select(g => g.First())];
+        }
+
+        public BecaHomeBuild? GetHomeBrick(int idHomeBrick, int[] idProfiles)
+        {
+            return _context.BecaHomeBuild.FirstOrDefault(m => idProfiles.Contains(m.idProfile) && m.idHomeBrick == idHomeBrick);
         }
     }
 }

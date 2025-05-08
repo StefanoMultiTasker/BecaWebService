@@ -275,7 +275,7 @@ namespace BecaWebService.Services.Custom
                     return $"Lo stato del documento ({stati[0].GetPropertyString("Stato")}) non consente più l'annullamento della firma".toResponse();
                 }
 
-                if (stato != 4)
+                if (stato == 4)
                 {
                     int idOrdine = (int)firme[0].GetPropertyValue("idOrdineWS");
                     List<object> user = _gRepository.GetDataBySQL("DbDati", "SELECT * From vFRM_DatiWS", []);

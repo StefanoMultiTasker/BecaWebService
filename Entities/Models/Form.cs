@@ -69,6 +69,7 @@
         public string TableName { get; set; }
         public string? ViewNameDB { get; set; }
         public string? ViewName { get; set; }
+        public byte[]? HashKeyTable { get; set; }
         public byte[]? HashKey { get; set; }
         public string? PrimaryKey { get; set; }
         public bool ForceInsertOnUpdate { get; set; }
@@ -89,6 +90,7 @@
             string tbl = view ? ((this.ViewName == null || this.ViewName.ToString() == "" ? this.TableName : this.ViewName)) : this.TableName;
             return tbl.Contains(";") ? tbl.Split(";").First() : tbl;
         }
+        public string SchemaHashTableString => HashKeyTable == null ? "" : BitConverter.ToString(HashKeyTable).Replace("-", "");
         public string SchemaHashString => HashKey == null ? "" : BitConverter.ToString(HashKey).Replace("-", "");
     }
 

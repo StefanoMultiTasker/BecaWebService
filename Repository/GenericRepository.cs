@@ -134,7 +134,7 @@ namespace Repository
                 //        return (spRes == null || spRes.Count == 0) ? null : spRes[0];
                 //    }
                 //}
-                object def = GetContext(form.TableNameDB).GetQueryDef<object>(form.SchemaHashString ?? Form, "Select * From " + form.TableName + " Where 0 = 1");
+                object def = GetContext(form.TableNameDB).GetQueryDef<object>((form.SchemaHashTableString ?? Form), "Select * From " + form.TableName + " Where 0 = 1");
                 MethodInfo? method = def.GetType().GetMethod("identityName");
                 string idName = method == null ? "" : method.Invoke(def, null)!.ToString() ?? "";
 
@@ -402,7 +402,7 @@ namespace Repository
                     }
                 }
 
-                colCheck ??= GetContext(db).GetQueryDef<object>(form.SchemaHashString ?? Form, sqlChk + " Where 0 = 1", [.. pars]);
+                colCheck ??= GetContext(db).GetQueryDef<object>((form.SchemaHashString ?? Form) + "_chk", sqlChk + " Where 0 = 1", [.. pars]);
 
                 if (colCheck.GetType().GetProperty("idUtente") != null && form.UseDefaultParam)
                 {
@@ -703,7 +703,9 @@ namespace Repository
             if (form != null)
             {
                 string sql = GetFormSQL(form, view, false, noUpload);
-                object def = GetContext(form.TableNameDB).GetQueryDef<object>(form.SchemaHashString ?? Form, sql + " Where 0 = 1", fields);
+                string formName = (view ? form.SchemaHashString : form.SchemaHashTableString) ?? Form;
+
+                object def = GetContext(form.TableNameDB).GetQueryDef<object>(formName, sql + " Where 0 = 1", fields);
                 return (T)def;
             }
             else
@@ -719,7 +721,8 @@ namespace Repository
             if (form != null)
             {
                 string sql = GetFormSQLAsync(fields, form, view, false, noUpload);
-                object def = await GetQueryDefAsync<object>(db, $"{form.SchemaHashString}{view}" ?? form.Form, sql + " Where 0 = 1", reqFields);
+                string formName = (view ? form.SchemaHashString : form.SchemaHashTableString) ?? form.Form;
+                object def = await GetQueryDefAsync<object>(db, $"{formName}", sql + " Where 0 = 1", reqFields);
                 return (T)def;
             }
             else
@@ -1014,7 +1017,7 @@ namespace Repository
                         }
                     }
                 }
-                colCheck ??= GetContext(formField.DropDownListDB!).GetQueryDef<object>(formField.SchemaHashString ?? Form + '_' + field + "_chk", sqlChk + " Where 0 = 1", parameters: [.. pars]);
+                colCheck ??= GetContext(formField.DropDownListDB!).GetQueryDef<object>((formField.SchemaHashString ?? Form) + '_' + field + "_chk", sqlChk + " Where 0 = 1", parameters: [.. pars]);
 
                 if (((ddlPar != null && ddlPar.Contains("idUtente")) || ddl.Contains("idUtente"))
                     && colCheck.GetType().GetProperty("idUtente") != null)
@@ -1158,7 +1161,7 @@ namespace Repository
 
             List<object?> pars = [];
             string sqlChk = "Select * From " + form.TableName;
-            object colCheck = GetContext(form.TableNameDB).GetQueryDef<object>(form.SchemaHashString ?? form + "_ca" + sqlNumber.ToString() + "_chk", sqlChk + " Where 0 = 1");
+            object colCheck = GetContext(form.TableNameDB).GetQueryDef<object>((form.SchemaHashString ?? form.Form) + "_ca" + sqlNumber.ToString() + "_chk", sqlChk + " Where 0 = 1");
             if (colCheck.GetType().GetProperty("idUtente") != null)
             {
                 ddlKeys += ",idUtente";
@@ -1803,7 +1806,7 @@ namespace Repository
                     }
                 }
 
-                colCheck ??= await GetQueryDefAsync<object>(cnn, Form + '_' + field + "_chk", sqlChk + " Where 0 = 1", [], parameters: [.. pars]);
+                colCheck ??= await GetQueryDefAsync<object>(cnn, formField.SchemaHashString + "_chk", sqlChk + " Where 0 = 1", [], parameters: [.. pars]);
 
                 if (((ddlPar != null && ddlPar.Contains("idUtente")) || ddl.Contains("idUtente"))
                     && colCheck.GetType().GetProperty("idUtente") != null)
@@ -2334,7 +2337,7 @@ namespace Repository
                     lowerCase ? PropertyNaming.LowerCase : PropertyNaming.LowerCamelCase, [.. pars]);
         }
 
-        public async Task<T?> AddDataByFormAsync<T>(SqlConnection connection, BecaForm form, List<BecaFormField> fields, object record) where T : class, new()
+        public async Task<T?> AddDataByFormAsync<T>(SqlConnection connection, BecaForm form, List<BecaFormField> fields, object record, bool GetRecordAfterInsert) where T : class, new()
         {
             List<BecaFormField> defFieds = fields.Where(f => f.DefaultValue != null).ToList();
             if (form != null)
@@ -2349,7 +2352,7 @@ namespace Repository
                     if (endOperation) return data;
                 }
 
-                object def = await GetQueryDefAsync<object>(connection, form.SchemaHashString ?? form.Form, "Select * From " + form.TableName + " Where 0 = 1", []);
+                object def = await GetQueryDefAsync<object>(connection, (form.SchemaHashTableString ?? form.Form) + "_Add", "Select * From " + form.TableName + " Where 0 = 1", []);
                 MethodInfo? method = def.GetType().GetMethod("identityName");
                 string idName = method == null ? "" : method.Invoke(def, null)!.ToString() ?? "";
 
@@ -2408,12 +2411,18 @@ namespace Repository
                 }
 
                 //await _context.SaveChangesAsync();
-                List<T> inserted = await this.GetDataByFormAsync<T>(new Dictionary<string, SqlConnection>
+                if (GetRecordAfterInsert)
+                {
+                    List<T> inserted = await this.GetDataByFormAsync<T>(new Dictionary<string, SqlConnection>
                     {
                         { form.TableNameDB, connection }
                     }, form, fields, record);
-                if (inserted.Count == 0) return null;
-                return inserted[0];
+                    if (inserted.Count == 0) return null;
+                    return inserted[0];
+                } else
+                {
+                    return record as T;
+                }
             }
             else
             {
@@ -2422,7 +2431,7 @@ namespace Repository
         }
 
         public async Task<(T? data, string message)> UpdateDataByFormAsync<T>(SqlConnection connection, BecaForm form, List<BecaFormField> fields,
-            object recordOld, object recordNew) where T : class, new()
+            object recordOld, object recordNew, bool GetRecordAfterInsert) where T : class, new()
         {
             if (form != null && form.ForceInsertOnUpdate)
             {
@@ -2434,7 +2443,7 @@ namespace Repository
                         }, form, fields, recordNew);
                     if (data.Count == 0)
                     {
-                        return (await this.AddDataByFormAsync<T>(connection, form, fields, recordNew), "");
+                        return (await this.AddDataByFormAsync<T>(connection, form, fields, recordNew, GetRecordAfterInsert), "");
                     }
                 }
             }
@@ -2538,12 +2547,18 @@ namespace Repository
                 if (!(resSave.GetValueOrDefault() > 0 & resSave.HasValue))
                     return ((T)recordOld, "Non è stato possibile aggiornare il record");
 
-                List<T> inserted2 = await this.GetDataByFormAsync<T>(new Dictionary<string, SqlConnection>
+                if(GetRecordAfterInsert)
+                {
+                    List<T> inserted2 = await this.GetDataByFormAsync<T>(new Dictionary<string, SqlConnection>
                         {
                             { form.TableNameDB, connection }
                         }, form, fields, recordNew);
-                if (inserted2.Count == 0) return (null, "Problemi nel trovare il nuovo record");
-                return (inserted2[0], "");
+                    if (inserted2.Count == 0) return (null, "Problemi nel trovare il nuovo record");
+                    return (inserted2[0], "");
+                } else
+                {
+                    return ((T)recordNew, "");
+                }
             }
             else
             {
@@ -2591,7 +2606,7 @@ namespace Repository
         {
             try
             {
-                foreach (BecaFormField field in upl.Where(f => record.HasPropertyValue($"{f.Name.Replace("upl", "")}upl") && record.GetPropertyString($"{f.Name.Replace("upl", "")}upl").ToString() != ""))
+                foreach (BecaFormField field in upl.Where(f => record.HasPropertyValue($"{f.Name.Replace("upl", "")}upl") && record.GetPropertyString($"{f.Name.Replace("upl", "")}upl").ToString() != "" && !f.Parameters.isNullOrempty()))
                 {
                     string res = await SaveFileByFieldAsync(connection, form, field, record);
                     if (res.Contains("ERR: ")) return res.Replace("ERR: ", "");

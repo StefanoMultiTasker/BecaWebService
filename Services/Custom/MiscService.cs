@@ -6,6 +6,7 @@ using Entities.Models.Custom;
 using Contracts.Custom;
 using Contracts;
 using Entities.Models;
+using System.Reflection.Metadata.Ecma335;
 
 namespace BecaWebService.Services.Custom
 {
@@ -55,6 +56,7 @@ namespace BecaWebService.Services.Custom
         #endregion
 
         #region "Lavor"
+        public async Task<GenericResponse> UploadCU(string CF, string anno, IFormFile file) => await lavorService.UploadCU(CF, anno, file);
         public GenericResponse ListCUByCodFisc()
         {
             return lavorService.ListCUByCodFisc();

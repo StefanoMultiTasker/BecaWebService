@@ -130,6 +130,17 @@ namespace BecaWebService.Controllers
             }
         }
 
+        [HttpPost("UploadCU")]
+        public async Task<IActionResult> PostUploadCU([FromForm] string CF, [FromForm] string anno, Microsoft.AspNetCore.Http.IFormFile file)
+        {
+            var result = await _service.UploadCU(CF, anno, file);
+
+            if (!result.Success)
+                return BadRequest(result.Message);
+
+            return Ok(result);
+        }
+
         [AllowAnonymous]
         [HttpPost("SavinoOTP")]
         public IActionResult SavinoOTP([FromBody] SavinoOTP data)

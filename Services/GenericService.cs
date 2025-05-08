@@ -505,6 +505,24 @@ namespace BecaWebService.Services
             return new GenericResponse(results, errorMsg);
         }
 
+        private object? isObjectInList(List<object> list, object record, BecaForm form)
+        {
+            string[] keys = form.PrimaryKey!.Replace(" ", "").Split(",", StringSplitOptions.RemoveEmptyEntries);
+            foreach (var item in list)
+            {
+                int keyOk = 0;
+                foreach (var field in keys)
+                {
+                    if (item.HasPropertyValue(field) && record.HasPropertyValue(field) && item.GetPropertyString(field) == record.GetPropertyString(field))
+                    {
+                        keyOk++;
+                    }
+                }
+                if (keyOk == keys.Length) return item;
+            }
+            return null;
+        }
+
         public async Task<GenericResponse> DataFormSaveAsync(DataFormPostParameter data, DataFormSaveActions action, bool lowerCase)
         {
             var (form, fields, message) = await _genericRepository.GetBecaFormObjects4Save(data);
@@ -516,19 +534,19 @@ namespace BecaWebService.Services
 
             bool forceInsert = data.force ?? false;
             bool isFromview = action switch
-                {
-                    DataFormSaveActions.Add => false,
-                    DataFormSaveActions.Update => true,
-                    DataFormSaveActions.AddOrUpdate => false,
-                    _ => false
-                };
+            {
+                DataFormSaveActions.Add => false,
+                DataFormSaveActions.Update => true,
+                DataFormSaveActions.AddOrUpdate => false,
+                _ => false
+            };
             bool isPartialFields = action switch
-                {
-                    DataFormSaveActions.Add => false,
-                    DataFormSaveActions.Update => false,
-                    DataFormSaveActions.AddOrUpdate => true,
-                    _ => false
-                };
+            {
+                DataFormSaveActions.Add => false,
+                DataFormSaveActions.Update => false,
+                DataFormSaveActions.AddOrUpdate => true,
+                _ => false
+            };
 
 
             List<object> recordsNew = data.newData != null
@@ -538,6 +556,12 @@ namespace BecaWebService.Services
             List<object> recordsOld = data.originalData != null
                 ? [CreateObjectFromJObject<object>(form!.Form, data.originalData, isFromview)]
                 : data.originalListData != null ? CreateObjectsFromJArray<object>(form!.Form, data.originalListData!, isFromview) : [];
+
+            List<object>? data2Check = data.Parameters == null
+                ? null
+                : await _genericRepository.GetDataByFormAsync<object>(connections, new List<BecaForm>() { form }, [], fields, form.Form, data.Parameters!.parameters, true, false, null, null, lowerCase);
+            //data2Check = null;
+            bool GetRecordAfterInsert = data2Check == null;
 
             var tasks = recordsNew.Select(async (recordNew, i) =>
             //var tasks = recordsNew.Select((recordNew, i) =>
@@ -552,34 +576,61 @@ namespace BecaWebService.Services
                             case DataFormSaveActions.Add:
                                 if (!forceInsert)
                                 {
-                                    List<object> data1 = await _genericRepository.GetDataByFormAsync<object>(connections, form, fields, recordNew);
-                                    if (data1.Count > 0) return new GenericResponse("Il record esiste già");
+                                    if (data2Check == null)
+                                    {
+                                        List<object> data1 = await _genericRepository.GetDataByFormAsync<object>(connections, form, fields, recordNew);
+                                        if (data1.Count > 0) return new GenericResponse("Il record esiste già");
+                                    }
+                                    else
+                                    {
+                                        if (isObjectInList(data2Check, recordNew, form) != null) return new GenericResponse("Il record esiste già");
+                                    }
                                 }
 
-                                object? res1 = await _genericRepository.AddDataByFormAsync<object>(cnn, form!,fields, recordNew);
-                                if (res1 == null) return new GenericResponse("Il record non è stato inserito"); 
+                                object? res1 = await _genericRepository.AddDataByFormAsync<object>(cnn, form!, fields, recordNew, GetRecordAfterInsert);
+                                if (res1 == null) return new GenericResponse("Il record non è stato inserito");
                                 singleResult = res1.toResponse();
                                 break;
                             case DataFormSaveActions.Update:
                                 var recordOld = recordsOld[i];
 
-                                List<object> data2 = await _genericRepository.GetDataByFormAsync<object>(connections, form, fields, recordOld);
-                                if (data2.Count == 0) return new GenericResponse("Il record non esiste più");
-
-                                var res2 = await _genericRepository.UpdateDataByFormAsync<object>(cnn, form!, fields, recordOld, recordNew);
-                                if (res2.data == null) return new GenericResponse(res2.message ?? "Il record non è stato aggiornato");
-
-                                singleResult = new GenericResponse(res2.data, res2.message); 
-                                break;
-                            case DataFormSaveActions.AddOrUpdate:
-                                List<object> data3 = await _genericRepository.GetDataByFormAsync<object>(connections, form, fields, recordNew);
-                                object? res3 = null;
-                                if (data3.Count == 0)
-                                    res3 = await _genericRepository.AddDataByFormAsync<object>(cnn, form!, fields, recordNew);
+                                if (data2Check == null)
+                                {
+                                    List<object> data2 = await _genericRepository.GetDataByFormAsync<object>(connections, form, fields, recordOld);
+                                    if (data2.Count == 0) return new GenericResponse("Il record non esiste più");
+                                }
                                 else
                                 {
-                                    object recordOld3 = CreateObjectFromExpando<object>(form.Form, data3[0],true,false);
-                                    res3 = (await _genericRepository.UpdateDataByFormAsync<object>(cnn, form!, fields, recordOld3, recordNew)).data;
+                                    if (isObjectInList(data2Check, recordNew, form) == null) return new GenericResponse("Il record non esiste più");
+                                }
+
+                                var res2 = await _genericRepository.UpdateDataByFormAsync<object>(cnn, form!, fields, recordOld, recordNew, GetRecordAfterInsert);
+                                if (res2.data == null) return new GenericResponse(res2.message ?? "Il record non è stato aggiornato");
+
+                                singleResult = new GenericResponse(res2.data, res2.message);
+                                break;
+                            case DataFormSaveActions.AddOrUpdate:
+                                object? current = null;
+                                if (data2Check == null)
+                                {
+                                    List<object> data3 = await _genericRepository.GetDataByFormAsync<object>(connections, form, fields, recordNew);
+                                    if (data3.Count > 0)
+                                    {
+                                        current = data3[0];
+                                    }
+                                }
+                                else
+                                {
+                                    current = isObjectInList(data2Check, recordNew, form);
+                                }
+
+                                object? res3 = null;
+                                if (current == null)
+                                    res3 = await _genericRepository.AddDataByFormAsync<object>(cnn, form!, fields, recordNew, GetRecordAfterInsert);
+                                else
+                                {
+                                    object recordOld3 = CreateObjectFromExpando<object>(form.Form, current, true, false);
+                                    res3 = (await _genericRepository.UpdateDataByFormAsync<object>(cnn, form!, fields, recordOld3, recordNew, GetRecordAfterInsert)).data;
                                 }
                                 singleResult = new GenericResponse(res3 ?? "Il record non è stata salvato");
                                 break;
@@ -596,9 +647,24 @@ namespace BecaWebService.Services
             // Aspetta che tutte le operazioni siano terminate PRIMA di restituire il risultato
             var results = await Task.WhenAll(tasks);
 
+            if (!GetRecordAfterInsert) {
+                data2Check = await _genericRepository.GetDataByFormAsync<object>(connections, new List<BecaForm>() { form }, [], fields, form.Form, data.Parameters!.parameters, true, false, null, null, lowerCase);
+                foreach(var result in results)
+                {
+                    if (result is GenericResponse response && response.Success)
+                    {
+                        var extraLoad = isObjectInList(data2Check, result._extraLoad!, form);
+                        if (extraLoad != null)
+                        {
+                            response._extraLoad = extraLoad;
+                        }
+                    }
+                }
+            }
+
             cnn.Close();
 
-            GenericResponse finalResult =   new(results.Any(r => r.Success), string.Join("\n", results.Select(r => r.Message).Where(m => !string.IsNullOrWhiteSpace(m))))  ;
+            GenericResponse finalResult = new(results.Any(r => r.Success), string.Join("\n", results.Select(r => r.Message).Where(m => !string.IsNullOrWhiteSpace(m))));
 
             if (data.newListData == null)
             {

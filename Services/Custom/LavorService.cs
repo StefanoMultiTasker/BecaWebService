@@ -19,6 +19,71 @@ namespace BecaWebService.Services.Custom
             _gRepository = genRepository;
             _logger = logger;
         }
+
+        public async Task<GenericResponse> UploadCU(string CF, string anno, IFormFile file)
+        {
+            try
+            {
+                string sql = "Select * From CUOnLine";
+                BecaParameters aPar = new BecaParameters();
+                aPar.Add("CFIL", CF);
+                aPar.Add("Anno", anno);
+                List<object> cu = _gRepository.GetDataBySQL("DbDati", sql, aPar.parameters, false);
+                if (cu.Count() == 0)
+                {
+                    sql = "Select * From LAVOR";
+                    aPar = new BecaParameters();
+                    aPar.Add("CFIL", CF);
+                    List<object> lavor = _gRepository.GetDataBySQL("DbDati", sql, aPar.parameters, false);
+                    if (lavor.Count() > 0)
+                    {
+                        List<object> parameters = new List<object>();
+                        parameters.Add(CF);
+                        parameters.Add(anno);
+                        parameters.Add("CU");
+                        sql = "Insert Into CUOnLine (CFIL, Anno, Suffix) " +
+                            "Select {0}, {1}, {2}";
+                        int res = await _gRepository.ExecuteSqlCommandAsync("DbDati", sql, parameters.ToArray());
+                        if (res == 0)
+                        {
+                            return new GenericResponse("Nessun record inserito in anagrafica CU");
+                        }
+                    }
+                    else
+                    {
+                        return new GenericResponse("Nessuna anagrafica trovata con il Codice Fiscale " + CF);
+                    }
+                }
+                return await this.UploadDoc(CF, anno, file);
+            }
+            catch (Exception ex)
+            {
+                return new GenericResponse($"{ex.Message}");
+            }
+        }
+
+        private async Task<GenericResponse> UploadDoc(string CF, string anno, IFormFile file)
+        {
+            try
+            {
+                string fileName = CF + "_CU_" + anno + ".pdf";
+                string folderName = Path.Combine("\\\\192.168.0.207", "BecaWeb", "Web", "Upload", _gRepository.GetActiveCompany()!.MainFolder!, "CUD");
+                string fullName = Path.Combine(folderName, fileName);
+
+                if (File.Exists(fullName)) File.Delete(fullName);
+
+                using (FileStream writer = System.IO.File.Create(fullName))
+                {
+                    await file.CopyToAsync(writer);
+                    writer.Close();
+                }
+                return new GenericResponse(true);
+            }
+            catch (Exception ex)
+            {
+                return new GenericResponse($"{ex.Message}");
+            }
+        }
         public GenericResponse ListCUByCodFisc()
         {
             if (_gRepository.GetLoggedUser() == null) return "Non sei loggato".toResponse();
