@@ -1,4 +1,6 @@
-﻿namespace Entities.Models
+﻿using Microsoft.IdentityModel.Tokens;
+
+namespace Entities.Models
 {
     public class BecaParameters
     {
@@ -87,7 +89,7 @@
 
         public string getMainSource(bool view)
         {
-            string tbl = view ? ((this.ViewName == null || this.ViewName.ToString() == "" ? this.TableName : this.ViewName)) : this.TableName;
+            string tbl = view ? ((this.ViewName.IsNullOrEmpty() ? this.TableName : this.ViewName)) : this.TableName;
             return tbl.Contains(";") ? tbl.Split(";").First() : tbl;
         }
         public string SchemaHashTableString => HashKeyTable == null ? "" : BitConverter.ToString(HashKeyTable).Replace("-", "");

@@ -1695,8 +1695,7 @@ namespace Repository
 
             List<BecaFormFieldLevel> formFieldCust = await _context.BecaFormFieldLevel
                 .Where(f => f.idProfile == _currentUser.idProfileDef(_activeCompany.idCompany) &&
-                    (forms.Contains(f.Form) && (f.OrderSequence != 0 || f.FieldType == "upload")) ||
-                    reqFields.Contains(f.Form.ToLower() + "_" + f.Name.ToLower()))
+                    (forms.Contains(f.Form) || reqFields.Contains(f.Form.ToLower() + "_" + f.Name.ToLower())))
                 .ToListAsync();
 
             return (fields, formFieldCust, "");
