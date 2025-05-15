@@ -56,7 +56,8 @@ namespace BecaWebService.Services.Custom
             return await AvviaProcessoSuccessivo(idAttivita, user_process_id, null);
         }
 
-        public async Task<GenericResponse> ValidaFase(int idAttivita, int user_process_id) {
+        public async Task<GenericResponse> ValidaFase(int idAttivita, int user_process_id)
+        {
             return await AvviaProcessoSuccessivo(idAttivita, user_process_id, null);
         }
 
@@ -193,7 +194,7 @@ namespace BecaWebService.Services.Custom
                             parameters.Add("user_process_id", pmsResData.user_process_id);
                             parameters.Add("user_steps_id", "[" + string.Join(",", pmsResData.user_step_ids ?? []) + "]");
                             parameters.Add("link", pmsResData.link);
-                            parameters.Add("parametri_processo", sParamas.Replace("'","''"));
+                            parameters.Add("parametri_processo", sParamas.Replace("'", "''"));
                             parameters.Add("PWDI", 1);
 
                             sw?.WriteLine($"{DateTime.Now.ToShortDateString()} - {DateTime.Now.ToShortTimeString()}: Eseguo spPMS_Avvia_Processo2");
@@ -230,6 +231,35 @@ namespace BecaWebService.Services.Custom
                 BecaParameters parameters = new();
                 parameters = new BecaParameters();
                 parameters.Add("idAnagAttivita", avvio.idAnagAttivita);
+
+                List<object> attivita = _gRepository.GetDataBySQL("MainDB", "Select * From PMS_AnagAttivita", parameters.parameters,false,true);
+                if (attivita.Count == 0) { return "Non trovo l'attività".toResponse(); }
+
+                string sourcesql = attivita[0].GetPropertyString("sourcesql");
+                if (sourcesql != string.Empty)
+                {
+                    string keys = attivita[0].GetPropertyString("keys").ToLower();
+                    if(keys == string.Empty) { return "Non trovo le chiavi dell'attività".toResponse(); }
+
+                    var dataDict = ((IEnumerable<JProperty>)avvio.data.Properties()).ToDictionary(p => p.Name.ToLower(), p => p.Value);
+
+                    parameters = new BecaParameters();
+                    foreach(string k in keys.Split(","))
+                    {
+                        if (dataDict.TryGetValue(k, out var jsonValue))
+                        {
+                            parameters.Add(k, ((Newtonsoft.Json.Linq.JValue)jsonValue).Value);
+                        }
+                    }
+                    List<object> attivitaData = _gRepository.GetDataBySQL("MainDB", $"Select * From {sourcesql}", parameters.parameters,false,true);
+                    if(attivitaData.Count == 0) { return "Non trovo i dati dell'attività".toResponse(); }
+                    if(attivitaData.Count > 1) { return "Trovo troppi dati per l'avvio dell'attività".toResponse(); }
+
+                    avvio.data = attivitaData[0];
+                }
+
+                parameters = new BecaParameters();
+                parameters.Add("idAnagAttivita", avvio.idAnagAttivita);
                 parameters.Add("apl", avvio.apl);
                 parameters.Add("cdff", avvio.cdff);
                 parameters.Add("pwdi", idUtenteAvvio);
@@ -238,8 +268,9 @@ namespace BecaWebService.Services.Custom
                 parameters.Add("communication_email", true);
                 parameters.Add("codiceanagrafica", null);
                 parameters.Add("tipoanagrafica", "L");
-                List<object> res1 =  _gRepository.GetDataBySP<object>("MainDB", "spPMS_Avvia_Attivita", parameters.parameters);
-                if (res1.Count == 0) {
+                List<object> res1 = _gRepository.GetDataBySP<object>("MainDB", "spPMS_Avvia_Attivita", parameters.parameters);
+                if (res1.Count == 0)
+                {
                     return "spPMS_Avvia_Attivita ha dato esito negativo".toResponse();
                 }
                 int idAttivita = int.Parse(res1[0].GetPropertyString("idAttivita"));
@@ -269,36 +300,40 @@ namespace BecaWebService.Services.Custom
                 List<object> parametri = _gRepository.GetDataBySQL("MainDB", "Select * From vPMS_ParamDict", parameters.parameters);
                 if (parametri == null || parametri.Count == 0) { return "Non trovo il parametri di avvio".toResponse(); }
 
-                var propsDict = ((IEnumerable<JProperty>)avvio.data.Properties())
-                    .ToDictionary(p => p.Name, p => p.Value);
+                if (avvio.data is JObject)
+                    avvio.data = JsonConvert.DeserializeObject<ExpandoObject>(avvio.data.ToString());
+
+                var propsDict = (IDictionary<string, object?>)avvio.data; // ((IEnumerable<JProperty>)avvio.data.Properties()).ToDictionary(p => p.Name, p => p.Value);
                 foreach (string k in parametri[0].GetPropertyString("Keys").Split(",").Skip(5))
                 {
                     if (propsDict.TryGetValue(k, out var jsonValue))
                     {
-                        dict[k] = ((Newtonsoft.Json.Linq.JValue)jsonValue).Value;
+                        //dict[k] = ((Newtonsoft.Json.Linq.JValue)jsonValue).Value;
+                        dict[k] = jsonValue;
                     }
                     else
                     {
                         switch (k)
                         {
-                            case "cdff":                    dict[k] = avvio.cdff; break;
-                            case "comune_filiale":          dict[k] = filiali[0].GetPropertyString("COFL"); break;
-                            case "aplP":                    dict[k] = apl[0].GetPropertyString("RSSL"); break;
-                            case "piva_apl":                dict[k] = apl[0].GetPropertyString("PISL"); break;
-                            case "comune_sede_legale":      dict[k] = apl[0].GetPropertyString("COSL"); break;
-                            case "indirizzo_sede_legale":   dict[k] = apl[0].GetPropertyString("INSL"); break;
-                            case "ora_adesso":              dict[k] = DateTime.Now.ToString("HH:mm:ss"); break;
-                            case "data_odierna":            dict[k] = DateTime.Today.ToString("dd/MM/yyyy"); break;
-                            case "anno_corrente":           dict[k] = DateTime.Today.ToString("yyyy"); break;
-                            default:                        break;
+                            case "cdff": dict[k] = avvio.cdff; break;
+                            case "comune_filiale": dict[k] = filiali[0].GetPropertyString("COFL"); break;
+                            case "aplP": dict[k] = apl[0].GetPropertyString("RSSL"); break;
+                            case "piva_apl": dict[k] = apl[0].GetPropertyString("PISL"); break;
+                            case "comune_sede_legale": dict[k] = apl[0].GetPropertyString("COSL"); break;
+                            case "indirizzo_sede_legale": dict[k] = apl[0].GetPropertyString("INSL"); break;
+                            case "ora_adesso": dict[k] = DateTime.Now.ToString("HH:mm:ss"); break;
+                            case "data_odierna": dict[k] = DateTime.Today.ToString("dd/MM/yyyy"); break;
+                            case "anno_corrente": dict[k] = DateTime.Today.ToString("yyyy"); break;
+                            default: break;
                         }
                     }
                 }
+                if (propsDict.ContainsKey("email")) avvio.email = avvio.data.email ?? "";
 
                 pmsPostData pmsPostData = new()
                 {
                     external_user_id = idAttivita,
-                    email = avvio.email,
+                    email = avvio.email ?? "",
                     apl = avvio.apl,
                     communication = new List<string>() {
                         (bool)processi[0].GetPropertyValue("communication_link") ? "link" : "",
@@ -364,7 +399,7 @@ namespace BecaWebService.Services.Custom
                     _logger.LogDebug($"La risposta è nulla");
                     return "La risposta è PMS nulla".toResponse();
                 }
-                return new GenericResponse( new { pmsRes.response[0].link });
+                return new GenericResponse(new { pmsRes.response[0].link });
             }
             catch (Exception ex)
             {
@@ -375,7 +410,8 @@ namespace BecaWebService.Services.Custom
 
         public async Task<GenericResponse> InvalidaFasi(pmsInvalidaFasi fasi)
         {
-            try {
+            try
+            {
                 pmsInvalidaFasiJson pmsInvalidaFasiJson = new()
                 {
                     data = [fasi]
@@ -386,7 +422,7 @@ namespace BecaWebService.Services.Custom
                 parameters.Add("user_process_id", fasi.user_process_id);
                 parameters.Add("user_process_status", "Reinviato all'utente");
                 int res2 = await _gRepository.ExecuteProcedure("MainDB", "spPMS_Processo_aggiorna_stato", parameters.parameters);
-          
+
                 return new GenericResponse(true);
             }
             catch (Exception ex) { return ex.Message.toResponse(); }
@@ -404,12 +440,12 @@ namespace BecaWebService.Services.Custom
 
                 // Crea un MemoryStream a partire dall'array di byte
                 MemoryStream stream = new(bytes);
-                    // Esempio: leggere il contenuto del MemoryStream e convertirlo in stringa
-                    using (StreamReader reader = new(stream))
-                    {
-                        string result = reader.ReadToEnd();
-                        Console.WriteLine(result); // Output: Hello, World!
-                    }
+                // Esempio: leggere il contenuto del MemoryStream e convertirlo in stringa
+                using (StreamReader reader = new(stream))
+                {
+                    string result = reader.ReadToEnd();
+                    Console.WriteLine(result); // Output: Hello, World!
+                }
                 return new GenericResponse(new { pdf = stream, mimeType });
             }
             catch (Exception ex)

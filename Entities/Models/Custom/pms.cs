@@ -62,7 +62,7 @@ namespace Entities.Models.Custom
         public int idAnagAttivita { get; set; }
         public string apl { get; set; }
         public string cdff { get; set; }
-        public string email { get; set; }
+        public string? email { get; set; }
         public string? CodiceAnagrafica { get; set; }
         //public string TipoAnagrafica { get; set; }
         public dynamic data { get; set; }

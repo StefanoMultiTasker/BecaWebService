@@ -1242,7 +1242,7 @@ namespace Repository
                 int numP = 0;
                 foreach (BecaParameter par in parameters)
                 {
-                    if (colCheck.GetType().GetProperty(par.name) != null)
+                    if (colCheck.HasPropertyValue(par.name))
                     {
                         sql += sql.Contains("WHERE", StringComparison.CurrentCultureIgnoreCase) ? " And " : " Where ";
                         sql += par.name + " " + par.comparison;
